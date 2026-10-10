@@ -1,6 +1,10 @@
 # TEMA 2. ESPACIOS VECTORIALES
 ## Ficha de estudio — Estilo Navarro
 
+<a href="Tema2Resueltos.pdf" target="_blank">Ver mi archivo PDF</a>
+
+
+
 **Hilo conductor:** un espacio vectorial es un mundo de flechas que pueden sumarse y estirarse.
 
 ## 1. Espacios vectoriales: un mundo de flechas
