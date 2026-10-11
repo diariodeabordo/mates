@@ -1,3 +1,7 @@
+<style>
+  header { display: none !important; }
+</style>
+
 # DIARIO DE A BORDO
 
 <div align="center">
