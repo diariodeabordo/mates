@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Diario de a bordo</title>
+  <title>Mis apuntes de matemáticas</title>
 
   <style>
     * {
@@ -36,9 +37,9 @@
       margin-bottom: 25px;
     }
 
-    .ecosistema {
+    section {
       max-width: 850px;
-      margin: 0 auto;
+      margin: 0 auto 30px auto;
       padding: 14px;
       border: 1px solid #dddddd;
       border-radius: 12px;
@@ -46,19 +47,48 @@
       box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
     }
 
-    .ecosistema h2 {
+    section h2 {
       font-size: 20px;
       font-weight: 600;
       margin: 0 0 12px 0;
     }
 
-    .ecosistema iframe {
+    .programa iframe {
       display: block;
       width: 100%;
       height: 500px;
       border: none;
       border-radius: 8px;
       background: white;
+    }
+
+    .pdf {
+      margin-top: 20px;
+    }
+
+    .pdf h3 {
+      font-size: 16px;
+      margin: 0 0 10px 0;
+    }
+
+    .pdf iframe {
+      display: block;
+      width: 100%;
+      height: 500px;
+      border: 1px solid #dddddd;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .enlace {
+      display: inline-block;
+      margin: 8px 0 12px;
+      color: #0759b8;
+      text-decoration: none;
+    }
+
+    .enlace:hover {
+      text-decoration: underline;
     }
 
     @media (max-width: 600px) {
@@ -70,11 +100,15 @@
         font-size: 24px;
       }
 
-      .ecosistema {
+      section {
         padding: 8px;
       }
 
-      .ecosistema iframe {
+      .programa iframe {
+        height: 420px;
+      }
+
+      .pdf iframe {
         height: 420px;
       }
     }
@@ -83,107 +117,96 @@
 
 <body>
   <main>
-    <h1>Diario de a bordo</h1>
 
-    <section class="ecosistema">
-      <h2>🌱 Un espacio vectorial</h2>
+    <h1>Mis apuntes de matemáticas</h1>
+
+    <p class="introduccion">
+      Un espacio para explorar las matemáticas de forma visual,
+      interactiva y práctica.
+    </p>
+
+    <!-- PROGRAMA 1: ECOSISTEMA -->
+    <section class="programa">
+      <h2>🌱 Ecosistema</h2>
+
       <iframe
-        src="./ecosistema-vectorial.html"
-        title="Un espacio vectorial"
-        loading="eager"
-        allowfullscreen>
+        src="./ecosistema.html"
+        title="Programa interactivo Ecosistema"
+        loading="eager">
       </iframe>
+
+      <a class="enlace"
+         href="./ecosistema.html"
+         target="_blank"
+         rel="noopener">
+        Abrir el programa en una ventana nueva ↗
+      </a>
     </section>
+
+    <!-- PROGRAMA 2: APLICACIÓN LINEAL -->
+    <section class="programa">
+      <h2>📐 Aplicación lineal</h2>
+
+      <iframe
+        src="./Aplicaci%C3%B3n%20Lineal.html"
+        title="Programa interactivo Aplicación Lineal"
+        loading="lazy">
+      </iframe>
+
+      <a class="enlace"
+         href="./Aplicaci%C3%B3n%20Lineal.html"
+         target="_blank"
+         rel="noopener">
+        Abrir el programa en una ventana nueva ↗
+      </a>
+    </section>
+
+    <!-- EJERCICIOS RESUELTOS -->
+    <section>
+      <h2>📚 Ejercicios resueltos</h2>
+
+      <p class="introduccion">
+        Consulta aquí los ejercicios y sus soluciones en PDF.
+      </p>
+
+      <!-- PDF 1 -->
+      <div class="pdf">
+        <h3>Ejercicios resueltos 1</h3>
+
+        <iframe
+          src="./Tema2Resueltos.pdf"
+          title="Ejercicios resueltos 1"
+          loading="lazy">
+        </iframe>
+
+        <a class="enlace"
+           href="./ejercicios1.pdf"
+           target="_blank"
+           rel="noopener">
+          Abrir o descargar el PDF ↗
+        </a>
+      </div>
+
+      <!-- PDF 2 -->
+      <div class="pdf">
+        <h3>Ejercicios resueltos 2</h3>
+
+        <iframe
+          src="./ejercicios2.pdf"
+          title="Ejercicios resueltos 2"
+          loading="lazy">
+        </iframe>
+
+        <a class="enlace"
+           href="./ejercicios2.pdf"
+           target="_blank"
+           rel="noopener">
+          Abrir o descargar el PDF ↗
+        </a>
+      </div>
+
+    </section>
+
   </main>
 </body>
-
-   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 30px 16px;
-      font-family: Arial, sans-serif;
-      background: #ffffff;
-      color: #222222;
-    }
-
-    main {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      font-size: 28px;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    .introduccion {
-      color: #555555;
-      line-height: 1.6;
-      margin-bottom: 25px;
-    }
-
-    .aplicacion {
-      max-width: 850px;
-      margin: 0 auto;
-      padding: 14px;
-      border: 1px solid #dddddd;
-      border-radius: 12px;
-      background: #fafafa;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
-    }
-
-    .aplicacion h2 {
-      font-size: 20px;
-      font-weight: 600;
-      margin: 0 0 12px 0;
-    }
-
-    .aplicacion iframe {
-      display: block;
-      width: 100%;
-      height: 500px;
-      border: none;
-      border-radius: 8px;
-      background: white;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 18px 10px;
-      }
-
-      h1 {
-        font-size: 24px;
-      }
-
-      .aplicacion {
-        padding: 8px;
-      }
-
-      .aplicacion iframe {
-        height: 420px;
-      }
-    }
-  </style>
-</head>
-
-
-<section class="lineal">
-      <h2>🌱 Una aplicación lineal</h2>
-
-      <iframe
-        src="./Aplicación lineal.html"
-        title="Una aplicación lineal"
-        loading="eager"
-        allowfullscreen>
-      </iframe>
-    </section>
-
-
-  
 </html>
