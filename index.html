@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -25,11 +25,17 @@
       margin: 0 auto;
     }
 
+    /* TÍTULO PRINCIPAL */
+
     h1 {
-      font-size: 28px;
+      font-size: 30px;
       font-weight: 600;
-      margin-bottom: 10px;
+      text-align: center;
+      margin: 0 0 10px;
+      letter-spacing: 0.3px;
     }
+
+    /* INTRODUCCIÓN */
 
     .introduccion {
       color: #555555;
@@ -37,9 +43,54 @@
       margin-bottom: 25px;
     }
 
+    /* PORTADA POÉTICA */
+
+    .portada-poetica {
+      max-width: 650px;
+      margin: 0 auto 38px;
+      padding: 12px 16px 26px;
+      text-align: center;
+    }
+
+    .portada-poetica .poema {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 19px;
+      line-height: 1.9;
+      font-style: italic;
+      color: #454545;
+      margin: 22px 0;
+    }
+
+    .portada-poetica img {
+      display: block;
+      width: 150px;
+      max-width: 60%;
+      height: auto;
+      margin: 22px auto 14px;
+      border-radius: 8px;
+    }
+
+    .portada-poetica .lema {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 13px;
+      color: #777777;
+      letter-spacing: 0.4px;
+      line-height: 1.6;
+    }
+
+    .separador {
+      width: 60px;
+      height: 1px;
+      border: 0;
+      background: #d5d5d5;
+      margin: 24px auto;
+    }
+
+    /* SECCIONES Y PROGRAMAS */
+
     section {
       max-width: 850px;
-      margin: 0 auto 30px auto;
+      margin: 0 auto 30px;
       padding: 14px;
       border: 1px solid #dddddd;
       border-radius: 12px;
@@ -50,7 +101,7 @@
     section h2 {
       font-size: 20px;
       font-weight: 600;
-      margin: 0 0 12px 0;
+      margin: 0 0 12px;
     }
 
     .programa iframe {
@@ -59,16 +110,32 @@
       height: 500px;
       border: none;
       border-radius: 8px;
-      background: white;
+      background: #ffffff;
     }
 
+    /* ENLACES */
+
+    .enlace {
+      display: inline-block;
+      margin: 8px 0 12px;
+      color: #0759b8;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .enlace:hover {
+      text-decoration: underline;
+    }
+
+    /* DOCUMENTOS PDF */
+
     .pdf {
-      margin-top: 20px;
+      margin-top: 24px;
     }
 
     .pdf h3 {
       font-size: 16px;
-      margin: 0 0 10px 0;
+      margin: 0 0 10px;
     }
 
     .pdf iframe {
@@ -77,37 +144,38 @@
       height: 500px;
       border: 1px solid #dddddd;
       border-radius: 8px;
-      background: white;
+      background: #ffffff;
     }
 
-    .enlace {
-      display: inline-block;
-      margin: 8px 0 12px;
-      color: #0759b8;
-      text-decoration: none;
-    }
-
-    .enlace:hover {
-      text-decoration: underline;
-    }
+    /* MÓVILES */
 
     @media (max-width: 600px) {
       body {
-        padding: 18px 10px;
+        padding: 20px 10px;
       }
 
       h1 {
-        font-size: 24px;
+        font-size: 25px;
+      }
+
+      .portada-poetica {
+        padding: 8px 10px 20px;
+        margin-bottom: 24px;
+      }
+
+      .portada-poetica .poema {
+        font-size: 17px;
+      }
+
+      .portada-poetica img {
+        width: 125px;
       }
 
       section {
         padding: 8px;
       }
 
-      .programa iframe {
-        height: 420px;
-      }
-
+      .programa iframe,
       .pdf iframe {
         height: 420px;
       }
@@ -118,51 +186,82 @@
 <body>
   <main>
 
-    <h1>Diario de a bordo</h1>
- 
-    <!--
-   <p class="introduccion">
-      Un espacio para explorar las matemáticas de forma visual,
-      interactiva y práctica.
-    </p>
+    <!-- TÍTULO -->
 
-    <!-- PROGRAMA 1: ECOSISTEMA -->
+    <h1>Diario de a bordo</h1>
+
+    <!-- PORTADA POÉTICA -->
+
+    <div class="portada-poetica">
+
+      <hr class="separador">
+
+      <div class="poema">
+        En cada forma, una relación;<br>
+        en cada relación, un universo.<br>
+        Comprender es aprender a ver<br>
+        lo que une las cosas.
+      </div>
+
+      <!--
+        Sube tu imagen al repositorio junto a index.html.
+        Llámala imagen-matematicas.png o cambia esta ruta.
+      -->
+
+      <img
+        src="./imagen-matematicas.png"
+        alt="Una imagen que simboliza la unidad entre las matemáticas y la naturaleza">
+
+      <div class="lema">
+        Matemáticas: el arte de descubrir relaciones.
+      </div>
+
+      <hr class="separador">
+
+    </div>
+
+    <!-- PROGRAMA 1: ESPACIO VECTORIAL -->
+
     <section class="programa">
       <h2>🌱 Un espacio vectorial</h2>
 
       <iframe
         src="./ecosistema-vectorial.html"
-        title="Programa interactivo Ecosistema"
+        title="Programa interactivo: Un espacio vectorial"
         loading="eager">
       </iframe>
 
-      <a class="enlace"
-         href="./ecosistema-vectorial.html"
-         target="_blank"
-         rel="noopener">
+      <a
+        class="enlace"
+        href="./ecosistema-vectorial.html"
+        target="_blank"
+        rel="noopener">
         Abrir el programa en una ventana nueva ↗
       </a>
     </section>
 
     <!-- PROGRAMA 2: APLICACIÓN LINEAL -->
+
     <section class="programa">
-      <h2>Una aplicación lineal</h2>
+      <h2>📐 Una aplicación lineal</h2>
 
       <iframe
-        src="./Aplicación lineal.html"
-        title="Programa interactivo Aplicación Lineal"
+        src="./Aplicaci%C3%B3n%20lineal.html"
+        title="Programa interactivo: Una aplicación lineal"
         loading="lazy">
       </iframe>
 
-      <a class="enlace"
-         href="./Aplicación lineal.html"
-         target="_blank"
-         rel="noopener">
+      <a
+        class="enlace"
+        href="./Aplicaci%C3%B3n%20lineal.html"
+        target="_blank"
+        rel="noopener">
         Abrir el programa en una ventana nueva ↗
       </a>
     </section>
 
     <!-- EJERCICIOS RESUELTOS -->
+
     <section>
       <h2>📚 Ejercicios resueltos</h2>
 
@@ -170,39 +269,43 @@
         Consulta aquí los ejercicios y sus soluciones en PDF.
       </p>
 
-      <!-- PDF 1 -->
+      <!-- PDF: TEMA 2 -->
+
       <div class="pdf">
-        <h3>Ejercicios resueltos Tema 2</h3>
+        <h3>Ejercicios resueltos · Tema 2</h3>
 
         <iframe
           src="./Tema2Resueltos.pdf"
-          title="Ejercicios resueltos 1"
+          title="Ejercicios resueltos del Tema 2"
           loading="lazy">
         </iframe>
 
-        <a class="enlace"
-           href="./ejercicios1.pdf"
-           target="_blank"
-           rel="noopener">
-          Abrir o descargar el PDF ↗
+        <a
+          class="enlace"
+          href="./Tema2Resueltos.pdf"
+          target="_blank"
+          rel="noopener">
+          Abrir o descargar el PDF del Tema 2 ↗
         </a>
       </div>
 
-      <!-- PDF 2 -->
+      <!-- PDF: TEMA 3 -->
+
       <div class="pdf">
-        <h3>Ejercicios resueltos Tema 3</h3>
+        <h3>Ejercicios resueltos · Tema 3</h3>
 
         <iframe
           src="./ejercicios2.pdf"
-          title="Ejercicios resueltos 2"
+          title="Ejercicios resueltos del Tema 3"
           loading="lazy">
         </iframe>
 
-        <a class="enlace"
-           href="./ejercicios2.pdf"
-           target="_blank"
-           rel="noopener">
-          Abrir o descargar el PDF ↗
+        <a
+          class="enlace"
+          href="./ejercicios2.pdf"
+          target="_blank"
+          rel="noopener">
+          Abrir o descargar el PDF del Tema 3 ↗
         </a>
       </div>
 
@@ -211,3 +314,4 @@
   </main>
 </body>
 </html>
+```
