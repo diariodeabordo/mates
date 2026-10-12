@@ -3,14 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>Mis apuntes de matemáticas</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px 16px;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #222222;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .introduccion {
+      color: #555555;
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+
+    .ecosistema {
+      max-width: 850px;
+      margin: 0 auto;
+      padding: 14px;
+      border: 1px solid #dddddd;
+      border-radius: 12px;
+      background: #fafafa;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .ecosistema h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+    }
+
+    .ecosistema iframe {
+      display: block;
+      width: 100%;
+      height: 500px;
+      border: none;
+      border-radius: 8px;
+      background: white;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 18px 10px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .ecosistema {
+        padding: 8px;
+      }
+
+      .ecosistema iframe {
+        height: 420px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-  <h1>Ecosistema</h1>
+  <main>
+    <h1>Mis apuntes de matemáticas</h1>
 
+    <p class="introduccion">
+      Un espacio para explorar las matemáticas de forma visual e interactiva.
+    </p>
 
+    <section class="ecosistema">
+      <h2>🌱 Ecosistema</h2>
 
-
-  
+      <iframe
+        src="./ecosistema-vectorial.html"
+        title="Programa interactivo Ecosistema"
+        loading="eager"
+        allowfullscreen>
+      </iframe>
+    </section>
+  </main>
 </body>
 </html>
