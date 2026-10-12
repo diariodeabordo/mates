@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ecosistema vectorial</title>
+<style>
+:root{
+  --bg:#f2efe9; --paper:#f2efe9; --fg:#20201e; --muted:#7a7873; --line:#dedad2; --habitat:#c9c5bd; --gold:#c99a2e;
+  --shadow:0 2px 6px rgba(0,0,0,.05),0 18px 40px rgba(0,0,0,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1014; --paper:#0e1014; --fg:#eceae5; --muted:#8e9099; --line:#2b2f38; --habitat:#3a3e48; --gold:#f0c95e;
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1014; --paper:#0e1014; --fg:#eceae5; --muted:#8e9099; --line:#2b2f38; --habitat:#3a3e48; --gold:#f0c95e;
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:"Iowan Old Style",Palatino,Georgia,serif;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+header{display:flex;align-items:center;gap:12px;padding:12px 16px 6px;flex-wrap:wrap}
+h1{font-size:1.1rem;margin:0;font-weight:700;letter-spacing:-.01em}
+.stats{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.themeBtn{margin-left:auto;font:inherit;cursor:pointer;border:1px solid var(--line);
+  background:var(--paper);color:var(--muted);border-radius:999px;width:32px;height:32px}
+main{flex:1;min-height:0;padding:0 12px;position:relative}
+.stage{position:relative;height:100%;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line)}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.caption{position:absolute;left:0;right:0;bottom:10px;text-align:center;pointer-events:none;
+  font-size:.82rem;color:var(--muted);padding:0 14px}
+footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px 14px}
+footer .grp{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
+input[type=range]{width:110px;accent-color:var(--fg);vertical-align:middle}
+button.pill{font:inherit;font-size:.8rem;cursor:pointer;padding:6px 13px;border-radius:999px;
+  border:1px solid var(--line);background:var(--paper);color:var(--fg)}
+button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Ecosistema vectorial</h1>
+  <span class="stats" id="stats">población 0 · nacimientos 0 · generación máx 0</span>
+  <button class="themeBtn" id="themeBtn">◐</button>
+</header>
+<main>
+  <div class="stage">
+    <canvas id="cv"></canvas>
+    <div class="caption">Arrastra una flecha hasta que su origen coincida con el de otra: nace su suma (paralelogramo) · toque corto: retirarla</div>
+  </div>
+</main>
+<footer>
+  <div class="grp">velocidad <input type="range" id="speed" min="0.2" max="2.2" step="0.1" value="1"></div>
+  <div class="grp">capacidad <input type="range" id="cap" min="6" max="40" step="1" value="22"></div>
+  <button class="pill" id="pauseBtn">⏸ Pausa</button>
+  <button class="pill" id="clearBtn">Vaciar hábitat</button>
+  <button class="pill" id="resetBtn">Repoblar</button>
+</footer>
+
+<script>
+const CSS=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+let W=0,H=0,CX=0,CY=0,S=46;
+const B=6.6; // radio del hábitat en unidades de mundo
+
+function resize(){
+  const r=cv.getBoundingClientRect(); if(!r.width) return;
+  const d=window.devicePixelRatio||1;
+  cv.width=r.width*d; cv.height=r.height*d; W=r.width; H=r.height;
+  ctx.setTransform(d,0,0,d,0,0); CX=W/2; CY=H/2;
+  S=Math.max(26,Math.min(58, Math.min(W,H)/(2*B+1)));
+}
+new ResizeObserver(resize).observe(cv);
+
+const P=(p)=>[CX+p[0]*S, CY-p[1]*S];
+const Wc=(px,py)=>[(px-CX)/S,(CY-py)/S];
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1]];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]];
+const mul=(k,a)=>[k*a[0],k*a[1]];
+const len=a=>Math.hypot(a[0],a[1]);
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+const lerp=(a,b,t)=>a+(b-a)*t;
+function clampLen(v,maxL){ const n=len(v); return n>maxL ? mul(maxL/n,v) : v; }
+function avgHue(h1,h2){
+  const a1=h1*Math.PI/180, a2=h2*Math.PI/180;
+  const x=Math.cos(a1)+Math.cos(a2), y=Math.sin(a1)+Math.sin(a2);
+  let a=Math.atan2(y,x)*180/Math.PI; if(a<0)a+=360; return a;
+}
+function rand(a,b){ return a+Math.random()*(b-a); }
+
+/* ---------------- estado del ecosistema ---------------- */
+/* ind.pos es el ORIGEN (punto de aplicación) de la flecha; ind.u es la propia flecha, fija.
+   la cabeza es siempre pos+u. dos individuos se combinan cuando sus orígenes coinciden. */
+let pop=[]; let effects=[]; let births=0, maxGen=0, nextId=1;
+let paused=false, speedMult=1, capMax=22;
+const MERGE_DIST=0.62;
+
+function makeIndividual({pos,vel,u,hue,gen}){
+  const life=rand(16,28);
+  return {
+    id:nextId++, pos, vel, u, hue, gen, age:0, life,
+    cooldown:0, birthT:0, dying:false, deathT:0, heldByUser:false,
+    mutateAt: rand(3, Math.max(4,life-2)), mutated:false, mutateT:null, mutateFrom:null, mutateTo:null
+  };
+}
+
+function spawnRandom(n){
+  for(let i=0;i<n;i++){
+    const ang=rand(0,6.28), r=rand(0.5,2.1);
+    const ind=makeIndividual({
+      pos:[rand(-B*0.7,B*0.7),rand(-B*0.7,B*0.7)],
+      vel:[rand(-0.35,0.35),rand(-0.35,0.35)],
+      u:[r*Math.cos(ang), r*Math.sin(ang)],
+      hue:rand(0,360), gen:0
+    });
+    ind.birthT=1; // ya "adultos" al poblar por primera vez
+    pop.push(ind);
+  }
+}
+spawnRandom(16);
+
+function killIndividual(ind, fast){
+  if(ind.dying) return; ind.dying=true; ind.deathT= fast?0.4:0;
+}
+
+function tryReproduce(){
+  const alive=pop.filter(p=>!p.dying && p.cooldown<=0);
+  for(let i=0;i<alive.length;i++){
+    const a=alive[i]; if(a.cooldown>0||a.dying) continue;
+    for(let j=i+1;j<alive.length;j++){
+      const b=alive[j]; if(b.cooldown>0||b.dying) continue;
+      if(dist(a.pos,b.pos) < MERGE_DIST){
+        const base=mul(0.5,add(a.pos,b.pos));
+        let childU=clampLen(add(a.u,b.u), 4.3);
+        const gen=Math.max(a.gen,b.gen)+1;
+        const child=makeIndividual({
+          pos:base, vel:mul(0.5,add(a.vel,b.vel)),
+          u:childU, hue:(avgHue(a.hue,b.hue)+rand(-12,12)+360)%360, gen
+        });
+        pop.push(child);
+        births++; if(gen>maxGen) maxGen=gen;
+        effects.push({pos:base, t:0, kind:'fusion', ua:[a.u[0],a.u[1]], ub:[b.u[0],b.u[1]]});
+        const diff=sub(b.pos,a.pos);
+        const dir= len(diff)>1e-6 ? mul(1/len(diff), diff) : [1,0];
+        a.vel=sub(a.vel, mul(0.5,dir)); b.vel=add(b.vel, mul(0.5,dir));
+        a.cooldown=2.4; b.cooldown=2.4;
+        const aliveCount=pop.filter(p=>!p.dying).length;
+        if(aliveCount>capMax){
+          let oldest=null;
+          pop.forEach(p=>{ if(!p.dying && p!==a && p!==b && !p.heldByUser){ if(!oldest||p.age>oldest.age) oldest=p; } });
+          if(oldest) killIndividual(oldest,true);
+        }
+        return;
+      }
+    }
+  }
+}
+
+function update(dt){
+  pop.forEach(ind=>{
+    if(ind.cooldown>0) ind.cooldown=Math.max(0,ind.cooldown-dt);
+    if(ind.birthT<1) ind.birthT=Math.min(1, ind.birthT + dt*2.6);
+    if(ind.dying){ ind.deathT=Math.min(1, ind.deathT + dt*2.0); return; }
+    ind.age += dt;
+    if(ind.age > ind.life){ killIndividual(ind,false); return; }
+
+    // dilatación: cada individuo se auto-escala una vez en su vida
+    if(!ind.mutated && !ind.heldByUser && ind.mutateT==null && ind.age>=ind.mutateAt){
+      ind.mutated=true;
+      let lam = Math.random()<0.5 ? rand(0.55,0.8) : rand(1.25,1.75);
+      if(Math.random()<0.18) lam=-lam;
+      let target=clampLen(mul(lam, ind.u), 4.3);
+      if(len(target) < 0.4){ const n=len(target)||1; target=mul(0.4/n, target); }
+      ind.mutateFrom=[ind.u[0],ind.u[1]]; ind.mutateTo=target; ind.mutateT=0;
+      effects.push({pos:[ind.pos[0],ind.pos[1]], t:0, kind:'mutate'});
+    }
+    if(ind.mutateT!=null){
+      ind.mutateT += dt/0.6;
+      const tt=Math.min(1, ind.mutateT);
+      const e=tt*tt*(3-2*tt);
+      ind.u=[ lerp(ind.mutateFrom[0], ind.mutateTo[0], e), lerp(ind.mutateFrom[1], ind.mutateTo[1], e) ];
+      if(tt>=1){ ind.mutateT=null; ind.u=ind.mutateTo; }
+    }
+
+    if(ind.heldByUser) return; // su posición la controla el puntero
+
+    ind.vel[0]+= rand(-1,1)*0.12*dt; ind.vel[1]+= rand(-1,1)*0.12*dt;
+    const sp=len(ind.vel), maxSp=0.55*speedMult;
+    if(sp>maxSp) ind.vel=mul(maxSp/sp, ind.vel);
+    ind.pos[0]+= ind.vel[0]*dt*speedMult*3; ind.pos[1]+= ind.vel[1]*dt*speedMult*3;
+
+    // el hábitat es un círculo de radio B: comprobamos ORIGEN y CABEZA por separado,
+    // así ninguna parte de la flecha (por larga que sea) se escapa del hábitat
+    for(let pass=0; pass<2; pass++){
+      const point = pass===0 ? ind.pos : add(ind.pos, ind.u);
+      const r=len(point);
+      if(r>B){
+        const n=mul(1/r, point);
+        const over=r-B;
+        ind.pos=sub(ind.pos, mul(over,n));
+        const vn=ind.vel[0]*n[0]+ind.vel[1]*n[1];
+        if(vn>0){ ind.vel[0]-=2*vn*n[0]; ind.vel[1]-=2*vn*n[1]; }
+      }
+    }
+  });
+  pop = pop.filter(ind=> !(ind.dying && ind.deathT>=1));
+  effects.forEach(e=>e.t+=dt); effects=effects.filter(e=>e.t<0.6);
+  if(!paused) tryReproduce();
+  document.getElementById('stats').textContent =
+    `población ${pop.filter(p=>!p.dying).length} · nacimientos ${births} · generación máx ${maxGen}`;
+}
+
+/* ---------------- dibujo ---------------- */
+let bgResolved='#f2efe9';
+function refreshBg(){ bgResolved=CSS('--bg'); }
+function drawArrow(tail,head,color,alpha,lw){
+  const [x1,y1]=P(tail), [x2,y2]=P(head);
+  const Lp=Math.hypot(x2-x1,y2-y1); if(Lp<1) return;
+  const hl=Math.min(Lp*0.4, lw*2.4+6), hw=lw*1.6+4;
+  const ang=Math.atan2(y2-y1,x2-x1);
+  const bx=x2-hl*Math.cos(ang), by=y2-hl*Math.sin(ang);
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+  ctx.fillStyle=color;
+  const nx=-Math.sin(ang), ny=Math.cos(ang);
+  ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(bx+nx*hw/2, by+ny*hw/2); ctx.lineTo(bx-nx*hw/2, by-ny*hw/2);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function dashSeg(a,b,color,alpha){
+  const [x1,y1]=P(a), [x2,y2]=P(b);
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=1.6; ctx.setLineDash([5,5]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.restore();
+}
+function render(t){
+  ctx.save(); ctx.globalAlpha=0.16; ctx.fillStyle=bgResolved; ctx.fillRect(0,0,W,H); ctx.restore();
+
+  const c0=P([0,0]); ctx.save(); ctx.strokeStyle=CSS('--habitat'); ctx.globalAlpha=.5; ctx.lineWidth=1.4;
+  ctx.setLineDash([2,6]); ctx.beginPath(); ctx.arc(c0[0],c0[1], B*S, 0,7); ctx.stroke(); ctx.restore();
+
+  effects.forEach(e=>{
+    const fadeA=1-(e.t/0.6);
+    if(e.kind==='fusion' && e.ua && e.ub){
+      // ley del paralelogramo, un instante
+      const tip=add(e.pos, add(e.ua,e.ub));
+      dashSeg(e.pos, add(e.pos,e.ua), CSS('--muted'), fadeA*0.7);
+      dashSeg(e.pos, add(e.pos,e.ub), CSS('--muted'), fadeA*0.7);
+      dashSeg(add(e.pos,e.ua), tip, CSS('--muted'), fadeA*0.5);
+      dashSeg(add(e.pos,e.ub), tip, CSS('--muted'), fadeA*0.5);
+    }
+    const [x,y]=P(e.pos), r=(e.t/0.6)*46, a=1-(e.t/0.6);
+    ctx.save(); ctx.globalAlpha=a*(e.kind==='mutate'?0.75:0.55);
+    ctx.strokeStyle= e.kind==='mutate' ? CSS('--gold') : CSS('--fg');
+    ctx.lineWidth= e.kind==='mutate' ? 3 : 2;
+    ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.stroke(); ctx.restore();
+  });
+
+  pop.forEach(ind=>{
+    const breathe=1+Math.sin(t*2 + ind.id)*0.05;
+    const scale=ind.birthT*breathe;
+    const tail=ind.pos, head=add(tail, mul(scale, ind.u));
+    const light = ind.dying ? 45 : (ind.heldByUser ? 62 : 55);
+    const color=`hsl(${ind.hue}, 68%, ${light}%)`;
+    const alpha=(ind.dying? (1-ind.deathT) : 1) * (0.55+ind.birthT*0.45);
+    const mid=add(tail, mul(0.5*scale, ind.u));
+    const [ax,ay]=P(mid);
+    ctx.save(); ctx.globalAlpha=alpha*(ind.heldByUser?0.24:0.14); ctx.fillStyle=color;
+    ctx.beginPath(); ctx.arc(ax,ay, (len(ind.u)*S*scale)/2+10, 0,7); ctx.fill(); ctx.restore();
+    // el origen se marca con un punto sutil: es ahí donde se busca la coincidencia
+    const [ox,oy]=P(tail);
+    ctx.save(); ctx.globalAlpha=alpha*0.5; ctx.fillStyle=color;
+    ctx.beginPath(); ctx.arc(ox,oy, ind.heldByUser?5.5:3, 0,7); ctx.fill(); ctx.restore();
+    drawArrow(tail,head,color,alpha, (ind.heldByUser?7:5.5)+Math.min(3,len(ind.u)));
+  });
+
+  if(newDrag && newDrag.head) drawArrow(newDrag.tail,newDrag.head,CSS('--fg'),0.5,4);
+}
+
+/* ---------------- interacción ---------------- */
+let newDrag=null, moveDrag=null;
+const posOf=e=>{const r=cv.getBoundingClientRect(); return Wc(e.clientX-r.left, e.clientY-r.top);};
+function segDist(p,a,b){ const ab=sub(b,a), ap=sub(p,a);
+  const t=Math.max(0,Math.min(1,(ap[0]*ab[0]+ap[1]*ab[1])/((ab[0]**2+ab[1]**2)||1)));
+  return dist(p, add(a,mul(t,ab))); }
+
+cv.addEventListener('pointerdown',e=>{
+  const p=posOf(e); cv.setPointerCapture(e.pointerId);
+  let hit=null;
+  for(let i=pop.length-1;i>=0;i--){
+    const ind=pop[i]; if(ind.dying) continue;
+    const head=add(ind.pos,ind.u);
+    if(segDist(p,ind.pos,head) < 0.32){ hit=ind; break; }
+  }
+  if(hit){ moveDrag={ind:hit, startP:p, moved:false, lastP:p, lastT:performance.now(), offset:sub(p,hit.pos)}; }
+  else { newDrag={tail:p}; }
+});
+cv.addEventListener('pointermove',e=>{
+  const p=posOf(e);
+  if(moveDrag){
+    if(!moveDrag.moved && dist(p,moveDrag.startP) > 0.15){
+      moveDrag.moved=true; moveDrag.ind.heldByUser=true; moveDrag.ind.cooldown=0;
+      moveDrag.lastP=p; moveDrag.lastT=performance.now();
+    }
+    if(moveDrag.moved){
+      const now=performance.now(); const dts=Math.max(0.001,(now-moveDrag.lastT)/1000);
+      const newPos=sub(p, moveDrag.offset);
+      let v=[(newPos[0]-moveDrag.ind.pos[0])/dts, (newPos[1]-moveDrag.ind.pos[1])/dts];
+      const sp=len(v); if(sp>3.5) v=mul(3.5/sp,v);
+      moveDrag.ind.vel=v; moveDrag.ind.pos=newPos;
+      moveDrag.lastP=p; moveDrag.lastT=now;
+    }
+    return;
+  }
+  if(newDrag) newDrag.head=p;
+});
+function endInteraction(){
+  if(moveDrag){
+    if(!moveDrag.moved){ killIndividual(moveDrag.ind,true); }
+    else { moveDrag.ind.heldByUser=false; }
+    moveDrag=null; return;
+  }
+  if(newDrag && newDrag.head){
+    const u=sub(newDrag.head, newDrag.tail);
+    if(len(u)>0.2){
+      const ind=makeIndividual({pos:newDrag.tail, vel:[rand(-0.2,0.2),rand(-0.2,0.2)], u:clampLen(u,4.3), hue:rand(0,360), gen:0});
+      ind.cooldown=0.4;
+      pop.push(ind);
+    }
+  }
+  newDrag=null;
+}
+cv.addEventListener('pointerup',endInteraction);
+cv.addEventListener('pointercancel',endInteraction);
+
+/* ---------------- controles ---------------- */
+document.getElementById('speed').oninput=e=>{speedMult=+e.target.value;};
+document.getElementById('cap').oninput=e=>{capMax=+e.target.value;};
+const pauseBtn=document.getElementById('pauseBtn');
+pauseBtn.onclick=()=>{paused=!paused; pauseBtn.textContent=paused?'▶ Reanudar':'⏸ Pausa'; pauseBtn.setAttribute('aria-pressed',paused);};
+document.getElementById('clearBtn').onclick=()=>{pop=[]; effects=[];};
+document.getElementById('resetBtn').onclick=()=>{pop=[]; effects=[]; births=0; maxGen=0; spawnRandom(16);};
+document.getElementById('themeBtn').onclick=()=>{
+  const el=document.documentElement, dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const now=el.getAttribute('data-theme')||(dark?'dark':'light');
+  el.setAttribute('data-theme', now==='dark'?'light':'dark');
+  refreshBg();
+};
+
+/* ---------------- bucle ---------------- */
+let last=performance.now();
+function loop(now){
+  let dt=(now-last)/1000; last=now; dt=Math.min(dt,0.05);
+  if(!paused) update(dt);
+  render(now/1000);
+  requestAnimationFrame(loop);
+}
+resize(); refreshBg();
+requestAnimationFrame(loop);
+window.addEventListener('resize',resize);
+</script>
+</body>
+</html>
