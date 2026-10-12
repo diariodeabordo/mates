@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dependencia, generadores y bases</title>
+<style>
+:root{
+  --bg:#f2efe9; --paper:#f2efe9; --fg:#20201e; --muted:#7a7873; --line:#dedad2; --habitat:#c9c5bd;
+  --gold:#c99a2e; --teal:#14a89b; --bad:#d2553f;
+  --shadow:0 2px 6px rgba(0,0,0,.05),0 18px 40px rgba(0,0,0,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1014; --paper:#0e1014; --fg:#eceae5; --muted:#8e9099; --line:#2b2f38; --habitat:#3a3e48;
+  --gold:#f0c95e; --teal:#4fe0d0; --bad:#ff7a5f;
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1014; --paper:#0e1014; --fg:#eceae5; --muted:#8e9099; --line:#2b2f38; --habitat:#3a3e48;
+  --gold:#f0c95e; --teal:#4fe0d0; --bad:#ff7a5f;
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:"Iowan Old Style",Palatino,Georgia,serif;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav{display:flex;gap:8px;padding:12px 12px 0;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto}
+main{flex:1;min-height:0;padding:12px 12px 0}
+.stage{position:relative;height:100%;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line)}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px 14px}
+#ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button.pill{font:inherit;font-size:1rem;line-height:1;cursor:pointer;min-width:38px;height:34px;padding:0 14px;border-radius:999px;
+  border:1px solid var(--line);background:var(--paper);color:var(--fg);white-space:nowrap}
+button.pill[aria-pressed="true"],button.pill[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.dots{display:inline-flex;gap:5px;align-items:center;padding:0 6px;min-width:44px;justify-content:center}
+.dots i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.sp{margin-left:auto}
+</style>
+</head>
+<body>
+<nav id="tabs" role="tablist">
+  <button class="pill" role="tab" data-tab="dep">↺ Dependientes</button>
+  <button class="pill" role="tab" data-tab="ind">⊥ Independientes</button>
+  <button class="pill" role="tab" data-tab="gen">✦ Sistema generador</button>
+  <button class="pill" role="tab" data-tab="base">◫ Base</button>
+</nav>
+<main><div class="stage"><canvas id="cv"></canvas></div></main>
+<footer>
+  <div id="ctl"></div>
+  <button class="pill sp" id="themeBtn" title="claro / oscuro">◐</button>
+</footer>
+
+<script>
+const CSS=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const B=6.6, LIM=5.3;
+const HUES=[22,205,140,300];
+const hcol=(h,l)=>`hsl(${h},68%,${l||55}%)`;
+let W=0,H=0,R=200,S=30,K=1,C=[0,0];
+
+function resize(){
+  const r=cv.getBoundingClientRect(); if(!r.width) return;
+  const d=window.devicePixelRatio||1;
+  cv.width=r.width*d; cv.height=r.height*d; W=r.width; H=r.height;
+  ctx.setTransform(d,0,0,d,0,0);
+  R=Math.max(60,Math.min(W,H)/2-14); C=[W/2,H/2];
+  S=R/B; K=Math.max(.55,Math.min(1.25,S/40));
+}
+new ResizeObserver(resize).observe(cv);
+
+/* ---------- álgebra ---------- */
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1]];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]];
+const mul=(k,a)=>[k*a[0],k*a[1]];
+const len=a=>Math.hypot(a[0],a[1]);
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1];
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const ease=g=>g*g*(3-2*g);
+const rand=(a,b)=>a+Math.random()*(b-a);
+function solve2(u,v,p){ const d=cross(u,v); if(Math.abs(d)<1e-9) return null; return [cross(p,v)/d, cross(u,p)/d]; }
+const sinAng=(a,b)=>Math.abs(cross(a,b))/((len(a)*len(b))||1);
+const Pt=p=>[C[0]+p[0]*S, C[1]-p[1]*S];
+const unPt=(x,y)=>[(x-C[0])/S,(C[1]-y)/S];
+function hexRgb(h){ h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+function hexA(h,a){ const c=hexRgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+let bgResolved='#f2efe9';
+function refreshBg(){ bgResolved=CSS('--bg'); }
+
+/* ---------- estado ---------- */
+const DEP_PRE={
+  2:[[3.0,1.0],[-1.8,-0.6]],
+  3:[[3.0,1.0],[-0.8,2.6],[-2.4,-1.7]],
+  4:[[3.0,1.0],[-0.8,2.6],[-2.4,-1.7],[1.6,-2.8]]
+};
+const IND_PRE={1:[[3.2,1.4]],2:[[3.0,0.6],[-0.6,2.6]]};
+const IND_P={1:[4.16,1.82],2:[3.24,3.64]};
+const GEN_DEF=[[3.0,0.9],[-0.8,2.5],[-2.6,-1.7],[1.8,-2.8]];
+const BASES=[[[2.2,0],[0,2.2]],[[1.69,1.41],[-1.41,1.69]],[[2.4,0],[1.4,2.2]],[[2.4,1.2],[-0.6,2.4]]];
+const cp=a=>a.map(v=>v.slice());
+const st={
+  dep:{n:3,vecs:cp(DEP_PRE[3])},
+  ind:{n:2,vecs:cp(IND_PRE[2]),P:IND_P[2].slice()},
+  gen:{n:2,vecs:cp(GEN_DEF),P:[3.4,-2.8]},
+  base:{mode:1,preset:0,morph:null,vecs:[BASES[0][0].slice(),BASES[0][1].slice(),[1.98,1.76]],P:[3.4,2.6]}
+};
+let tab='dep', hoverKey=null, drag=null;
+let dust=[], demo=null, spawnT=0, litPlane=0, litLine=0, pAnim=0;
+
+function active(){
+  const s=st[tab];
+  if(tab==='base') return s.vecs.slice(0,s.mode+1);
+  return s.vecs.slice(0,s.n);
+}
+const hasP=()=>tab!=='dep';
+const getP=()=>st[tab].P;
+
+function rankOf(vs){
+  let r=0;
+  for(let i=0;i<vs.length;i++){
+    if(len(vs[i])>0.3) r=Math.max(r,1);
+    for(let j=i+1;j<vs.length;j++) if(sinAng(vs[i],vs[j])>0.03) return 2;
+  }
+  return r;
+}
+function pairsOf(vs){
+  const out=[];
+  for(let i=0;i<vs.length;i++) for(let j=i+1;j<vs.length;j++){
+    const sn=sinAng(vs[i],vs[j]); if(sn>0.05) out.push({i,j,sn});
+  }
+  out.sort((a,b)=>b.sn-a.sn); return out;
+}
+/* combinación no trivial que da 0 (null si son independientes) */
+function nullCombo(vs){
+  const n=vs.length, c=new Array(n).fill(0);
+  for(let i=0;i<n;i++) if(len(vs[i])<1e-6){ c[i]=1; return {c,collinear:true}; }
+  let best=0,bi=0,bj=1;
+  for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){ const sn=sinAng(vs[i],vs[j]); if(sn>best){best=sn;bi=i;bj=j;} }
+  if(best<1e-4){
+    for(let j=1;j<n;j++){ const k=dot(vs[j],vs[0])/dot(vs[0],vs[0]); c[j]+=1; c[0]-=k; }
+    return {c,collinear:true};
+  }
+  if(n===2) return null;
+  let w=1;
+  for(let k=0;k<n;k++){
+    if(k===bi||k===bj) continue;
+    const ab=solve2(vs[bi],vs[bj],vs[k]);
+    c[k]+=w; c[bi]-=w*ab[0]; c[bj]-=w*ab[1]; w=0.6;
+  }
+  return {c,collinear:false};
+}
+
+/* ---------- primitivas de dibujo ---------- */
+function drawArrow(p1,p2,color,alpha,lw,halo){
+  const [x1,y1]=p1,[x2,y2]=p2;
+  const Lp=Math.hypot(x2-x1,y2-y1); if(Lp<1.5) return;
+  const hl=Math.min(Lp*0.4, lw*2.4+6), hw=lw*1.6+4;
+  const ang=Math.atan2(y2-y1,x2-x1);
+  const bx=x2-hl*Math.cos(ang), by=y2-hl*Math.sin(ang);
+  const nx=-Math.sin(ang), ny=Math.cos(ang);
+  ctx.save(); ctx.globalAlpha=alpha; ctx.lineCap='round'; ctx.lineJoin='round';
+  if(halo){
+    ctx.strokeStyle=halo; ctx.lineWidth=lw+4;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+    ctx.fillStyle=halo; ctx.lineWidth=4; ctx.strokeStyle=halo;
+    ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(bx+nx*hw/2,by+ny*hw/2); ctx.lineTo(bx-nx*hw/2,by-ny*hw/2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.strokeStyle=color; ctx.lineWidth=lw;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(bx+nx*hw/2,by+ny*hw/2); ctx.lineTo(bx-nx*hw/2,by-ny*hw/2); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function dashSeg(a,b,color,alpha,lw,dash){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw||1.8; ctx.setLineDash(dash||[5,5]);
+  ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.restore();
+}
+function ring(pt,r,color,alpha,lw,dash){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw; if(dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.arc(pt[0],pt[1],r,0,7); ctx.stroke(); ctx.restore();
+}
+function dot_(pt,r,color,alpha){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle=color; ctx.beginPath(); ctx.arc(pt[0],pt[1],r,0,7); ctx.fill(); ctx.restore();
+}
+function drawCross(pt,size,color,alpha){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=2.6*K; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(pt[0]-size,pt[1]-size); ctx.lineTo(pt[0]+size,pt[1]+size);
+  ctx.moveTo(pt[0]+size,pt[1]-size); ctx.lineTo(pt[0]-size,pt[1]+size); ctx.stroke(); ctx.restore();
+}
+function drawOrigin(t){
+  const color=CSS('--gold'), br=1+0.12*Math.sin(t*2.4), rad=30*K*br;
+  const g=ctx.createRadialGradient(C[0],C[1],0,C[0],C[1],rad);
+  g.addColorStop(0,hexA(color,.6)); g.addColorStop(.35,hexA(color,.22)); g.addColorStop(1,hexA(color,0));
+  ctx.save(); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(C[0],C[1],rad,0,7); ctx.fill(); ctx.restore();
+  ring(C,9*K*br,color,.55,1.6);
+  dot_(C,5.5*K+1,color,1); dot_(C,2.2*K+.4,'#ffffff',.9);
+}
+
+/* ---------- hábitat ---------- */
+function drawHabitat(){
+  const gold=CSS('--gold'), hab=CSS('--habitat');
+  ctx.save(); ctx.fillStyle=hexA(gold,0.05); ctx.beginPath(); ctx.arc(C[0],C[1],R,0,7); ctx.fill(); ctx.restore();
+  ring(C,R/3,hab,.28,1,[2,6]); ring(C,2*R/3,hab,.28,1,[2,6]);
+  ring(C,R,hab,.6,1.4,[2,6]);
+}
+
+/* intersección de la recta p0 + s·d (|d|=1) con el disco de radio B */
+function chordOf(p0,d){
+  const b=dot(p0,d), c=dot(p0,p0)-B*B, disc=b*b-c;
+  if(disc<=0) return null;
+  const q=Math.sqrt(disc); return [-b-q,-b+q];
+}
+
+/* retícula de coordenadas generada por u1,u2 */
+function drawLattice(u1,u2,alpha){
+  const d=cross(u1,u2); if(Math.abs(d)<1e-6) return;
+  const L1=len(u1), L2=len(u2);
+  const defs=[[u1,u2,Math.abs(d)/L2,0],[u2,u1,Math.abs(d)/L1,1]];
+  let stepKeep=1;
+  defs.forEach(([base,dirv,sp,idx])=>{
+    const dn=mul(1/len(dirv),dirv);
+    const step=Math.max(1,Math.ceil(7/(sp*S)));
+    stepKeep=Math.max(stepKeep,step);
+    const kmax=Math.ceil(B/sp)+1;
+    const k0=-Math.floor(kmax/step)*step;
+    for(let k=k0;k<=kmax;k+=step){
+      const p0=mul(k,base), ch=chordOf(p0,dn); if(!ch) continue;
+      const a=Pt(add(p0,mul(ch[0],dn))), b=Pt(add(p0,mul(ch[1],dn)));
+      const axis=(k===0);
+      ctx.save(); ctx.globalAlpha=alpha*(axis?0.42:0.17); ctx.strokeStyle=hcol(HUES[idx]); ctx.lineWidth=axis?2.2*K:1;
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.restore();
+    }
+  });
+  if(stepKeep===1){
+    const fg=CSS('--fg'), kmax=Math.ceil(B/Math.min(Math.abs(d)/L2,Math.abs(d)/L1))+1;
+    ctx.save(); ctx.fillStyle=fg; ctx.globalAlpha=alpha*0.3;
+    for(let k=-kmax;k<=kmax;k++) for(let l=-kmax;l<=kmax;l++){
+      const p=add(mul(k,u1),mul(l,u2)); if(len(p)>B-0.05) continue;
+      const q=Pt(p); ctx.beginPath(); ctx.arc(q[0],q[1],1.7*K,0,7); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+/* ---------- cadenas de flechas (copias estiradas, punta con cola) ---------- */
+function drawChain(edges,tau,alpha,offsets,lw){
+  let p=[0,0];
+  for(let k=0;k<edges.length;k++){
+    const g=clamp(tau-k,0,1); if(g<=0) break;
+    const e=edges[k].e;
+    let a=Pt(p), b=Pt(add(p,mul(ease(g),e)));
+    const full=Pt(add(p,e));
+    if(offsets && offsets[k]){
+      const dx=full[0]-a[0], dy=full[1]-a[1], L=Math.hypot(dx,dy)||1;
+      const ox=-dy/L*offsets[k], oy=dx/L*offsets[k];
+      a=[a[0]+ox,a[1]+oy]; b=[b[0]+ox,b[1]+oy];
+    }
+    drawArrow(a,b,hcol(edges[k].hue),alpha,lw||4*K+1,bgResolved);
+    p=add(p,e);
+  }
+  // cabeza actual
+  let h=[0,0];
+  for(let k=0;k<edges.length;k++){ const g=clamp(tau-k,0,1); h=add(h,mul(ease(g),edges[k].e)); }
+  return h;
+}
+
+/* ---------- ruta a un punto P por dos flechas ---------- */
+let routeProg=2;
+function drawRoute(ui,uj,a,b,hi,hj,main){
+  const A=mul(a,ui), Bv=mul(b,uj), E=add(A,Bv);
+  const pC=Pt([0,0]), pA=Pt(A), pB=Pt(Bv), pE=Pt(E);
+  if(main){
+    ctx.save(); ctx.globalAlpha=0.07; ctx.fillStyle=CSS('--fg');
+    ctx.beginPath(); ctx.moveTo(pC[0],pC[1]); ctx.lineTo(pA[0],pA[1]); ctx.lineTo(pE[0],pE[1]); ctx.lineTo(pB[0],pB[1]); ctx.closePath(); ctx.fill(); ctx.restore();
+    dashSeg(pC,pB,hcol(hj),.4,1.6); dashSeg(pB,pE,hcol(hi),.4,1.6);
+    dashSeg(pC,pA,hcol(hi),.3,1.6); dashSeg(pA,pE,hcol(hj),.3,1.6);
+    const g1=clamp(routeProg,0,1), g2=clamp(routeProg-1,0,1);
+    drawArrow(pC,Pt(mul(ease(g1),A)),hcol(hi),1,4*K+1,bgResolved);
+    if(g2>0) drawArrow(pA,Pt(add(A,mul(ease(g2),Bv))),hcol(hj),1,4*K+1,bgResolved);
+  }else{
+    dashSeg(pC,pA,hcol(hi),.55,2,[3,6]); dashSeg(pA,pE,hcol(hj),.55,2,[3,6]);
+    dot_(pA,3*K,hcol(hi),.7);
+  }
+}
+
+/* ---------- construcción por la ley del paralelogramo ----------
+   1) las flechas ui, uj se estiran (o encogen) hasta a·ui, b·uj
+   2) se desliza una copia de cada una hasta cerrar el paralelogramo
+   3) la diagonal, suma de ambas, llega al punto */
+function paraAnim(ui,uj,hi,hj,a,b,tau,alpha){
+  const eA=ease(clamp(tau/1.2,0,1)), eB=ease(clamp((tau-1.2)/1.0,0,1)), eC=ease(clamp((tau-2.2)/0.8,0,1));
+  const A=mul(a,ui), Bv=mul(b,uj), E=add(A,Bv), O=Pt([0,0]);
+  const si=lerp(1,a,eA), sj=lerp(1,b,eA);
+  if(eB>0){
+    const pA=Pt(A), pB=Pt(Bv), pE=Pt(E);
+    ctx.save(); ctx.globalAlpha=alpha*.09*eB; ctx.fillStyle=CSS('--fg');
+    ctx.beginPath(); ctx.moveTo(O[0],O[1]); ctx.lineTo(pA[0],pA[1]); ctx.lineTo(pE[0],pE[1]); ctx.lineTo(pB[0],pB[1]); ctx.closePath(); ctx.fill(); ctx.restore();
+    const t1=mul(eB,A), t2=mul(eB,Bv);
+    drawArrow(Pt(t1),Pt(add(t1,Bv)),hcol(hj),alpha*.8,3.4*K+1,bgResolved);
+    drawArrow(Pt(t2),Pt(add(t2,A)),hcol(hi),alpha*.8,3.4*K+1,bgResolved);
+  }
+  drawArrow(O,Pt(mul(si,ui)),hcol(hi),alpha,5*K+1.5,bgResolved);
+  drawArrow(O,Pt(mul(sj,uj)),hcol(hj),alpha,5*K+1.5,bgResolved);
+  if(eC>0){
+    drawArrow(O,Pt(mul(eC,E)),CSS('--fg'),alpha,5.5*K+1.5,bgResolved);
+    if(tau>3.0&&tau<3.7){ const k=(tau-3.0)/0.7; ring(Pt(E),k*30*K,CSS('--fg'),(1-k)*.8*alpha,2.4); }
+  }
+  return E;
+}
+/* una sola flecha que se estira hasta alcanzar el punto */
+function stretchAnim(u,hue,a,tau,alpha){
+  const e=ease(clamp(tau/1.6,0,1)), O=Pt([0,0]), q=mul(a,u);
+  drawArrow(O,Pt(mul(lerp(1,a,e),u)),hcol(hue),alpha,5*K+1.5,bgResolved);
+  if(tau>1.6&&tau<2.3){ const k=(tau-1.6)/0.7; ring(Pt(q),k*30*K,CSS('--fg'),(1-k)*.8*alpha,2.4); }
+}
+
+/* ---------- marcador P (punto objetivo) ---------- */
+function drawTarget(P,t,reach){
+  const pt=Pt(P), fg=CSS('--fg'), bad=CSS('--bad');
+  const col=(reach===false)?bad:fg;
+  const g=ctx.createRadialGradient(pt[0],pt[1],0,pt[0],pt[1],22*K);
+  g.addColorStop(0,hexA(col.charAt(0)==='#'?col:'#888888',.28)); g.addColorStop(1,hexA(col.charAt(0)==='#'?col:'#888888',0));
+  ctx.save(); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(pt[0],pt[1],22*K,0,7); ctx.fill(); ctx.restore();
+  const ph=(t%2)/2; ring(pt,(7+ph*14)*K,col,(1-ph)*.5,1.6);
+  ctx.save(); ctx.fillStyle=bgResolved; ctx.strokeStyle=col; ctx.lineWidth=2.4*K;
+  ctx.beginPath(); ctx.arc(pt[0],pt[1],7.5*K,0,7); ctx.fill(); ctx.stroke(); ctx.restore();
+  dot_(pt,2.6*K,col,1);
+}
+
+/* ---------- flechas base (desde el origen) ---------- */
+function drawVecs(vs,t,opts){
+  opts=opts||{};
+  vs.forEach((u,i)=>{
+    const hue=HUES[i], a=Pt([0,0]), b=Pt(u);
+    const hov=(hoverKey==='v'+i)||(drag&&drag.key==='v'+i);
+    const L=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
+    dot_([mx,my],L/2+10*K,hcol(hue),hov?.22:.12);
+    const lw=(hov?7.2:6)*K+1;
+    const extra=(opts.dashedIdx===i);
+    drawArrow(a,b,hcol(hue,hov?62:55),extra?.85:1,lw,null);
+    if(extra) dashSeg(a,b,bgResolved,.9,lw*.5,[4,6]);
+    ring(b,13*K,hcol(hue),hov?.95:.4,hov?2:1.4,[3,4]);
+  });
+}
+
+/* ---------- polvo y demostración de combinaciones ---------- */
+function resetFx(){ dust=[]; demo=null; spawnT=0; }
+function spawnDust(vs){
+  for(let tries=0;tries<6;tries++){
+    const cs=vs.map(()=>rand(-1.5,1.5));
+    let p=[0,0], best=0, bi=0;
+    cs.forEach((c,i)=>{ p=add(p,mul(c,vs[i])); const m=Math.abs(c)*len(vs[i]); if(m>best){best=m;bi=i;} });
+    if(len(p)<B-0.2){ dust.push({p,hue:HUES[bi],age:0,life:rand(2.4,3.6)}); return; }
+  }
+}
+function demoPoint(vs){
+  if(demo.kind==='para') return add(mul(demo.a,vs[demo.i]),mul(demo.b,vs[demo.j]));
+  return mul(demo.a,vs[demo.i]);
+}
+function newDemo(vs){
+  const rk=rankOf(vs);
+  for(let tries=0;tries<10;tries++){
+    if(rk>=2){
+      const prs=pairsOf(vs); if(!prs.length) break;
+      const pr=prs[Math.floor(Math.random()*prs.length)];
+      const a=rand(0.5,1.5)*(Math.random()<.35?-1:1), b=rand(0.5,1.5)*(Math.random()<.35?-1:1);
+      const p=add(mul(a,vs[pr.i]),mul(b,vs[pr.j]));
+      if(len(p)<B-0.3){ demo={kind:'para',i:pr.i,j:pr.j,a,b,t:0,done:false}; return; }
+    }else{
+      let bi=0; vs.forEach((v,i)=>{ if(len(v)>len(vs[bi])) bi=i; });
+      const a=rand(0.5,1.6)*(Math.random()<.4?-1:1);
+      if(len(mul(a,vs[bi]))<B-0.3){ demo={kind:'single',i:bi,a,t:0,done:false}; return; }
+    }
+  }
+  demo=null;
+}
+function newDemoOld(vs){
+  const n=vs.length;
+  for(let tries=0;tries<8;tries++){
+    const idxs=[]; for(let i=0;i<n;i++) idxs.push(i);
+    for(let i=idxs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i],idxs[j]]=[idxs[j],idxs[i]]; }
+    const use=idxs.slice(0,Math.min(n,3));
+    const edges=use.map(i=>({e:mul(rand(0.5,1.6)*(Math.random()<.35?-1:1),vs[i]),hue:HUES[i]}));
+    let p=[0,0]; edges.forEach(e=>{p=add(p,e.e);});
+    let ok=true, q=[0,0]; edges.forEach(e=>{q=add(q,e.e); if(len(q)>B-0.2) ok=false;});
+    if(ok){ demo={edges,t:0,p,done:false}; return; }
+  }
+  demo=null;
+}
+function updateFx(dt,vs){
+  const rk=rankOf(vs);
+  litPlane+=((rk>=2?1:0)-litPlane)*Math.min(1,dt*4);
+  litLine+=((rk===1?1:0)-litLine)*Math.min(1,dt*4);
+  dust.forEach(d=>d.age+=dt/d.life); dust=dust.filter(d=>d.age<1);
+  if(rk>=1){
+    spawnT-=dt; if(spawnT<=0){ spawnT=0.11; spawnDust(vs); }
+    if(drag || pAnim<3.5){ demo=null; }
+    else if(!demo){ if(pAnim<4.6) newDemo(vs); }
+    else if(demo.i>=vs.length || (demo.j!==undefined && demo.j>=vs.length)){ demo=null; }
+    else{
+      demo.t+=dt;
+      if(!demo.done && demo.t>=2.5){ demo.done=true; dust.push({p:demoPoint(vs),hue:HUES[demo.i],age:0,life:3.4,big:true,vec:true}); }
+      if(demo.t>3.2) demo=null;
+    }
+  }else demo=null;
+}
+function drawSpan(vs,t){
+  const gold=CSS('--gold');
+  if(litPlane>0.01){
+    const g=ctx.createRadialGradient(C[0],C[1],0,C[0],C[1],R);
+    g.addColorStop(0,hexA(gold,.17*litPlane)); g.addColorStop(1,hexA(gold,.08*litPlane));
+    ctx.save(); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(C[0],C[1],R,0,7); ctx.fill();
+    ctx.globalAlpha=.8*litPlane; ctx.strokeStyle=gold; ctx.lineWidth=2.2*K; ctx.setLineDash([12,10]); ctx.lineDashOffset=-t*18;
+    ctx.beginPath(); ctx.arc(C[0],C[1],R,0,7); ctx.stroke(); ctx.restore();
+  }
+  if(litLine>0.01 && vs.length){
+    let best=vs[0]; vs.forEach(v=>{ if(len(v)>len(best)) best=v; });
+    const d=mul(1/len(best),best), a=Pt(mul(-B,d)), b=Pt(mul(B,d));
+    ctx.save(); ctx.lineCap='round';
+    ctx.strokeStyle=hexA(gold,.13*litLine); ctx.lineWidth=18*K; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    ctx.strokeStyle=hexA(gold,.6*litLine); ctx.lineWidth=2.4*K; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    ctx.restore();
+  }
+}
+function drawDust(){
+  dust.forEach(d=>{
+    const a=d.age, pt=Pt(d.p);
+    const al=Math.min(1,a*10)*(1-a);
+    if(d.vec) drawArrow(Pt([0,0]),pt,hcol(d.hue),(1-a)*.35,3*K,null);
+    dot_(pt,(d.big?4.2:2.8)*K,hcol(d.hue,60),al*.9);
+    if(a<0.3) ring(pt,(a/0.3)*(d.big?24:14)*K,hcol(d.hue,60),(1-a/0.3)*.7,1.6);
+  });
+}
+function drawDemo(vs){
+  if(!demo) return;
+  const fade=demo.t>2.7?clamp((3.2-demo.t)/0.5,0,1):1;
+  const tau=demo.t*1.25;
+  if(demo.kind==='para') paraAnim(vs[demo.i],vs[demo.j],HUES[demo.i],HUES[demo.j],demo.a,demo.b,tau,fade*0.8);
+  else stretchAnim(vs[demo.i],HUES[demo.i],demo.a,tau,fade*0.8);
+}
+function drawDemoOld(){
+  if(!demo) return;
+  const m=demo.edges.length, tau=Math.min(m,demo.t/0.8);
+  const fade=demo.t/0.8>m+0.6?1-((demo.t/0.8-m-0.6)/0.5):1;
+  if(fade<=0) return;
+  const h=drawChain(demo.edges,tau,0.9*clamp(fade,0,1),null,3.2*K+1);
+  dot_(Pt(h),5*K,CSS('--fg'),clamp(fade,0,1));
+}
+
+/* ---------- rutas hacia P con un sistema de flechas ---------- */
+function drawPRoutes(vs,P,t){
+  const rk=rankOf(vs);
+  if(rk>=2){
+    const prs=pairsOf(vs).slice(0,3);
+    prs.forEach((pr,k)=>{
+      const ab=solve2(vs[pr.i],vs[pr.j],P); if(!ab) return;
+      if(k===0) paraAnim(vs[pr.i],vs[pr.j],HUES[pr.i],HUES[pr.j],ab[0],ab[1],pAnim,1);
+      else if(pAnim>=3.0) drawRoute(vs[pr.i],vs[pr.j],ab[0],ab[1],HUES[pr.i],HUES[pr.j],false);
+    });
+    return true;
+  }
+  if(rk===1){
+    let bi=0; vs.forEach((v,i)=>{ if(len(v)>len(vs[bi])) bi=i; });
+    const u=vs[bi], a=dot(P,u)/dot(u,u), q=mul(a,u), gap=dist(P,q);
+    stretchAnim(u,HUES[bi],a,pAnim,1);
+    if(gap>0.25){
+      const pq=Pt(q), pp=Pt(P);
+      dashSeg(pq,pp,CSS('--bad'),.8,2,[4,5]);
+      drawCross(pp,10*K,CSS('--bad'),.55+.35*Math.sin(t*5));
+      return false;
+    }
+    return true;
+  }
+  return true;
+}
+
+/* ====================== ESCENAS ====================== */
+
+/* ----- 1. Dependientes: un paseo no trivial que vuelve al origen ----- */
+function sceneDep(t){
+  const s=st.dep, vs=s.vecs.slice(0,s.n), bad=CSS('--bad');
+  // vectores que se alcanzan como combinación de los demás
+  const items=[];
+  for(let k=0;k<vs.length;k++){
+    const others=[]; vs.forEach((v,i)=>{ if(i!==k) others.push(i); });
+    const ov=others.map(i=>vs[i]);
+    if(rankOf(ov)>=2){
+      const prs=pairsOf(ov); if(!prs.length) continue;
+      const i=others[prs[0].i], j=others[prs[0].j];
+      const ab=solve2(vs[i],vs[j],vs[k]); if(ab) items.push({k,kind:'para',i,j,a:ab[0],b:ab[1]});
+    }else{
+      let bi=others[0]; others.forEach(i=>{ if(len(vs[i])>len(vs[bi])) bi=i; });
+      const u=vs[bi], a=dot(vs[k],u)/dot(u,u);
+      if(dist(vs[k],mul(a,u))<0.05) items.push({k,kind:'single',i:bi,a});
+    }
+  }
+  drawVecs(vs,t);
+  const T=5.2, tau=t%T, fade=tau>4.6?clamp((T-tau)/0.6,0,1):1;
+  if(items.length){
+    const it=items[Math.floor(t/T)%items.length], w=vs[it.k];
+    const pw=Pt(w), ph=(t%1.4)/1.4;
+    ring(pw,(18+ph*6)*K,hcol(HUES[it.k]),.55*fade,2.2);
+    if(it.kind==='para') paraAnim(vs[it.i],vs[it.j],HUES[it.i],HUES[it.j],it.a,it.b,tau,fade);
+    else stretchAnim(vs[it.i],HUES[it.i],it.a,tau,fade);
+  }else if(vs.length>=2){
+    // no hay dependencia: estirar la primera flecha no alcanza a la segunda
+    const u=vs[0], w=vs[1], a=dot(w,u)/dot(u,u), q=mul(a,u);
+    stretchAnim(u,HUES[0],a,tau,fade);
+    if(tau>1.6){
+      const al=clamp((tau-1.6)*2,0,1)*fade;
+      dashSeg(Pt(q),Pt(w),bad,.8*al,2.2,[4,5]);
+      drawCross(Pt(w),10*K,bad,al*(.6+.3*Math.sin(t*6)));
+    }
+  }
+}
+function sceneDepOld(t){
+  const s=st.dep, vs=s.vecs.slice(0,s.n);
+  const gold=CSS('--gold'), bad=CSS('--bad');
+  drawVecs(vs,t);
+  const nc=nullCombo(vs);
+  let edges=[], closed=!!nc, offs=null;
+  if(nc){
+    nc.c.forEach((c,i)=>{ const e=mul(c,vs[i]); if(len(e)>1e-4) edges.push({e,hue:HUES[i],ang:Math.atan2(e[1],e[0])}); });
+    edges.sort((a,b)=>a.ang-b.ang);
+  }else{
+    edges=[{e:vs[0].slice(),hue:HUES[0]},{e:vs[1].slice(),hue:HUES[1]}];
+  }
+  const m=edges.length; if(!m) return;
+  let p=[0,0], dmax=0; edges.forEach(e=>{ p=add(p,e.e); dmax=Math.max(dmax,len(p)); });
+  const sc=closed?5.0/Math.max(dmax,1e-6):Math.min(1,5.2/Math.max(dmax,1e-6));
+  edges.forEach(e=>{ e.e=mul(sc,e.e); });
+  if(closed && (nc.collinear||m===2)) offs=edges.map((e,k)=>(k-(m-1)/2)*9);
+  const T=m*1.0+2.4, tt=t%T, tau=Math.min(m,tt);
+  const fade=tt>T-0.5?clamp((T-tt)/0.5,0,1):1;
+  // polígono relleno al cerrarse
+  if(closed && tt>=m && !offs){
+    let q=[0,0]; const pts=[Pt(q)]; edges.forEach(e=>{ q=add(q,e.e); pts.push(Pt(q)); });
+    ctx.save(); ctx.globalAlpha=.08*clamp((tt-m)/0.5,0,1)*fade; ctx.fillStyle=gold;
+    ctx.beginPath(); pts.forEach((pp,i)=>i?ctx.lineTo(pp[0],pp[1]):ctx.moveTo(pp[0],pp[1])); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  const h=drawChain(edges,tau,fade,offs,4*K+1);
+  dot_(Pt(h),6*K,CSS('--fg'),fade); ring(Pt(h),9*K,bgResolved,fade*.8,2);
+  if(closed){
+    if(tt>=m && tt<m+0.9){ const k=(tt-m)/0.9; ring(C,k*54*K,gold,(1-k)*.85,3); }
+  }else if(tt>=m){
+    const E=edges.reduce((a,e)=>add(a,e.e),[0,0]);
+    const al=clamp((tt-m)*2,0,1)*fade;
+    const pe=Pt(E), mid=[(pe[0]+C[0])/2,(pe[1]+C[1])/2];
+    dashSeg(pe,C,bad,.8*al,2.2,[5,6]);
+    drawCross(mid,9*K,bad,al*(.6+.3*Math.sin(t*6)));
+  }
+}
+
+/* ----- 2. Independientes: la única manera de volver es no moverse; direcciones únicas ----- */
+function sceneIndBack(t){
+  const s=st.ind, vs=s.vecs.slice(0,s.n);
+  if(s.n===2){ drawLattice(vs[0],vs[1],1); }
+  else{
+    const u=vs[0], d=mul(1/len(u),u), a=Pt(mul(-B,d)), b=Pt(mul(B,d));
+    ctx.save(); ctx.globalAlpha=.4; ctx.strokeStyle=hcol(HUES[0]); ctx.lineWidth=2.2*K;
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.restore();
+    for(let k=-12;k<=12;k++){ const p=mul(k,u); if(len(p)>B-0.05) continue; dot_(Pt(p),(k===0?0:2)*K+.1,CSS('--fg'),.3); }
+  }
+}
+function sceneIndFront(t){
+  const s=st.ind, vs=s.vecs.slice(0,s.n), P=s.P, gold=CSS('--gold'), bad=CSS('--bad');
+  const atO=len(P)<0.05;
+  if(!atO){
+    if(s.n===2){
+      const ab=solve2(vs[0],vs[1],P);
+      if(ab) paraAnim(vs[0],vs[1],HUES[0],HUES[1],ab[0],ab[1],pAnim,1);
+    }else{
+      stretchAnim(vs[0],HUES[0],dot(P,vs[0])/dot(vs[0],vs[0]),pAnim,1);
+    }
+    // el regreso directo no cierra ningún paseo vacío
+    const pp=Pt(P), mid=[(pp[0]+C[0])/2,(pp[1]+C[1])/2];
+    dashSeg(pp,C,bad,.35,1.6,[3,7]);
+    drawCross(mid,7*K,bad,.35);
+  }else{
+    const ph=(t%1.6)/1.6; ring(C,ph*50*K,gold,(1-ph)*.8,2.6);
+  }
+}
+
+/* ----- 3. Sistema generador ----- */
+function sceneGenBack(t){
+  const vs=active();
+  drawSpan(vs,t); drawDust();
+}
+function sceneGenFront(t){
+  const vs=active();
+  drawDemo(vs);
+  const ok=drawPRoutes(vs,st.gen.P,t);
+  return ok;
+}
+
+/* ----- 4. Base ----- */
+function sceneBaseBack(t){
+  const s=st.base, vs=active();
+  drawSpan(vs,t);
+  if(s.mode>=1) drawLattice(s.vecs[0],s.vecs[1],1);
+  if(s.mode===1) ring(C,R+7*K,CSS('--teal'),.45+.25*Math.sin(t*2),2*K);
+  drawDust();
+}
+function sceneBaseFront(t){
+  const s=st.base, vs=active();
+  drawDemo(vs);
+  if(s.mode===2){
+    const ab=solve2(s.vecs[0],s.vecs[1],s.vecs[2]);
+    if(ab){
+      const A=mul(ab[0],s.vecs[0]);
+      const pC=Pt([0,0]), pA=Pt(A), pU=Pt(s.vecs[2]);
+      dashSeg(pC,pA,hcol(HUES[0]),.7,2.2,[4,5]); dashSeg(pA,pU,hcol(HUES[1]),.7,2.2,[4,5]);
+    }
+  }
+  return drawPRoutes(vs,s.P,t);
+}
+
+/* ====================== bucle ====================== */
+function update(dt,t){
+  const s=st[tab];
+  if(tab==='base' && s.morph){
+    const k=1-Math.exp(-4*dt); let done=true;
+    for(let i=0;i<2;i++){
+      const v=s.vecs[i], tg=s.morph[i];
+      v[0]+=(tg[0]-v[0])*k; v[1]+=(tg[1]-v[1])*k;
+      if(dist(v,tg)>0.01) done=false;
+    }
+    if(done){ s.vecs[0]=s.morph[0].slice(); s.vecs[1]=s.morph[1].slice(); s.morph=null; }
+  }
+  // la construcción se vuelve a trazar al soltar y cada cierto tiempo
+  if(drag) pAnim=60; else { if(pAnim>=50) pAnim=0; pAnim+=dt; if(pAnim>8) pAnim=0; }
+  if(tab==='gen'||tab==='base') updateFx(dt,active());
+  // animación de la ruta: se vuelve a trazar cada cierto tiempo
+  routeProg=2;
+}
+function render(t){
+  ctx.fillStyle=bgResolved; ctx.fillRect(0,0,W,H);
+  if(!W) return;
+  drawHabitat();
+  let reach=null;
+  if(tab==='dep'){ sceneDep(t); }
+  else if(tab==='ind'){ sceneIndBack(t); drawVecs(active(),t); sceneIndFront(t); }
+  else if(tab==='gen'){ sceneGenBack(t); drawVecs(active(),t); reach=sceneGenFront(t); }
+  else { sceneBaseBack(t); drawVecs(active(),t,{dashedIdx: st.base.mode===2?2:-1}); reach=sceneBaseFront(t); }
+  if(hasP()){
+    const P=getP();
+    drawTarget(P, t, reach===false?false:null);
+    if(hoverKey==='P'||(drag&&drag.key==='P')) ring(Pt(P),16*K,CSS('--fg'),.5,1.6,[3,4]);
+  }
+  drawOrigin(t);
+}
+let last=performance.now();
+function loop(now){
+  let dt=(now-last)/1000; last=now; dt=Math.min(dt,0.05);
+  update(dt,now/1000);
+  render(now/1000);
+  requestAnimationFrame(loop);
+}
+
+/* ====================== interacción ====================== */
+function enforceIndep(i,j){
+  const s=st[tab]; const u=s.vecs[i], o=s.vecs[j];
+  const lu=len(u), lo=len(o); if(lu<1e-6||lo<1e-6) return;
+  const m=0.2838;
+  let rel=Math.atan2(u[1],u[0])-Math.atan2(o[1],o[0]);
+  rel=Math.atan2(Math.sin(rel),Math.cos(rel));
+  if(Math.abs(Math.sin(rel))>=0.28) return;
+  let nr;
+  if(Math.abs(rel)<=Math.PI/2) nr=(rel>=0?1:-1)*m; else nr=(rel>0?1:-1)*(Math.PI-m);
+  const ang=Math.atan2(o[1],o[0])+nr;
+  s.vecs[i]=[lu*Math.cos(ang),lu*Math.sin(ang)];
+}
+function snapCollinear(i,n){
+  const s=st[tab]; const u=s.vecs[i], lu=len(u);
+  for(let j=0;j<n;j++){
+    if(j===i) continue; const o=s.vecs[j], lo=len(o); if(lo<1e-6) continue;
+    if(sinAng(u,o)<0.10){
+      let rel=Math.atan2(u[1],u[0])-Math.atan2(o[1],o[0]);
+      rel=Math.atan2(Math.sin(rel),Math.cos(rel));
+      const ang=Math.atan2(o[1],o[0])+(Math.abs(rel)<=Math.PI/2?0:Math.PI);
+      s.vecs[i]=[lu*Math.cos(ang),lu*Math.sin(ang)];
+      return;
+    }
+  }
+}
+function setVec(idx,p){
+  const s=st[tab]; let q=p.slice(), L=len(q);
+  if(L>LIM) q=mul(LIM/L,q);
+  if(L<0.55){ const dir=L>1e-6?mul(1/L,q):[1,0]; q=mul(0.55,dir); }
+  s.vecs[idx]=q;
+  if(tab==='base') s.morph=null;
+  const n=active().length;
+  if(tab==='ind' && n===2) enforceIndep(idx,1-idx);
+  else if(tab==='base' && s.mode>=1 && idx<2) enforceIndep(idx,1-idx);
+  else if(tab==='dep' && n===2) snapCollinear(idx,2);
+  else if(tab==='gen' && n>=2) snapCollinear(idx,n);
+}
+function setP(p){
+  const s=st[tab]; let q=p.slice(), L=len(q);
+  if(L>LIM+0.1) q=mul((LIM+0.1)/L,q);
+  if(tab==='ind'){
+    if(s.n===1){ const u=s.vecs[0], d=mul(1/len(u),u); q=mul(dot(q,d),d); if(len(q)>LIM+0.1) q=mul((LIM+0.1)/len(q),q); }
+    if(len(q)<0.3) q=[0,0];
+  }
+  s.P=q;
+}
+const ptr=e=>{const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top];};
+function findHandle(px,py){
+  const thr=Math.max(20,22*K);
+  let best=null,bd=thr;
+  const vs=active();
+  vs.forEach((u,i)=>{ const d=dist([px,py],Pt(u)); if(d<bd){bd=d;best={key:'v'+i,kind:'v',idx:i};} });
+  if(hasP()){ const d=dist([px,py],Pt(getP()))*0.9; if(d<bd){bd=d;best={key:'P',kind:'P'};} }
+  return best;
+}
+cv.addEventListener('pointerdown',e=>{
+  const [px,py]=ptr(e); cv.setPointerCapture(e.pointerId);
+  let h=findHandle(px,py);
+  if(!h && hasP() && dist([px,py],C)<R+6){ setP(unPt(px,py)); h={key:'P',kind:'P'}; }
+  drag=h; hoverKey=h?h.key:null;
+});
+cv.addEventListener('pointermove',e=>{
+  const [px,py]=ptr(e);
+  if(drag){
+    const p=unPt(px,py);
+    if(drag.kind==='v') setVec(drag.idx,p); else setP(p);
+    return;
+  }
+  const h=findHandle(px,py); hoverKey=h?h.key:null;
+  cv.style.cursor=h?'grab':'default';
+});
+function endDrag(){ drag=null; }
+cv.addEventListener('pointerup',endDrag);
+cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('pointerleave',e=>{ if(!drag) hoverKey=null; });
+
+/* ====================== controles ====================== */
+function setDepN(n){ st.dep.n=n; st.dep.vecs=cp(DEP_PRE[n]); }
+function setIndN(n){ st.ind.n=n; st.ind.vecs=cp(IND_PRE[n]); st.ind.P=IND_P[n].slice(); }
+function resetTab(){
+  if(tab==='dep') setDepN(st.dep.n);
+  else if(tab==='ind') setIndN(st.ind.n);
+  else if(tab==='gen'){ st.gen.vecs=cp(GEN_DEF); st.gen.P=[3.4,-2.8]; st.gen.n=2; }
+  else{ const b=st.base; b.preset=0; b.mode=1; b.morph=null; b.vecs=[BASES[0][0].slice(),BASES[0][1].slice(),[1.98,1.76]]; b.P=[3.4,2.6]; }
+  resetFx();
+}
+const ctl=document.getElementById('ctl');
+function mk(txt,title,fn,pressed){
+  const b=document.createElement('button'); b.className='pill'; b.textContent=txt; b.title=title; b.onclick=fn;
+  if(pressed!==undefined) b.setAttribute('aria-pressed',pressed);
+  ctl.appendChild(b); return b;
+}
+function dotsSpan(n){
+  const sp=document.createElement('span'); sp.className='dots';
+  for(let i=0;i<n;i++){ const d=document.createElement('i'); d.style.background=hcol(HUES[i]); sp.appendChild(d); }
+  ctl.appendChild(sp); return sp;
+}
+function buildControls(){
+  ctl.innerHTML='';
+  const s=st[tab];
+  if(tab==='dep'){
+    [2,3,4].forEach(n=>mk('•'.repeat(n),n+' flechas',()=>{setDepN(n);buildControls();},s.n===n));
+  }else if(tab==='ind'){
+    [1,2].forEach(n=>mk('•'.repeat(n),n+(n===1?' flecha':' flechas'),()=>{setIndN(n);buildControls();},s.n===n));
+  }else if(tab==='gen'){
+    mk('−','quitar una flecha',()=>{ if(s.n>1){s.n--; resetFx(); buildControls();} });
+    dotsSpan(s.n);
+    mk('+','añadir una flecha',()=>{ if(s.n<4){s.n++; resetFx(); buildControls();} });
+  }else{
+    mk('•','falta una flecha',()=>{s.mode=0;resetFx();buildControls();},s.mode===0);
+    mk('••','justo las necesarias',()=>{s.mode=1;resetFx();buildControls();},s.mode===1);
+    mk('•••','sobra una flecha',()=>{s.mode=2;resetFx();buildControls();},s.mode===2);
+    mk('◈','otra base',()=>{ s.preset=(s.preset+1)%BASES.length; s.morph=[BASES[s.preset][0].slice(),BASES[s.preset][1].slice()]; if(s.mode===0) s.mode=1; resetFx(); buildControls(); });
+  }
+  mk('⟲','reiniciar',()=>{resetTab();buildControls();});
+}
+function setTab(t){
+  tab=t; drag=null; hoverKey=null; resetFx(); litPlane=0; litLine=0; pAnim=0;
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
+  buildControls();
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+document.getElementById('themeBtn').onclick=()=>{
+  const el=document.documentElement, dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const now=el.getAttribute('data-theme')||(dark?'dark':'light');
+  el.setAttribute('data-theme', now==='dark'?'light':'dark'); refreshBg();
+};
+
+resize(); refreshBg(); setTab('dep');
+window.addEventListener('resize',resize);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
