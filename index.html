@@ -556,6 +556,26 @@
     
 
   </main>
+
+
+<script>
+function abrirPrograma(boton, archivo) {
+  const visor = boton.parentElement;
+
+  const iframe = document.createElement("iframe");
+  iframe.src = archivo;
+  iframe.title = "Programa interactivo";
+  iframe.loading = "eager";
+  iframe.style.width = "100%";
+  iframe.style.height = "500px";
+  iframe.style.border = "0";
+
+  boton.remove();
+  visor.replaceChildren(iframe);
+}
+</script>
+
+  
 </body>
 </html>
 
