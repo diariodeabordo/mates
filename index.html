@@ -183,7 +183,78 @@
         height: 420px;
       }
     }
+
+/* PÁGINAS RECOMENDADAS */
+
+.recomendados {
+  margin-top: 40px;
+  padding: 22px;
+  background: #f7f9fc;
+  border: 1px solid #e1e7ef;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.recomendados h2 {
+  margin-bottom: 8px;
+}
+
+.enlace-recomendado {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 16px;
+  color: #263b53;
+  text-decoration: none;
+  background: #ffffff;
+  border: 1px solid #e0e6ed;
+  border-radius: 10px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.enlace-recomendado:hover {
+  border-color: #8aa9cc;
+  transform: translateY(-2px);
+}
+
+.icono-enlace {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #e8eff8;
+  color: #28598b;
+  font-size: 23px;
+}
+
+.enlace-recomendado strong,
+.enlace-recomendado small {
+  display: block;
+}
+
+.enlace-recomendado strong {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.enlace-recomendado small {
+  color: #687586;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+    
   </style>
+
+
+
+
+  
 </head>
 
 <body>
@@ -334,6 +405,31 @@
       </div>
 
     </section>
+
+<!-- PÁGINAS RECOMENDADAS -->
+
+<section class="recomendados">
+  <h2>🧭 Páginas recomendadas</h2>
+
+  <p class="introduccion">
+    Ponte a prueba . . .
+  </p>
+
+  <a
+    class="enlace-recomendado"
+    href="https://claude.ai/artifact/BMyZvbrsASDPD9mZm8YSAn"
+    target="_blank"
+    rel="noopener noreferrer">
+    <span class="icono-enlace">↗</span>
+    <span>
+      <strong>Checklist Temas 1, 2 y 3</strong>
+      <small>¡Muchas gracias Javi!</small>
+    </span>
+  </a>
+
+</section>
+
+    
 
   </main>
 </body>
