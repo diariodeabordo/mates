@@ -248,6 +248,43 @@
   line-height: 1.6;
 }
 
+    /* ÍNDICE DE NAVEGACIÓN */
+
+.indice {
+  max-width: 850px;
+  margin: 22px auto 30px;
+  padding: 16px 20px;
+  background: #f7f9fc;
+  border: 1px solid #e1e7ef;
+  border-radius: 10px;
+}
+
+.indice h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #35465a;
+}
+
+.indice ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 18px;
+}
+
+.indice a {
+  color: #0759b8;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.indice a:hover {
+  text-decoration: underline;
+}
+
 
     
   </style>
@@ -265,7 +302,20 @@
 
     <h1>Diario de a bordo</h1>
 
-    <!-- PORTADA POÉTICA -->
+<!-- ÍNDICE DE NAVEGACIÓN -->
+
+<nav class="indice" aria-label="Índice de contenidos">
+  <h2>☰ Navegar por el diario</h2>
+  <ul>
+    <li><a href="#espacio-vectorial">🌱 Espacio vectorial</a></li>
+    <li><a href="#dependencia-bases">⬆️ Dependencia y bases</a></li>
+    <li><a href="#aplicacion-lineal">🪞 Aplicación lineal</a></li>
+    <li><a href="#ejercicios">📚 Ejercicios resueltos</a></li>
+    <li><a href="#recomendados">🧭 Páginas recomendadas</a></li>
+  </ul>
+</nav>
+
+<!-- PORTADA POÉTICA -->
 
     <div class="portada-poetica">
 
@@ -295,7 +345,7 @@
 
     <!-- PROGRAMA 1: ESPACIO VECTORIAL -->
 
-    <section class="programa">
+    <section class="programa" id="espacio-vectorial">
       <h2>🌱 Espacio vectorial: mundo de flechas que pueden sumarse y estirarse sin salirse</h2>
 
       <iframe
@@ -315,7 +365,7 @@
 
  <!-- PROGRAMA 2: LD, LI Y BASES -->
 
-<section class="programa">
+<section class="programa" id="dependencia-bases">
       <h2>⬆️ Dependencia, generadores y bases: lo que se alcanza estirando y sumando flechas</h2>
 
       <iframe
@@ -337,7 +387,7 @@
 
     <!-- PROGRAMA 3: APLICACIÓN LINEAL -->
 
-    <section class="programa">
+    <section class="programa" id="aplicacion-lineal">
       <h2>🪞 Aplicación lineal: puente entre dos espacios vectoriales</h2>
 
       <iframe
@@ -358,7 +408,7 @@
 
     <!-- EJERCICIOS RESUELTOS -->
 
-    <section>
+    <section id="ejercicios">
       <h2>📚 Ejercicios resueltos</h2>
 
       <p class="introduccion">
@@ -409,8 +459,8 @@
 
 <!-- PÁGINAS RECOMENDADAS -->
 
-<section class="recomendados">
-  <h2>🧭 Páginas recomendadas</h2>
+<section class="recomendados" id="recomendados">
+  <h2>🧭 Otros puertos</h2>
 
   <a
     class="enlace-recomendado"
