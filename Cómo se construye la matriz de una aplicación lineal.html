@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cómo se construye la matriz</title>
+<style>
+:root{
+  --bg:#f2efe9; --paper:#f2efe9; --fg:#20201e; --muted:#7a7873; --line:#dedad2; --habitat:#c9c5bd;
+  --gold:#c99a2e; --teal:#14a89b;
+  --shadow:0 2px 6px rgba(0,0,0,.05),0 18px 40px rgba(0,0,0,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1014; --paper:#0e1014; --fg:#eceae5; --muted:#8e9099; --line:#2b2f38; --habitat:#3a3e48;
+  --gold:#f0c95e; --teal:#4fe0d0;
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1014; --paper:#0e1014; --fg:#eceae5; --muted:#8e9099; --line:#2b2f38; --habitat:#3a3e48;
+  --gold:#f0c95e; --teal:#4fe0d0;
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:"Iowan Old Style",Palatino,Georgia,serif;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+main{flex:1;min-height:0;padding:12px 12px 0}
+.stage{position:relative;height:100%;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line)}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px 14px}
+button.pill{font:inherit;font-size:1rem;line-height:1;cursor:pointer;min-width:38px;height:34px;padding:0 14px;border-radius:999px;
+  border:1px solid var(--line);background:var(--paper);color:var(--fg);white-space:nowrap}
+button.pill:disabled{opacity:.38;cursor:default}
+button.act{position:absolute;transform:translate(-50%,-50%);height:36px;font-size:.95rem;
+  box-shadow:0 2px 10px rgba(0,0,0,.10);border-color:var(--fg)}
+button.act:not(:disabled):hover{background:var(--fg);color:var(--bg)}
+.sp{margin-left:auto}
+</style>
+</head>
+<body>
+<main>
+  <div class="stage">
+    <canvas id="cv"></canvas>
+    <button class="pill act" id="btnReflect">Reflejar la base</button>
+    <button class="pill act" id="btnCoords" disabled>Tomar coordenadas</button>
+  </div>
+</main>
+<footer>
+  <button class="pill" id="resetBtn" title="reiniciar">⟲</button>
+  <button class="pill sp" id="themeBtn" title="claro / oscuro">◐</button>
+</footer>
+
+<script>
+const CSS=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const btnReflect=document.getElementById('btnReflect'), btnCoords=document.getElementById('btnCoords');
+
+/* ---------- álgebra ---------- */
+const Z2=[0,0];
+const add=(a,b)=>a.map((x,i)=>x+b[i]);
+const sub=(a,b)=>a.map((x,i)=>x-b[i]);
+const mul=(k,a)=>a.map(x=>k*x);
+const len=a=>Math.hypot(...a);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const ease=g=>g*g*(3-2*g);
+const cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
+const dist2=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+function solve2(u,v,p){ const d=cross(u,v); if(Math.abs(d)<1e-9) return [0,0]; return [cross(p,v)/d, cross(u,p)/d]; }
+function hexRgb(h){ h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+function hexA(h,a){ const c=hexRgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+function mixHex(h1,h2,t){ const a=hexRgb(h1),b=hexRgb(h2); return `rgb(${Math.round(lerp(a[0],b[0],t))},${Math.round(lerp(a[1],b[1],t))},${Math.round(lerp(a[2],b[2],t))})`; }
+const hcol=(h,l)=>`hsl(${h},68%,${l||55}%)`;
+let bgResolved='#f2efe9';
+function refreshBg(){ bgResolved=CSS('--bg'); }
+
+/* ---------- los datos: la aplicación F y las dos bases ---------- */
+const G=[[0.85,-0.55],[0.45,0.6]];                       // F, fija
+const appG=p=>[G[0][0]*p[0]+G[0][1]*p[1], G[1][0]*p[0]+G[1][1]*p[1]];
+const HE=[22,205], HF=[140,300];                         // colores: base de salida (e), base de llegada (f)
+const E0=[[2.3,0.5],[-0.7,1.9]], F0=[[2.0,-0.3],[0.6,2.0]];
+let E=E0.map(v=>v.slice()), Fb=F0.map(v=>v.slice());
+const Fe=j=>appG(E[j]);                                  // F(e_j)
+const colOf=j=>solve2(Fb[0],Fb[1],Fe(j));                // coordenadas de F(e_j) en la base f
+
+/* ---------- disposición ---------- */
+let W=0,H=0,S=30,K=1,portrait=false;
+let Vr={x:0,y:0,w:0,h:0}, Wr={x:0,y:0,w:0,h:0}, Mr={x:0,y:0,w:0,h:0};
+let CV=[0,0], CW=[0,0], AX=[1,0], GAPpx=100, HX=5, HY=4;
+let MX={cx:0,cy:0,cs:40};
+function layout(){
+  const r=cv.getBoundingClientRect(); if(!r.width) return;
+  const d=window.devicePixelRatio||1;
+  cv.width=r.width*d; cv.height=r.height*d; W=r.width; H=r.height;
+  ctx.setTransform(d,0,0,d,0,0);
+  portrait = H > W*0.95;
+  if(!portrait){
+    const mw=clamp(W*0.17,140,210), gap2=16, g=clamp(W*0.11,72,150);
+    const rw=(W-24-mw-gap2-g)/2, rh=Math.min(rw*0.84,H-40), y=(H-rh)/2;
+    Vr={x:12,y,w:rw,h:rh}; Wr={x:12+rw+g,y,w:rw,h:rh}; Mr={x:Wr.x+rw+gap2,y,w:mw,h:rh};
+    AX=[1,0]; GAPpx=g;
+  }else{
+    const mh=clamp(H*0.22,124,172), gap2=12, g=clamp(H*0.1,60,92);
+    const rh0=(H-24-mh-gap2-g)/2, rw=Math.min(W-24,rh0*1.2), rh=Math.min(rh0,rw/1.0);
+    const x=(W-rw)/2;
+    Vr={x,y:12,w:rw,h:rh}; Wr={x,y:12+rh+g,w:rw,h:rh}; Mr={x:12,y:Wr.y+rh+gap2,w:W-24,h:mh};
+    AX=[0,1]; GAPpx=g;
+  }
+  S=Math.min(Vr.w/10.4,Vr.h/8.4); K=clamp(S/38,.6,1.2);
+  CV=[Vr.x+Vr.w/2,Vr.y+Vr.h/2]; CW=[Wr.x+Wr.w/2,Wr.y+Wr.h/2];
+  HX=Vr.w/(2*S); HY=Vr.h/(2*S);
+  const cs=clamp(Math.min(Mr.w/3.9,Mr.h/3.6),30,64);
+  if(!portrait) MX={cx:Mr.x+Mr.w/2,cy:Wr.y+Wr.h*0.60,cs};
+  else MX={cx:Mr.x+Mr.w*0.66,cy:Mr.y+Mr.h*0.60,cs};
+  // botones
+  if(!portrait){
+    btnReflect.style.left=((Vr.x+Vr.w+Wr.x)/2)+'px'; btnReflect.style.top=(H/2+Math.max(34,Vr.h*0.14))+'px';
+    btnCoords.style.left=(Mr.x+Mr.w/2)+'px'; btnCoords.style.top=(Wr.y+24)+'px';
+  }else{
+    btnReflect.style.left=(W/2+Math.min(96,W*0.25))+'px'; btnReflect.style.top=((Vr.y+Vr.h+Wr.y)/2)+'px';
+    btnCoords.style.left=(Mr.x+100)+'px'; btnCoords.style.top=(Mr.y+18)+'px';
+  }
+}
+new ResizeObserver(layout).observe(cv);
+const Pv=p=>[CV[0]+p[0]*S, CV[1]-p[1]*S];
+const Pw=q=>[CW[0]+q[0]*S, CW[1]-q[1]*S];
+const unV=(x,y)=>[(x-CV[0])/S,(CV[1]-y)/S];
+const unW=(x,y)=>[(x-CW[0])/S,(CW[1]-y)/S];
+
+/* ---------- primitivas ---------- */
+function drawArrow(p1,p2,color,alpha,lw,halo){
+  const [x1,y1]=p1,[x2,y2]=p2;
+  const Lp=Math.hypot(x2-x1,y2-y1); if(Lp<1.5) return;
+  const hl=Math.min(Lp*0.4, lw*2.4+6), hw=lw*1.6+4;
+  const ang=Math.atan2(y2-y1,x2-x1);
+  const bx=x2-hl*Math.cos(ang), by=y2-hl*Math.sin(ang);
+  const nx=-Math.sin(ang), ny=Math.cos(ang);
+  ctx.save(); ctx.globalAlpha=alpha; ctx.lineCap='round'; ctx.lineJoin='round';
+  if(halo){
+    ctx.strokeStyle=halo; ctx.lineWidth=lw+4;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+    ctx.fillStyle=halo; ctx.lineWidth=4; ctx.strokeStyle=halo;
+    ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(bx+nx*hw/2,by+ny*hw/2); ctx.lineTo(bx-nx*hw/2,by-ny*hw/2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.strokeStyle=color; ctx.lineWidth=lw;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(bx+nx*hw/2,by+ny*hw/2); ctx.lineTo(bx-nx*hw/2,by-ny*hw/2); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function dashSeg(a,b,color,alpha,lw,dash){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw||1.8; ctx.setLineDash(dash||[5,5]);
+  ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.restore();
+}
+function ring(pt,r,color,alpha,lw,dash){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw; if(dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.arc(pt[0],pt[1],r,0,7); ctx.stroke(); ctx.restore();
+}
+function dot_(pt,r,color,alpha){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle=color; ctx.beginPath(); ctx.arc(pt[0],pt[1],r,0,7); ctx.fill(); ctx.restore();
+}
+function rrect(x,y,w,h,r){
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+function drawOrigin(pt,color,t,ph){
+  const br=1+0.12*Math.sin(t*2.4+ph), rad=30*K*br;
+  const g=ctx.createRadialGradient(pt[0],pt[1],0,pt[0],pt[1],rad);
+  g.addColorStop(0,hexA(color,.6)); g.addColorStop(.35,hexA(color,.22)); g.addColorStop(1,hexA(color,0));
+  ctx.save(); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(pt[0],pt[1],rad,0,7); ctx.fill(); ctx.restore();
+  ring(pt,9*K*br,color,.55,1.6);
+  dot_(pt,5.5*K+1,color,1); dot_(pt,2.2*K+.4,'#ffffff',.9);
+}
+
+/* ---------- construcción por paralelogramo: estirar f1, f2 hasta alcanzar el punto ---------- */
+function paraAnim(Pf,ui,uj,hi,hj,a,b,tau,alpha,diagCol,ringCol){
+  const eA=ease(clamp(tau/1.2,0,1)), eB=ease(clamp((tau-1.2)/1.0,0,1)), eC=ease(clamp((tau-2.2)/0.8,0,1));
+  const A=mul(a,ui), Bv=mul(b,uj), Ev=add(A,Bv), O=Pf(Z2);
+  const si=lerp(1,a,eA), sj=lerp(1,b,eA);
+  if(eB>0){
+    const pA=Pf(A), pB=Pf(Bv), pE=Pf(Ev);
+    ctx.save(); ctx.globalAlpha=alpha*.1*eB; ctx.fillStyle=CSS('--fg');
+    ctx.beginPath(); ctx.moveTo(O[0],O[1]); ctx.lineTo(pA[0],pA[1]); ctx.lineTo(pE[0],pE[1]); ctx.lineTo(pB[0],pB[1]); ctx.closePath(); ctx.fill(); ctx.restore();
+    const t1=mul(eB,A), t2=mul(eB,Bv);
+    drawArrow(Pf(t1),Pf(add(t1,Bv)),hcol(hj),alpha*.8,3.4*K+1,bgResolved);
+    drawArrow(Pf(t2),Pf(add(t2,A)),hcol(hi),alpha*.8,3.4*K+1,bgResolved);
+  }
+  drawArrow(O,Pf(mul(si,ui)),hcol(hi),alpha,5*K+1.5,bgResolved);
+  drawArrow(O,Pf(mul(sj,uj)),hcol(hj),alpha,5*K+1.5,bgResolved);
+  if(eC>0){
+    drawArrow(O,Pf(mul(eC,Ev)),diagCol,alpha,5.8*K+1.5,bgResolved);
+    if(tau>3.0&&tau<3.7){ const k=(tau-3.0)/0.7; ring(Pf(Ev),k*30*K,ringCol,(1-k)*.8*alpha,2.4); }
+  }
+}
+/* paralelogramo estático y tenue (al terminar, queda como huella) */
+function ghostPara(Pf,ui,uj,hi,hj,a,b,alpha){
+  const A=mul(a,ui), Bv=mul(b,uj), Ev=add(A,Bv), O=Pf(Z2), pA=Pf(A), pB=Pf(Bv), pE=Pf(Ev);
+  dashSeg(O,pA,hcol(hi),alpha,1.6,[3,5]); dashSeg(pA,pE,hcol(hj),alpha,1.6,[3,5]);
+  dashSeg(O,pB,hcol(hj),alpha,1.6,[3,5]); dashSeg(pB,pE,hcol(hi),alpha,1.6,[3,5]);
+}
+
+/* ---------- estado del proceso ---------- */
+let phase='idle', pt=0, NOW=0;
+const T_REFL=2.8, DC=6.2;
+function gF(j){ if(phase==='idle') return 0; if(phase==='reflecting') return ease(clamp((pt-(j*0.6+1.5))/0.5,0,1)); return 1; }
+function colT(j){ return phase==='coords'?pt-j*DC:(phase==='done'?99:-1); }
+const filled=j=>colT(j)>=4.9;
+function updButtons(){
+  btnReflect.disabled=(phase==='reflecting'||phase==='coords');
+  btnCoords.disabled=!(phase==='reflected'||phase==='done');
+}
+btnReflect.onclick=()=>{ phase='reflecting'; pt=0; updButtons(); };
+btnCoords.onclick=()=>{ phase='coords'; pt=0; updButtons(); };
+document.getElementById('resetBtn').onclick=()=>{ phase='idle'; pt=0; E=E0.map(v=>v.slice()); Fb=F0.map(v=>v.slice()); updButtons(); };
+
+/* ---------- la matriz ---------- */
+function cellCenter(i,j){ const {cx,cy,cs}=MX; return [cx-cs+(j+.5)*cs, cy-cs+(i+.5)*cs]; }
+const fmt=v=>(Math.abs(v)<0.005?0:v).toFixed(2).replace('-','−');
+function miniArrow(c,dir,len_,color,alpha,lw){
+  const d=[dir[0],-dir[1]], l=Math.hypot(d[0],d[1])||1, u=[d[0]/l,d[1]/l];
+  drawArrow([c[0]-u[0]*len_/2,c[1]-u[1]*len_/2],[c[0]+u[0]*len_/2,c[1]+u[1]*len_/2],color,alpha,lw,null);
+}
+function drawMatrix(t){
+  const {cx,cy,cs}=MX, fg=CSS('--fg'), hab=CSS('--habitat');
+  const left=cx-cs, right=cx+cs, top=cy-cs, bot=cy+cs;
+  // resalte de la columna que se está construyendo
+  for(let j=0;j<2;j++){
+    const ct=colT(j);
+    if(phase==='coords' && ct>=0 && ct<5.6){
+      const pul=.10+.06*Math.sin(t*5);
+      ctx.save(); ctx.globalAlpha=pul+0.04; ctx.fillStyle=hcol(HE[j]);
+      rrect(left+j*cs+3,top-4,cs-6,2*cs+8,8*K); ctx.fill(); ctx.restore();
+    }
+  }
+  // corchetes
+  ctx.save(); ctx.strokeStyle=fg; ctx.globalAlpha=.85; ctx.lineWidth=3*K; ctx.lineCap='round'; ctx.lineJoin='round';
+  const bw=9*K, pad=6*K;
+  ctx.beginPath(); ctx.moveTo(left-pad+bw,top-pad); ctx.lineTo(left-pad,top-pad); ctx.lineTo(left-pad,bot+pad); ctx.lineTo(left-pad+bw,bot+pad); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(right+pad-bw,top-pad); ctx.lineTo(right+pad,top-pad); ctx.lineTo(right+pad,bot+pad); ctx.lineTo(right+pad-bw,bot+pad); ctx.stroke();
+  ctx.restore();
+  // cabeceras: qué vector de la primera base da cada columna; marcas: qué vector de la segunda base da cada fila
+  for(let j=0;j<2;j++) miniArrow([left+(j+.5)*cs,top-0.55*cs-6*K],E[j],cs*0.55,hcol(HE[j]),1,3.4*K);
+  for(let i=0;i<2;i++) miniArrow([left-0.62*cs-pad,top+(i+.5)*cs],Fb[i],cs*0.55,hcol(HF[i]),1,3.4*K);
+  // celdas
+  const fs=clamp(cs*0.36,12,22);
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=`600 ${fs}px "Iowan Old Style",Palatino,Georgia,serif`;
+  for(let j=0;j<2;j++){
+    const co=colOf(j), ct=colT(j);
+    for(let i=0;i<2;i++){
+      const c=cellCenter(i,j);
+      if(filled(j)){
+        const v=co[i], landed=ct<5.9&&ct>=4.9, k=landed?(ct-4.9)/1.0:1;
+        if(landed){ ring(c,(8+k*26)*K,hcol(HF[i]),(1-k)*.8,2.2); }
+        ctx.fillStyle=hcol(HF[i],50); ctx.globalAlpha=1; ctx.fillText(fmt(v),c[0],c[1]-3*K);
+        const bl=clamp(Math.abs(v),0,1.8)/1.8*cs*0.38;
+        ctx.globalAlpha=.85; ctx.fillStyle=hcol(HF[i]);
+        ctx.fillRect(v>=0?c[0]:c[0]-bl, c[1]+fs*0.62, bl, 3.6*K);
+        ctx.globalAlpha=.3; ctx.fillRect(c[0]-1,c[1]+fs*0.62-2*K,2,7.6*K);
+      }else{
+        ctx.globalAlpha=.45; ctx.strokeStyle=hab; ctx.lineWidth=1.4; ctx.setLineDash([3,5]);
+        rrect(c[0]-cs*0.36,c[1]-cs*0.36,cs*0.72,cs*0.72,7*K); ctx.stroke(); ctx.setLineDash([]);
+      }
+    }
+  }
+  ctx.restore();
+}
+/* las "fichas" con las coordenadas: salen de la punta de cada flecha estirada y vuelan a su celda */
+function drawChips(t){
+  const fs=clamp(MX.cs*0.30,11,17);
+  for(let j=0;j<2;j++){
+    const ct=colT(j); if(!(phase==='coords') || ct<1.3 || ct>=4.9) continue;
+    const co=colOf(j);
+    for(let i=0;i<2;i++){
+      const tipW=Pw(mul(co[i],Fb[i]));
+      const dirp=[Fb[i][0]*co[i],-Fb[i][1]*co[i]]; let l=Math.hypot(dirp[0],dirp[1])||1;
+      const off=[-dirp[1]/l*18*K, dirp[0]/l*18*K];
+      let start=[tipW[0]+off[0],tipW[1]+off[1]];
+      start=[clamp(start[0],Wr.x+24,Wr.x+Wr.w-24), clamp(start[1],Wr.y+14,Wr.y+Wr.h-14)];
+      const target=cellCenter(i,j);
+      let p=start, sc=1, al=clamp((ct-1.3)/0.3,0,1);
+      if(ct>=3.9){
+        const s=ease(clamp((ct-3.9)/1.0,0,1));
+        p=[lerp(start[0],target[0],s), lerp(start[1],target[1],s)-Math.sin(Math.PI*s)*34*K];
+        sc=lerp(1,0.8,s);
+      }
+      const txt=fmt(co[i]);
+      ctx.save(); ctx.globalAlpha=al; ctx.font=`600 ${fs*sc}px "Iowan Old Style",Palatino,Georgia,serif`;
+      const tw=ctx.measureText(txt).width+14*K;
+      ctx.fillStyle=bgResolved; ctx.strokeStyle=hcol(HF[i]); ctx.lineWidth=2*K;
+      rrect(p[0]-tw/2,p[1]-fs*0.85*sc,tw,fs*1.7*sc,9*K); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=hcol(HF[i],50); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,p[0],p[1]); ctx.restore();
+    }
+  }
+}
+
+/* ---------- los lienzos ---------- */
+function drawCanvasFrame(r,color){
+  ctx.save(); rrect(r.x,r.y,r.w,r.h,18*K); ctx.fillStyle=hexA(color,.05); ctx.fill();
+  ctx.strokeStyle=CSS('--habitat'); ctx.globalAlpha=.8; ctx.lineWidth=1.6; ctx.setLineDash([2,6]); ctx.stroke(); ctx.restore();
+}
+function drawLatticeF(alpha){
+  // la retícula que generan f1 y f2: así se "mide" cualquier punto de este espacio
+  ctx.save(); ctx.lineWidth=1;
+  [[Fb[0],Fb[1],HF[0]],[Fb[1],Fb[0],HF[1]]].forEach(([base,dir,h])=>{
+    const dl=len(dir), dn=mul(1/dl,dir);
+    for(let k=-16;k<=16;k++){
+      const p0=mul(k,base), a=Pw(add(p0,mul(-30,dn))), b=Pw(add(p0,mul(30,dn)));
+      ctx.globalAlpha=alpha*(k===0?.5:.2); ctx.strokeStyle=hcol(h); ctx.lineWidth=k===0?2:1;
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    }
+  });
+  ctx.restore();
+}
+function drawHandle(pt_,color,hov){ ring(pt_,13*K,color,hov?.95:.55,hov?2.2:1.5,[3,4]); }
+
+/* ---------- la flecha grande y los mensajeros ---------- */
+function bridgeEnds(){
+  const half=(AX[0]?Vr.w:Vr.h)/2;
+  return [[CV[0]+AX[0]*(half+8),CV[1]+AX[1]*(half+8)],[CW[0]-AX[0]*(half+8),CW[1]-AX[1]*(half+8)]];
+}
+function drawBridge(t){
+  const gold=CSS('--gold'), teal=CSS('--teal');
+  ctx.save(); const g=ctx.createLinearGradient(CV[0],CV[1],CW[0],CW[1]);
+  g.addColorStop(0,hexA(gold,.5)); g.addColorStop(1,hexA(teal,.5));
+  ctx.strokeStyle=g; ctx.lineWidth=1.4; ctx.setLineDash([3,6]);
+  ctx.beginPath(); ctx.moveTo(CV[0],CV[1]); ctx.lineTo(CW[0],CW[1]); ctx.stroke(); ctx.restore();
+  const [a0,a1]=bridgeEnds();
+  const L=Math.hypot(a1[0]-a0[0],a1[1]-a0[1]), th=clamp(Math.min(Vr.w,Vr.h)*0.1,14,32), hl=Math.min(L*0.42,th*1.5);
+  ctx.save(); ctx.translate(a0[0],a0[1]); ctx.rotate(Math.atan2(AX[1],AX[0]));
+  const grad=ctx.createLinearGradient(0,0,L,0);
+  grad.addColorStop(0,hexA(gold,.92)); grad.addColorStop(1,hexA(teal,.92));
+  const path=()=>{ ctx.beginPath(); ctx.moveTo(0,-th/2); ctx.lineTo(L-hl,-th/2); ctx.lineTo(L-hl,-th*0.95); ctx.lineTo(L,0);
+    ctx.lineTo(L-hl,th*0.95); ctx.lineTo(L-hl,th/2); ctx.lineTo(0,th/2); ctx.closePath(); };
+  ctx.shadowColor='rgba(0,0,0,.18)'; ctx.shadowBlur=14; ctx.shadowOffsetY=3;
+  path(); ctx.fillStyle=grad; ctx.fill();
+  ctx.shadowColor='transparent'; path(); ctx.clip();
+  const sp=th*1.1, off=(t*38)%sp;
+  ctx.strokeStyle='rgba(255,255,255,.42)'; ctx.lineWidth=2.2; ctx.lineJoin='round';
+  for(let x=-sp+off;x<L+sp;x+=sp){ ctx.beginPath(); ctx.moveTo(x-th*.22,-th*.34); ctx.lineTo(x+th*.12,0); ctx.lineTo(x-th*.22,th*.34); ctx.stroke(); }
+  ctx.restore();
+}
+function drawCouriers(){
+  if(phase!=='reflecting') return;
+  const [a0,a1]=bridgeEnds();
+  const cf=Math.min(0.7*S,(GAPpx-16)*0.8/4);
+  for(let j=0;j<2;j++){
+    const ct=pt-j*0.6; if(ct<0||ct>1.5) continue;
+    const s=ct/1.5, e=ease(s), u=E[j], Fu=Fe(j);
+    const p=[lerp(a0[0],a1[0],e),lerp(a0[1],a1[1],e)];
+    const v=[lerp(u[0],Fu[0],e),lerp(u[1],Fu[1],e)];
+    const vx=v[0]*cf, vy=-v[1]*cf, al=Math.min(1,s*8)*Math.min(1,(1-s)*8);
+    drawArrow([p[0]-vx/2,p[1]-vy/2],[p[0]+vx/2,p[1]+vy/2],hcol(HE[j]),al,(3.4+Math.min(2,len(v)))*Math.max(.8,K),bgResolved);
+  }
+}
+function drawSpark(t){
+  const gold=CSS('--gold'), teal=CSS('--teal');
+  const per=5.2, q=(t%per)/1.9;
+  if(q<0.3) ring(CV,q/0.3*34*K,gold,(1-q/0.3)*.6,2);
+  if(q<1){
+    const e=q*q*(3-2*q), p=[lerp(CV[0],CW[0],e),lerp(CV[1],CW[1],e)];
+    const col=mixHex(gold,teal,e), g=ctx.createRadialGradient(p[0],p[1],0,p[0],p[1],14*K);
+    g.addColorStop(0,col); g.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.save(); ctx.globalAlpha=.9; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p[0],p[1],14*K,0,7); ctx.fill(); ctx.restore();
+  }else if(q<1.35){ const k=(q-1)/0.35; ring(CW,k*36*K,teal,(1-k)*.7,2.2); }
+}
+
+/* ---------- dibujo ---------- */
+let hoverKey=null, drag=null;
+function render(t){
+  ctx.fillStyle=bgResolved; ctx.fillRect(0,0,W,H);
+  if(!W) return;
+  const gold=CSS('--gold'), teal=CSS('--teal');
+  drawCanvasFrame(Vr,gold); drawCanvasFrame(Wr,teal);
+  drawBridge(t);
+
+  // ---- primer espacio: la base e1, e2
+  ctx.save(); rrect(Vr.x,Vr.y,Vr.w,Vr.h,18*K); ctx.clip();
+  for(let j=0;j<2;j++){
+    const hot=(phase==='reflecting' && pt-j*0.6>=0 && pt-j*0.6<0.5);
+    const O=Pv(Z2), T=Pv(E[j]);
+    dot_([(O[0]+T[0])/2,(O[1]+T[1])/2],len(sub(T,O))/2+10*K,hcol(HE[j]),hot?.3:.14);
+    drawArrow(O,T,hcol(HE[j]),1,6*K+1,null);
+    if(hot) ring(T,(10+ (pt-j*0.6)/0.5*22)*K,hcol(HE[j]),1-(pt-j*0.6)/0.5,2.2);
+  }
+  ctx.restore();
+
+  // ---- segundo espacio: la base f1, f2 y las imágenes F(e_j)
+  ctx.save(); rrect(Wr.x,Wr.y,Wr.w,Wr.h,18*K); ctx.clip();
+  const showLat=(phase==='coords'||phase==='done');
+  if(showLat) drawLatticeF(clamp(phase==='coords'?pt/1.2:1,0,1));
+  for(let i=0;i<2;i++){
+    const O=Pw(Z2), T=Pw(Fb[i]);
+    dot_([(O[0]+T[0])/2,(O[1]+T[1])/2],len(sub(T,O))/2+10*K,hcol(HF[i]),.14);
+    drawArrow(O,T,hcol(HF[i]),1,6*K+1,null);
+  }
+  // huellas de las construcciones ya terminadas
+  if(phase==='done'||phase==='coords'){
+    for(let j=0;j<2;j++){
+      if(phase==='done'||colT(j)>=3.7){ const co=colOf(j); ghostPara(Pw,Fb[0],Fb[1],HF[0],HF[1],co[0],co[1],.38); }
+    }
+  }
+  // imágenes de la primera base
+  for(let j=0;j<2;j++){
+    const g=gF(j); if(g<=0) continue;
+    const act=(phase==='coords' && colT(j)>=0 && colT(j)<5.6);
+    const dim=(phase==='coords' && !act && colT(j)<0);
+    const O=Pw(Z2), T=Pw(mul(g,Fe(j)));
+    dot_([(O[0]+T[0])/2,(O[1]+T[1])/2],len(sub(T,O))/2+11*K,hcol(HE[j]),act?.30:.16);
+    drawArrow(O,T,hcol(HE[j]),dim?.55:1,(act?7:6)*K+1,bgResolved);
+    if(phase==='reflecting' && pt-(j*0.6+1.5)>=0 && pt-(j*0.6+1.5)<0.8){
+      const k=(pt-(j*0.6+1.5))/0.8; ring(Pw(Fe(j)),k*34*K,hcol(HE[j]),(1-k)*.9,2.4);
+    }
+  }
+  // construcción de la columna activa: f1 y f2 se estiran y se suman hasta alcanzar F(e_j)
+  if(phase==='coords'){
+    for(let j=0;j<2;j++){
+      const ct=colT(j); if(ct<0||ct>=5.6) continue;
+      const co=colOf(j), fade=ct>4.9?clamp((5.6-ct)/0.7,0,1):1;
+      paraAnim(Pw,Fb[0],Fb[1],HF[0],HF[1],co[0],co[1],Math.min(ct,3.8),fade,hcol(HE[j]),hcol(HE[j]));
+      // la flecha F(e_j) se vuelve a pintar encima de la diagonal
+      const g=1; ring(Pw(Fe(j)),(15+3*Math.sin(t*6))*K,hcol(HE[j]),.8*fade,2);
+    }
+  }
+  ctx.restore();
+
+  drawCouriers();
+  drawSpark(t);
+
+  // asas para cambiar las bases (la aplicación no cambia; la matriz sí)
+  for(let j=0;j<2;j++){ drawHandle(Pv(E[j]),hcol(HE[j]),hoverKey==='e'+j||drag==='e'+j); }
+  for(let i=0;i<2;i++){ drawHandle(Pw(Fb[i]),hcol(HF[i]),hoverKey==='f'+i||drag==='f'+i); }
+
+  drawOrigin(CV,gold,t,0); drawOrigin(CW,teal,t,1.7);
+  if(phase==='reflecting' && pt>1.9 && pt<2.7){ const k=(pt-1.9)/0.8; ring(CW,k*46*K,teal,(1-k)*.8,2.6); }
+
+  drawMatrix(t);
+  drawChips(t);
+  // la matriz completa: pulso final
+  if(phase==='done' && pt<1.2){ const k=pt/1.2; const {cx,cy,cs}=MX; ring([cx,cy],(cs*1.7+k*26)*K,CSS('--fg'),(1-k)*.35,2.4); }
+}
+
+/* ---------- bucle ---------- */
+function update(dt,t){
+  NOW=t; pt+=dt;
+  if(phase==='reflecting' && pt>=T_REFL){ phase='reflected'; pt=0; updButtons(); }
+  if(phase==='coords' && pt>=2*DC){ phase='done'; pt=0; updButtons(); }
+}
+let last=performance.now();
+function loop(now){
+  let dt=(now-last)/1000; last=now; dt=Math.min(dt,0.05);
+  update(dt,now/1000); render(now/1000);
+  requestAnimationFrame(loop);
+}
+
+/* ---------- interacción: arrastrar las puntas de las bases ---------- */
+const ptr=e=>{const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top];};
+function findHandle(px,py){
+  const thr=Math.max(22,24*K); let best=null,bd=thr;
+  for(let j=0;j<2;j++){ const d=dist2([px,py],Pv(E[j])); if(d<bd){bd=d;best='e'+j;} }
+  for(let i=0;i<2;i++){ const d=dist2([px,py],Pw(Fb[i])); if(d<bd){bd=d;best='f'+i;} }
+  return best;
+}
+function enforceIndep(vs,i){
+  const o=vs[1-i], u=vs[i], lu=len(u), lo=len(o); if(lu<1e-6||lo<1e-6) return;
+  let rel=Math.atan2(u[1],u[0])-Math.atan2(o[1],o[0]); rel=Math.atan2(Math.sin(rel),Math.cos(rel));
+  if(Math.abs(Math.sin(rel))>=0.28) return;
+  const m=0.2838; let nr;
+  if(Math.abs(rel)<=Math.PI/2) nr=(rel>=0?1:-1)*m; else nr=(rel>0?1:-1)*(Math.PI-m);
+  const ang=Math.atan2(o[1],o[0])+nr; vs[i]=[lu*Math.cos(ang),lu*Math.sin(ang)];
+}
+function setHandle(key,px,py){
+  const isE=key[0]==='e', idx=+key[1], vs=isE?E:Fb;
+  let p=isE?unV(px,py):unW(px,py);
+  const L=len(p); if(L>3.4) p=mul(3.4/L,p); if(L<0.9){ const d=L>1e-6?mul(1/L,p):[1,0]; p=mul(0.9,d); }
+  p=[clamp(p[0],-HX+0.5,HX-0.5),clamp(p[1],-HY+0.5,HY-0.5)];
+  vs[idx]=p; enforceIndep(vs,idx);
+}
+cv.addEventListener('pointerdown',e=>{
+  const [px,py]=ptr(e); const h=findHandle(px,py);
+  if(h){ cv.setPointerCapture(e.pointerId); drag=h; hoverKey=h; setHandle(h,px,py); }
+});
+cv.addEventListener('pointermove',e=>{
+  const [px,py]=ptr(e);
+  if(drag){ setHandle(drag,px,py); return; }
+  const h=findHandle(px,py); hoverKey=h; cv.style.cursor=h?'grab':'default';
+});
+function endDrag(){ drag=null; }
+cv.addEventListener('pointerup',endDrag);
+cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('pointerleave',()=>{ if(!drag) hoverKey=null; });
+
+document.getElementById('themeBtn').onclick=()=>{
+  const el=document.documentElement, dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const now=el.getAttribute('data-theme')||(dark?'dark':'light');
+  el.setAttribute('data-theme', now==='dark'?'light':'dark'); refreshBg();
+};
+
+layout(); refreshBg(); updButtons();
+window.addEventListener('resize',layout);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

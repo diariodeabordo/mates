@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coordenadas respecto de una base</title>
+<style>
+:root{
+  --bg:#f2efe9; --paper:#f2efe9; --fg:#20201e; --muted:#7a7873; --line:#dedad2; --habitat:#c9c5bd;
+  --gold:#c99a2e; --teal:#14a89b;
+  --shadow:0 2px 6px rgba(0,0,0,.05),0 18px 40px rgba(0,0,0,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1014; --paper:#0e1014; --fg:#eceae5; --muted:#8e9099; --line:#2b2f38; --habitat:#3a3e48;
+  --gold:#f0c95e; --teal:#4fe0d0;
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1014; --paper:#0e1014; --fg:#eceae5; --muted:#8e9099; --line:#2b2f38; --habitat:#3a3e48;
+  --gold:#f0c95e; --teal:#4fe0d0;
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:"Iowan Old Style",Palatino,Georgia,serif;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+main{flex:1;min-height:0;padding:12px 12px 0}
+.stage{position:relative;height:100%;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line)}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px 14px}
+button.pill{font:inherit;font-size:1rem;line-height:1;cursor:pointer;min-width:38px;height:34px;padding:0 14px;border-radius:999px;
+  border:1px solid var(--line);background:var(--paper);color:var(--fg);white-space:nowrap}
+button.pill:disabled{opacity:.38;cursor:default}
+.sp{margin-left:auto}
+</style>
+</head>
+<body>
+<main><div class="stage"><canvas id="cv"></canvas></div></main>
+<footer>
+  <button class="pill" id="replayBtn" title="repetir la construcción" disabled>▶</button>
+  <button class="pill" id="resetBtn" title="reiniciar">⟲</button>
+  <button class="pill sp" id="themeBtn" title="claro / oscuro">◐</button>
+</footer>
+
+<script>
+const CSS=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const replayBtn=document.getElementById('replayBtn');
+
+/* ---------- álgebra ---------- */
+const Z2=[0,0];
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1]];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]];
+const mul=(k,a)=>[k*a[0],k*a[1]];
+const len=a=>Math.hypot(a[0],a[1]);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const ease=g=>g*g*(3-2*g);
+const cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
+const dist2=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+function solve2(u,v,p){ const d=cross(u,v); if(Math.abs(d)<1e-9) return [0,0]; return [cross(p,v)/d, cross(u,p)/d]; }
+function hexRgb(h){ h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+function hexA(h,a){ const c=hexRgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+const hcol=(h,l)=>`hsl(${h},68%,${l||55}%)`;
+let bgResolved='#f2efe9';
+function refreshBg(){ bgResolved=CSS('--bg'); }
+
+/* ---------- datos: una base (e1,e2) y un vector v que se elige pinchando ---------- */
+const HE=[22,205];
+const E0=[[2.3,0.5],[-0.7,1.9]];
+let E=E0.map(v=>v.slice()), v=null;
+const coords=()=>v?solve2(E[0],E[1],v):[0,0];
+
+/* ---------- disposición ---------- */
+let W=0,H=0,S=30,K=1,portrait=false;
+let Vr={x:0,y:0,w:0,h:0}, Mr={x:0,y:0,w:0,h:0}, CV=[0,0], HX=5, HY=4, MX={cx:0,cy:0,cs:50};
+function layout(){
+  const r=cv.getBoundingClientRect(); if(!r.width) return;
+  const d=window.devicePixelRatio||1;
+  cv.width=r.width*d; cv.height=r.height*d; W=r.width; H=r.height;
+  ctx.setTransform(d,0,0,d,0,0);
+  portrait = H > W*0.95;
+  if(!portrait){
+    const pw=clamp(W*0.2,150,240), gap=16;
+    Vr={x:12,y:12,w:W-24-pw-gap,h:H-24}; Mr={x:12+Vr.w+gap,y:12,w:pw,h:H-24};
+    MX={cx:Mr.x+Mr.w/2,cy:Mr.y+Mr.h/2,cs:clamp(Math.min(Mr.w/3.0,Mr.h/4.6),38,80)};
+  }else{
+    const mh=clamp(H*0.26,140,210), gap=12;
+    Vr={x:12,y:12,w:W-24,h:H-24-mh-gap}; Mr={x:12,y:12+Vr.h+gap,w:W-24,h:mh};
+    MX={cx:Mr.x+Mr.w/2,cy:Mr.y+Mr.h/2,cs:clamp(Math.min(Mr.w/3.0,Mr.h/3.6),34,70)};
+  }
+  S=Math.min(Vr.w/10.4,Vr.h/8.4); K=clamp(S/38,.6,1.25);
+  CV=[Vr.x+Vr.w/2,Vr.y+Vr.h/2]; HX=Vr.w/(2*S); HY=Vr.h/(2*S);
+}
+new ResizeObserver(layout).observe(cv);
+const Pv=p=>[CV[0]+p[0]*S, CV[1]-p[1]*S];
+const unV=(x,y)=>[(x-CV[0])/S,(CV[1]-y)/S];
+
+/* ---------- primitivas ---------- */
+function drawArrow(p1,p2,color,alpha,lw,halo){
+  const [x1,y1]=p1,[x2,y2]=p2;
+  const Lp=Math.hypot(x2-x1,y2-y1); if(Lp<1.5) return;
+  const hl=Math.min(Lp*0.4, lw*2.4+6), hw=lw*1.6+4;
+  const ang=Math.atan2(y2-y1,x2-x1);
+  const bx=x2-hl*Math.cos(ang), by=y2-hl*Math.sin(ang);
+  const nx=-Math.sin(ang), ny=Math.cos(ang);
+  ctx.save(); ctx.globalAlpha=alpha; ctx.lineCap='round'; ctx.lineJoin='round';
+  if(halo){
+    ctx.strokeStyle=halo; ctx.lineWidth=lw+4;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+    ctx.fillStyle=halo; ctx.lineWidth=4; ctx.strokeStyle=halo;
+    ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(bx+nx*hw/2,by+ny*hw/2); ctx.lineTo(bx-nx*hw/2,by-ny*hw/2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.strokeStyle=color; ctx.lineWidth=lw;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(bx+nx*hw/2,by+ny*hw/2); ctx.lineTo(bx-nx*hw/2,by-ny*hw/2); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function dashSeg(a,b,color,alpha,lw,dash){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw||1.8; ctx.setLineDash(dash||[5,5]);
+  ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.restore();
+}
+function ring(pt,r,color,alpha,lw,dash){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw; if(dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.arc(pt[0],pt[1],r,0,7); ctx.stroke(); ctx.restore();
+}
+function dot_(pt,r,color,alpha){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle=color; ctx.beginPath(); ctx.arc(pt[0],pt[1],r,0,7); ctx.fill(); ctx.restore();
+}
+function rrect(x,y,w,h,r){
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+function drawOrigin(pt,color,t){
+  const br=1+0.12*Math.sin(t*2.4), rad=30*K*br;
+  const g=ctx.createRadialGradient(pt[0],pt[1],0,pt[0],pt[1],rad);
+  g.addColorStop(0,hexA(color,.6)); g.addColorStop(.35,hexA(color,.22)); g.addColorStop(1,hexA(color,0));
+  ctx.save(); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(pt[0],pt[1],rad,0,7); ctx.fill(); ctx.restore();
+  ring(pt,9*K*br,color,.55,1.6);
+  dot_(pt,5.5*K+1,color,1); dot_(pt,2.2*K+.4,'#ffffff',.9);
+}
+
+/* ---------- la construcción: e1 y e2 se estiran, se suman (paralelogramo) y llegan a v ---------- */
+function paraAnim(ui,uj,hi,hj,a,b,tau,alpha,diagCol){
+  const eA=ease(clamp(tau/1.2,0,1)), eB=ease(clamp((tau-1.2)/1.0,0,1)), eC=ease(clamp((tau-2.2)/0.8,0,1));
+  const A=mul(a,ui), Bv=mul(b,uj), Ev=add(A,Bv), O=Pv(Z2);
+  const si=lerp(1,a,eA), sj=lerp(1,b,eA);
+  if(eB>0){
+    const pA=Pv(A), pB=Pv(Bv), pE=Pv(Ev);
+    ctx.save(); ctx.globalAlpha=alpha*.1*eB; ctx.fillStyle=CSS('--fg');
+    ctx.beginPath(); ctx.moveTo(O[0],O[1]); ctx.lineTo(pA[0],pA[1]); ctx.lineTo(pE[0],pE[1]); ctx.lineTo(pB[0],pB[1]); ctx.closePath(); ctx.fill(); ctx.restore();
+    const t1=mul(eB,A), t2=mul(eB,Bv);
+    drawArrow(Pv(t1),Pv(add(t1,Bv)),hcol(hj),alpha*.8,3.4*K+1,bgResolved);
+    drawArrow(Pv(t2),Pv(add(t2,A)),hcol(hi),alpha*.8,3.4*K+1,bgResolved);
+  }
+  drawArrow(O,Pv(mul(si,ui)),hcol(hi),alpha,5*K+1.5,bgResolved);
+  drawArrow(O,Pv(mul(sj,uj)),hcol(hj),alpha,5*K+1.5,bgResolved);
+  if(eC>0){
+    drawArrow(O,Pv(mul(eC,Ev)),diagCol,alpha,5.8*K+1.5,bgResolved);
+    if(tau>3.0&&tau<3.7){ const k=(tau-3.0)/0.7; ring(Pv(Ev),k*30*K,diagCol,(1-k)*.8*alpha,2.4); }
+  }
+}
+function ghostPara(ui,uj,hi,hj,a,b,alpha){
+  const A=mul(a,ui), Bv=mul(b,uj), Ev=add(A,Bv), O=Pv(Z2), pA=Pv(A), pB=Pv(Bv), pE=Pv(Ev);
+  dashSeg(O,pA,hcol(hi),alpha,1.6,[3,5]); dashSeg(pA,pE,hcol(hj),alpha,1.6,[3,5]);
+  dashSeg(O,pB,hcol(hj),alpha,1.6,[3,5]); dashSeg(pB,pE,hcol(hi),alpha,1.6,[3,5]);
+}
+/* retícula de la base: cada punto del lienzo tiene una dirección única en ella */
+function drawLattice(alpha){
+  ctx.save();
+  [[E[0],E[1],HE[0]],[E[1],E[0],HE[1]]].forEach(([base,dir,h])=>{
+    const dn=mul(1/len(dir),dir);
+    for(let k=-16;k<=16;k++){
+      const p0=mul(k,base), a=Pv(add(p0,mul(-30,dn))), b=Pv(add(p0,mul(30,dn)));
+      ctx.globalAlpha=alpha*(k===0?.5:.2); ctx.strokeStyle=hcol(h); ctx.lineWidth=k===0?2:1;
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    }
+  });
+  ctx.restore();
+}
+
+/* ---------- el vector columna ---------- */
+const fmt=x=>(Math.abs(x)<0.005?0:x).toFixed(2).replace('-','−');
+function cellCenter(i){ const {cx,cy,cs}=MX; return [cx, cy-cs+(i+.5)*cs]; }
+function miniArrow(c,dir,len_,color,alpha,lw){
+  const l=Math.hypot(dir[0],dir[1])||1, u=[dir[0]/l,-dir[1]/l];
+  drawArrow([c[0]-u[0]*len_/2,c[1]-u[1]*len_/2],[c[0]+u[0]*len_/2,c[1]+u[1]*len_/2],color,alpha,lw,null);
+}
+function drawColumn(t){
+  const {cx,cy,cs}=MX, fg=CSS('--fg'), hab=CSS('--habitat');
+  const left=cx-cs*0.55, right=cx+cs*0.55, top=cy-cs, bot=cy+cs;
+  if(phase==='anim'){
+    ctx.save(); ctx.globalAlpha=.10+.05*Math.sin(t*5); ctx.fillStyle=fg;
+    rrect(left,top-4,right-left,2*cs+8,8*K); ctx.fill(); ctx.restore();
+  }
+  ctx.save(); ctx.strokeStyle=fg; ctx.globalAlpha=.85; ctx.lineWidth=3*K; ctx.lineCap='round'; ctx.lineJoin='round';
+  const bw=9*K, pad=6*K;
+  ctx.beginPath(); ctx.moveTo(left-pad+bw,top-pad); ctx.lineTo(left-pad,top-pad); ctx.lineTo(left-pad,bot+pad); ctx.lineTo(left-pad+bw,bot+pad); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(right+pad-bw,top-pad); ctx.lineTo(right+pad,top-pad); ctx.lineTo(right+pad,bot+pad); ctx.lineTo(right+pad-bw,bot+pad); ctx.stroke();
+  ctx.restore();
+  // cabecera: el vector v; marcas de fila: los vectores de la base
+  if(v) miniArrow([cx,top-0.55*cs-6*K],v,cs*0.55,fg,1,3.6*K);
+  for(let i=0;i<2;i++) miniArrow([left-0.62*cs-pad,top+(i+.5)*cs],E[i],cs*0.55,hcol(HE[i]),1,3.4*K);
+  const fs=clamp(cs*0.34,13,26), co=coords();
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=`600 ${fs}px "Iowan Old Style",Palatino,Georgia,serif`;
+  for(let i=0;i<2;i++){
+    const c=cellCenter(i);
+    if(v && filled()){
+      const val=co[i], landed=(phase==='anim'&&pt<FILL+1.0), k=landed?(pt-FILL)/1.0:1;
+      if(landed) ring(c,(8+k*26)*K,hcol(HE[i]),(1-k)*.8,2.2);
+      ctx.fillStyle=hcol(HE[i],50); ctx.globalAlpha=1; ctx.fillText(fmt(val),c[0],c[1]-3*K);
+      const bl=clamp(Math.abs(val),0,1.8)/1.8*cs*0.4;
+      ctx.globalAlpha=.85; ctx.fillStyle=hcol(HE[i]);
+      ctx.fillRect(val>=0?c[0]:c[0]-bl, c[1]+fs*0.62, bl, 3.6*K);
+      ctx.globalAlpha=.3; ctx.fillRect(c[0]-1,c[1]+fs*0.62-2*K,2,7.6*K);
+    }else{
+      ctx.globalAlpha=.45; ctx.strokeStyle=hab; ctx.lineWidth=1.4; ctx.setLineDash([3,5]);
+      rrect(c[0]-cs*0.4,c[1]-cs*0.4,cs*0.8,cs*0.8,8*K); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  ctx.restore();
+}
+function drawChips(){
+  if(!v || phase!=='anim') return;
+  const ct=pt-0.7, co=coords(), fs=clamp(MX.cs*0.30,12,19);
+  for(let i=0;i<2;i++){
+    if(ct<1.3||pt>=FILL) continue;
+    const tipW=Pv(mul(co[i],E[i])), O=Pv(Z2), dx=tipW[0]-O[0], dy=tipW[1]-O[1], l=Math.hypot(dx,dy)||1;
+    let start=[tipW[0]+(-dy/l)*18*K, tipW[1]+(dx/l)*18*K];
+    start=[clamp(start[0],Vr.x+24,Vr.x+Vr.w-24), clamp(start[1],Vr.y+14,Vr.y+Vr.h-14)];
+    const target=cellCenter(i);
+    let p=start, sc=1, al=clamp((ct-1.3+i*0.15)/0.3,0,1);
+    const fly0=FILL-1.0+i*0.1;
+    if(pt>=fly0){
+      const s=ease(clamp((pt-fly0)/1.0,0,1));
+      p=[lerp(start[0],target[0],s), lerp(start[1],target[1],s)-Math.sin(Math.PI*s)*34*K]; sc=lerp(1,0.8,s);
+    }
+    const txt=fmt(co[i]);
+    ctx.save(); ctx.globalAlpha=al; ctx.font=`600 ${fs*sc}px "Iowan Old Style",Palatino,Georgia,serif`;
+    const tw=ctx.measureText(txt).width+14*K;
+    ctx.fillStyle=bgResolved; ctx.strokeStyle=hcol(HE[i]); ctx.lineWidth=2*K;
+    rrect(p[0]-tw/2,p[1]-fs*0.85*sc,tw,fs*1.7*sc,9*K); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=hcol(HE[i],50); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,p[0],p[1]); ctx.restore();
+  }
+}
+
+/* ---------- estado ---------- */
+let phase='idle', pt=0, hoverKey=null, drag=null, vDrag=false, hintT=0;
+const FILL=5.6, END=6.4;
+const filled=()=> phase==='live'||phase==='done'||(phase==='anim'&&pt>=FILL);
+function startAnim(){ if(!v) return; phase='anim'; pt=0; replayBtn.disabled=true; }
+replayBtn.onclick=startAnim;
+document.getElementById('resetBtn').onclick=()=>{ v=null; phase='idle'; pt=0; E=E0.map(a=>a.slice()); replayBtn.disabled=true; };
+
+/* ---------- dibujo ---------- */
+function render(t){
+  ctx.fillStyle=bgResolved; ctx.fillRect(0,0,W,H);
+  if(!W) return;
+  const gold=CSS('--gold'), fg=CSS('--fg');
+  // el lienzo
+  ctx.save(); rrect(Vr.x,Vr.y,Vr.w,Vr.h,18*K); ctx.fillStyle=hexA(gold,.05); ctx.fill();
+  ctx.strokeStyle=CSS('--habitat'); ctx.globalAlpha=.8; ctx.lineWidth=1.6; ctx.setLineDash([2,6]); ctx.stroke(); ctx.restore();
+
+  ctx.save(); rrect(Vr.x,Vr.y,Vr.w,Vr.h,18*K); ctx.clip();
+  drawLattice(.9);
+  const co=coords();
+  // la base
+  for(let i=0;i<2;i++){
+    const O=Pv(Z2), T=Pv(E[i]);
+    dot_([(O[0]+T[0])/2,(O[1]+T[1])/2],Math.hypot(T[0]-O[0],T[1]-O[1])/2+10*K,hcol(HE[i]),.14);
+    drawArrow(O,T,hcol(HE[i]),1,6*K+1,null);
+  }
+  if(!v){
+    // invitación: un anillo que late sobre un punto del lienzo
+    const hp=Pv([HX*0.45,HY*0.38]), ph=(t%1.8)/1.8;
+    ring(hp,(10+ph*26)*K,fg,(1-ph)*.55,2); dot_(hp,3*K,fg,.5);
+  }else{
+    const g=phase==='anim'?ease(clamp(pt/0.6,0,1)):1;
+    const T=Pv(mul(g,v)), O=Pv(Z2);
+    // el vector elegido
+    const tip=Pv(v);
+    const pul=1+0.1*Math.sin(t*4);
+    ring(tip,12*K*pul,fg,.7,2); dot_(tip,3.4*K,fg,.9);
+    // construcción
+    if(phase==='anim'){
+      const tau=Math.max(0,pt-0.7);
+      if(pt<0.7) drawArrow(O,T,fg,1,6*K+1.5,bgResolved);
+      else{
+        paraAnim(E[0],E[1],HE[0],HE[1],co[0],co[1],Math.min(tau,3.8),1,fg);
+      }
+    }else{
+      // en reposo: huella del paralelogramo y el vector v
+      ghostPara(E[0],E[1],HE[0],HE[1],co[0],co[1],.4);
+      drawArrow(O,tip,fg,1,6*K+1.5,bgResolved);
+    }
+  }
+  ctx.restore();
+
+  for(let i=0;i<2;i++) ring(Pv(E[i]),13*K,hcol(HE[i]),(hoverKey==='e'+i||drag==='e'+i)?.95:.55,(hoverKey==='e'+i||drag==='e'+i)?2.2:1.5,[3,4]);
+  drawOrigin(CV,gold,t);
+  drawColumn(t);
+  drawChips();
+  if(phase==='done' && pt<1.2){ const k=pt/1.2, {cx,cy,cs}=MX; ring([cx,cy],(cs*1.7+k*24)*K,fg,(1-k)*.35,2.4); }
+}
+
+/* ---------- bucle ---------- */
+function update(dt){
+  pt+=dt;
+  if(phase==='anim' && pt>=END){ phase='done'; pt=0; replayBtn.disabled=false; }
+}
+let last=performance.now();
+function loop(now){
+  let dt=(now-last)/1000; last=now; dt=Math.min(dt,0.05);
+  update(dt); render(now/1000);
+  requestAnimationFrame(loop);
+}
+
+/* ---------- interacción: pinchar para elegir v; arrastrar las puntas de la base ---------- */
+const ptr=e=>{const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top];};
+const inRect=(x,y)=>x>=Vr.x&&x<=Vr.x+Vr.w&&y>=Vr.y&&y<=Vr.y+Vr.h;
+function findHandle(px,py){
+  const thr=Math.max(22,24*K); let best=null,bd=thr;
+  for(let i=0;i<2;i++){ const d=dist2([px,py],Pv(E[i])); if(d<bd){bd=d;best='e'+i;} }
+  return best;
+}
+function enforceIndep(i){
+  const o=E[1-i], u=E[i], lu=len(u), lo=len(o); if(lu<1e-6||lo<1e-6) return;
+  let rel=Math.atan2(u[1],u[0])-Math.atan2(o[1],o[0]); rel=Math.atan2(Math.sin(rel),Math.cos(rel));
+  if(Math.abs(Math.sin(rel))>=0.28) return;
+  const m=0.2838; let nr;
+  if(Math.abs(rel)<=Math.PI/2) nr=(rel>=0?1:-1)*m; else nr=(rel>0?1:-1)*(Math.PI-m);
+  const ang=Math.atan2(o[1],o[0])+nr; E[i]=[lu*Math.cos(ang),lu*Math.sin(ang)];
+}
+function setBase(i,px,py){
+  let p=unV(px,py); const L=len(p); if(L>3.4) p=mul(3.4/L,p); if(L<0.9){ const d=L>1e-6?mul(1/L,p):[1,0]; p=mul(0.9,d); }
+  E[i]=[clamp(p[0],-HX+0.5,HX-0.5),clamp(p[1],-HY+0.5,HY-0.5)]; enforceIndep(i);
+}
+function setV(px,py){ const p=unV(px,py); v=[clamp(p[0],-HX+0.4,HX-0.4),clamp(p[1],-HY+0.4,HY-0.4)]; }
+cv.addEventListener('pointerdown',e=>{
+  const [px,py]=ptr(e); cv.setPointerCapture(e.pointerId);
+  const h=findHandle(px,py);
+  if(h){ drag=h; hoverKey=h; setBase(+h[1],px,py); }
+  else if(inRect(px,py)){ vDrag=true; setV(px,py); phase='live'; replayBtn.disabled=true; }
+});
+cv.addEventListener('pointermove',e=>{
+  const [px,py]=ptr(e);
+  if(drag){ setBase(+drag[1],px,py); return; }
+  if(vDrag){ setV(px,py); return; }
+  const h=findHandle(px,py); hoverKey=h; cv.style.cursor=h?'grab':(inRect(px,py)?'crosshair':'default');
+});
+function endDrag(){
+  if(vDrag){ vDrag=false; startAnim(); }
+  drag=null;
+}
+cv.addEventListener('pointerup',endDrag);
+cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('pointerleave',()=>{ if(!drag&&!vDrag) hoverKey=null; });
+
+document.getElementById('themeBtn').onclick=()=>{
+  const el=document.documentElement, dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const now=el.getAttribute('data-theme')||(dark?'dark':'light');
+  el.setAttribute('data-theme', now==='dark'?'light':'dark'); refreshBg();
+};
+
+layout(); refreshBg();
+window.addEventListener('resize',layout);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
