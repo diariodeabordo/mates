@@ -354,24 +354,46 @@
       }
     }
 
- /* FRASES */
-
-
-    blockquote {
-  font-style: italic;
-  font-size: 1.25rem;
-  margin: 20px;
-  padding-left: 15px;
-  border-left: 4px solid #007BFF; /* Línea de color al lado de la frase */
-  color: #555555;
+ /* Lema de Álgebra Lineal */
+.lema-algebra {
+  max-width: 760px;
+  margin: 0 auto 26px;
+  padding: 24px 28px;
+  text-align: center;
+  border: 1px solid #d8c18a;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fffdf7, #f8f2e4);
+  box-shadow: 0 4px 16px rgba(150, 115, 45, 0.10);
 }
 
-blockquote cite {
-  display: block;
-  font-size: 0.9rem;
-  color: #888888;
-  margin-top: 5px;
-  font-style: normal;
+.lema-algebra .frase {
+  margin: 0 0 8px;
+  color: #b08a35;
+  font-family: "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(25px, 3.4vw, 35px);
+  font-weight: normal;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.lema-algebra .firma {
+  margin: 0;
+  color: #9a7938;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  .lema-algebra {
+    padding: 20px 14px;
+    margin-bottom: 20px;
+  }
+
+  .lema-algebra .frase {
+    font-size: 25px;
+  }
 }
 
     
@@ -433,11 +455,11 @@ blockquote cite {
       <hr class="separador">
 
     </div>
-
-    <blockquote>
-  "Solo sé que no sé nada."
-  <cite>— Sócrates</cite>
-</blockquote>
+    
+<div class="lema-algebra">
+  <p class="frase">Todo es estirar y sumar</p>
+  <p class="firma">— Álgebra Lineal</p>
+</div>
     
     <!-- PROGRAMA 1: ESPACIO VECTORIAL -->
 
