@@ -112,40 +112,140 @@
       background: #ffffff;
     }
 
-   /* ENLACES */
+  /* ENLACES */
 
 .enlace {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: inline-block;
   margin: 8px 0 12px;
   color: #0759b8;
   text-decoration: none;
   font-size: 14px;
-  gap: 6px;
 }
 
 .enlace:hover {
   text-decoration: underline;
 }
 
-.enlace .titulo-enlace {
+/* DOCUMENTOS PDF */
+
+.pdf {
+  margin-top: 24px;
+}
+
+.pdf h3 {
+  font-size: 16px;
+  margin: 0 0 10px;
+}
+
+.pdf iframe {
+  display: block;
+  width: 100%;
+  height: 500px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+/* MÓVILES */
+
+@media (max-width: 600px) {
+  body {
+    padding: 20px 10px;
+  }
+
+  h1 {
+    font-size: 25px;
+  }
+
+  .portada-poetica {
+    padding: 8px 10px 20px;
+    margin-bottom: 24px;
+  }
+
+  .portada-poetica .poema {
+    font-size: 17px;
+  }
+
+  .portada-poetica img {
+    width: 200px;
+    height: auto;
+    display: block;
+    margin: 20px auto;
+    border-radius: 8px;
+  }
+
+  section {
+    padding: 8px;
+  }
+
+  .programa iframe,
+  .pdf iframe {
+    height: 420px;
+  }
+}
+
+/* PÁGINAS RECOMENDADAS */
+
+.recomendados {
+  margin-top: 40px;
+  padding: 22px;
+  background: #f7f9fc;
+  border: 1px solid #e1e7ef;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.recomendados h2 {
+  margin-bottom: 8px;
+}
+
+.enlace-recomendado {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 16px;
+  color: #263b53;
+  text-decoration: none;
+  background: #ffffff;
+  border: 1px solid #e0e6ed;
+  border-radius: 10px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.enlace-recomendado:hover {
+  border-color: #8aa9cc;
+  transform: translateY(-2px);
+}
+
+.icono-enlace {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #e8eff8;
+  color: #28598b;
+  font-size: 23px;
+}
+
+.enlace-recomendado strong,
+.enlace-recomendado small {
   display: block;
 }
 
-.enlace .autora {
-  display: block;
+.enlace-recomendado strong {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.enlace-recomendado small {
   color: #526174;
-  font-size: 0.9em;
-}
-
-.enlace .agradecimiento {
-  display: block;
-  margin-top: 4px;
-  color: #b8860b;
+  font-size: 15px;
   font-weight: bold;
-  font-size: 1.1em;
-  font-style: italic;
+  line-height: 1.6;
 }
 
       /* ÍNDICE LATERAL FIJO */
@@ -536,25 +636,23 @@
 
 <!-- MAPA: TEMA 4 -->
 
-     <a
-  class="enlace"
-  href="./mapa4.pdf"
-  target="_blank"
-  rel="noopener">
+   <div class="pdf">
+        <h3>Mapa mental · Tema 4</h3>
 
-  <span class="titulo-enlace">
-    Abrir o descargar el Mapa 4 ↗
-  </span>
+        <iframe
+          src="./mapa4.pdf"
+          title="Mapa mental del Tema 4"
+          loading="lazy">
+        </iframe>
 
-  <span class="autora">
-    Autora: Carla Villarreal Conde
-  </span>
-
-  <span class="agradecimiento">
-    ¡Muchas gracias, Carla! 
-  </span>
-
-</a>
+        <a
+          class="enlace"
+          href="./mapa4.pdf"
+          target="_blank"
+          rel="noopener">
+          Abrir o descargar el Mapa del Tema 4 ↗
+        </a>
+      </div>
 
 
 
