@@ -402,6 +402,69 @@
   }
 }
 
+/* Animación del lema: estirar y sumar ↔ combinación lineal */
+.lema-algebra .frase {
+  cursor: pointer;
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
+}
+
+.lema-algebra .frase:hover {
+  transform: scale(1.025);
+  text-shadow: 0 0 10px rgba(255, 196, 55, 0.65);
+}
+
+.lema-algebra .frase:focus-visible {
+  outline: 2px solid #d4a017;
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
+.lema-cambiante {
+  display: inline-grid;
+  vertical-align: baseline;
+}
+
+.lema-cambiante > span {
+  grid-area: 1 / 1;
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.texto-original {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.texto-nuevo {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+
+.lema-algebra.activo .texto-original {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.lema-algebra.activo .texto-nuevo {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.indicacion-lema {
+  margin: 0 0 10px;
+  color: #b58a24;
+  font-size: 11px;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lema-cambiante > span,
+  .lema-algebra .frase {
+    transition: none;
+  }
+}
+
 
     
     
@@ -468,10 +531,24 @@
 
     </div>
     
-<div class="lema-algebra">
-  <p class="frase">Todo es estirar y sumar</p>
+
+<div class="lema-algebra" id="lema-algebra">
+  <p
+    class="frase"
+    id="frase-lema"
+    role="button"
+    tabindex="0"
+    aria-pressed="false"
+    aria-label="Pulsa para transformar el lema">
+    Todo es
+    <span class="lema-cambiante">
+      <span class="texto-original">estirar y sumar</span>
+      <span class="texto-nuevo">combinación lineal</span>
+    </span>
+  </p>
   <p class="firma">— Álgebra Lineal</p>
 </div>
+
     
     <!-- PROGRAMA 1: ESPACIO VECTORIAL -->
 
@@ -699,6 +776,33 @@
     
 
   </main>
+
+
+<!-- ANIMACIÓN -->
+  
+<script>
+(() => {
+  const tarjeta = document.getElementById("lema-algebra");
+  const frase = document.getElementById("frase-lema");
+
+  if (!tarjeta || !frase) return;
+
+  function alternarLema() {
+    const activado = tarjeta.classList.toggle("activo");
+    frase.setAttribute("aria-pressed", String(activado));
+  }
+
+  frase.addEventListener("click", alternarLema);
+
+  frase.addEventListener("keydown", (evento) => {
+    if (evento.key === "Enter" || evento.key === " ") {
+      evento.preventDefault();
+      alternarLema();
+    }
+  });
+})();
+</script>
+
 
   
 </body>
