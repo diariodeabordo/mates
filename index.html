@@ -6,11 +6,9 @@
   <title>Diario de a bordo</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Seaweed+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@300;400;500&display=swap">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@300;400;500&display=swap">
+        href="https://fonts.googleapis.com/css2?family=Seaweed+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@300;400;500&display=swap">
 
   <style>
     /* =========================================
@@ -89,14 +87,14 @@
     }
 
     h1 {
-  margin: 0;
-  font-family: "Seaweed Script", cursive;   /* antes: var(--serif) */
-  font-style: normal;                        /* antes: italic */
-  font-weight: 400;
-  font-size: clamp(54px, 11vw, 136px);
-  line-height: 0.95;
-  letter-spacing: -0.01em;
-}
+      margin: 0;
+      font-family: "Seaweed Script", cursive;
+      font-style: normal;
+      font-weight: 400;
+      font-size: clamp(54px, 11vw, 136px);
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+    }
 
     h1 .letra {
       display: inline-block;
@@ -584,6 +582,149 @@
       .enlace-recomendado strong { font-size: 21px; }
     }
 
+    /* =========================================
+       MEDALLÓN EN FORMA DE CORAZÓN
+    ========================================= */
+    .lamina {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 200px;
+      gap: 30px;
+      align-items: center;
+    }
+
+    .medallon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      align-self: start;
+    }
+
+    .colgante {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform-origin: 50% 0;
+      animation: balanceo 7s ease-in-out infinite;
+    }
+
+    .cadena { width: 20px; height: 50px; margin-bottom: -6px; }
+
+    .corazon {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      perspective: 900px;
+    }
+
+    .fondo, .tapa { position: absolute; inset: 0; }
+
+    .fondo svg, .cara {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 10px 12px rgba(12, 21, 36, .35));
+    }
+
+    .tapa {
+      cursor: pointer;
+      transform-origin: 3% 33%;
+      transform-style: preserve-3d;
+      transition: transform 1.4s cubic-bezier(.3, .1, .15, 1);
+      outline: none;
+    }
+
+    .tapa:hover { transform: rotateY(-8deg); }
+
+    .medallon.abierto .tapa { transform: rotateY(-158deg); }
+
+    .cara {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .dorso { transform: rotateY(180deg); }
+
+    .tapa:focus-visible .frente { filter: drop-shadow(0 0 6px var(--oro)); }
+
+    .inscripcion {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 15px;
+      fill: #4a3310;
+    }
+
+    .engranaje {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .medallon.abierto .engranaje { animation: girar 14s linear infinite; }
+    .medallon.abierto .engranaje.inverso { animation-direction: reverse; }
+    .medallon.sonando .engranaje { animation-duration: 4s; }
+
+    .perla {
+      position: absolute;
+      left: 50%;
+      top: 47%;
+      width: 38px;
+      height: 38px;
+      transform: translate(-50%, -50%) scale(.6);
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 34% 30%, #ffffff 0%, #f6f1ea 22%, #ddd3c6 55%, #a89c8c 100%);
+      box-shadow:
+        0 0 0 3px #8a6324,
+        0 0 0 4.5px #3d2a0c,
+        0 6px 10px rgba(0, 0, 0, .5),
+        inset -3px -4px 8px rgba(120, 100, 80, .35);
+      transition: opacity .6s ease .9s, transform .6s ease .9s, box-shadow .3s;
+    }
+
+    .medallon.abierto .perla {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .perla:active { transform: translate(-50%, -48%) scale(.94); }
+
+    .medallon.sonando .perla {
+      box-shadow:
+        0 0 0 3px #8a6324,
+        0 0 0 4.5px #3d2a0c,
+        0 0 18px 4px rgba(255, 230, 160, .65),
+        inset -3px -4px 8px rgba(120, 100, 80, .35);
+    }
+
+    .leyenda {
+      margin: 14px 0 0;
+      font-size: 10px;
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: var(--oro-2);
+      min-height: 1em;
+      text-align: center;
+    }
+
+    @keyframes balanceo {
+      0%, 100% { transform: rotate(1.6deg); }
+      50%      { transform: rotate(-1.6deg); }
+    }
+
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    @media (max-width: 700px) {
+      .lamina { grid-template-columns: 1fr; gap: 10px; }
+      .medallon { align-self: center; }
+      .medallon { transition: transform 1.4s cubic-bezier(.3, .1, .15, 1); }
+      .medallon.abierto { transform: translateX(86px); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -603,7 +744,7 @@
     <canvas id="mar" aria-hidden="true"></canvas>
 
     <div class="portada-texto">
-      <p class="antetitulo">¡Aprende con entusiasmo!</p>
+      <p class="antetitulo">Álgebra lineal</p>
       <h1 id="titulo">Diario de a bordo</h1>
       <p class="poema">
         Affectus imprimit,<br>
@@ -632,10 +773,128 @@
       </ul>
     </nav>
 
-    <!-- IMAGEN -->
-    <figure class="lamina revelar">
+    <!-- IMAGEN + MEDALLÓN -->
+    <div class="lamina revelar">
       <img src="./barco-diario.jpg" alt="Barco del Diario de a bordo">
-    </figure>
+
+      <div class="medallon" id="medallon">
+        <div class="colgante">
+          <svg class="cadena" viewBox="0 0 20 50" aria-hidden="true">
+            <circle cx="10" cy="5" r="4" fill="none" stroke="url(#m-oro)" stroke-width="2"/>
+            <ellipse cx="10" cy="15" rx="3" ry="5" fill="none" stroke="url(#m-oro)" stroke-width="1.6"/>
+            <ellipse cx="10" cy="24" rx="1.6" ry="5" fill="none" stroke="url(#m-oro)" stroke-width="1.6"/>
+            <ellipse cx="10" cy="33" rx="3" ry="5" fill="none" stroke="url(#m-oro)" stroke-width="1.6"/>
+            <ellipse cx="10" cy="42" rx="1.6" ry="5" fill="none" stroke="url(#m-oro)" stroke-width="1.6"/>
+          </svg>
+
+          <div class="corazon">
+            <!-- Interior: cavidad, engranajes y perla -->
+            <div class="fondo">
+              <svg viewBox="0 0 200 200" aria-hidden="true">
+                <use href="#m-forma" fill="url(#m-oro)"/>
+                <use href="#m-forma" fill="none" stroke="#4a3310" stroke-width="2"/>
+                <g transform="translate(100 96) scale(.86) translate(-100 -96)">
+                  <use href="#m-forma" fill="url(#m-hueco)"/>
+                  <use href="#m-forma" fill="none" stroke="#2a1c07" stroke-width="2.5"/>
+                </g>
+                <g id="m-engranajes"></g>
+                <use href="#m-forma" fill="url(#m-brillo)" opacity=".35"/>
+              </svg>
+              <button class="perla" id="perla" aria-label="Tocar la canción" tabindex="-1"></button>
+            </div>
+
+            <!-- Tapa: frente y cara interior -->
+            <div class="tapa" id="tapa" role="button" tabindex="0" aria-label="Abrir el medallón" aria-expanded="false">
+              <svg class="cara frente" viewBox="0 0 200 200" aria-hidden="true">
+                <use href="#m-forma" fill="url(#m-oro)"/>
+                <use href="#m-forma" filter="url(#m-patina)" opacity=".55"/>
+                <use href="#m-forma" fill="none" stroke="#3d2a0c" stroke-width="2.5"/>
+                <g transform="translate(100 96) scale(.88) translate(-100 -96)">
+                  <use href="#m-forma" fill="none" stroke="#f6e2a2" stroke-width="1.6" opacity=".7" transform="translate(.8 .8)"/>
+                  <use href="#m-forma" fill="none" stroke="#4a3310" stroke-width="1.6"/>
+                </g>
+                <g transform="translate(100 96) scale(.8) translate(-100 -96)">
+                  <use href="#m-forma" fill="none" stroke="#4a3310" stroke-width=".9" stroke-dasharray="1.5 3.2"/>
+                </g>
+                <!-- grabado: rosa de los vientos y volutas -->
+                <g class="grabado" transform="translate(.7 .7)" stroke="#f6e2a2" opacity=".55"><use href="#m-grabado"/></g>
+                <g class="grabado" stroke="#47300d"><use href="#m-grabado"/></g>
+                <!-- cierre -->
+                <path d="M186 58 q11 2 11 12 q0 10 -11 12" fill="url(#m-oro)" stroke="#3d2a0c" stroke-width="1.5"/>
+                <circle cx="192" cy="70" r="2.4" fill="#3d2a0c"/>
+                <!-- bisagra -->
+                <rect x="1" y="44" width="10" height="34" rx="5" fill="url(#m-oro-v)" stroke="#3d2a0c" stroke-width="1.3"/>
+                <line x1="1.5" y1="55" x2="10.5" y2="55" stroke="#3d2a0c" stroke-width="1"/>
+                <line x1="1.5" y1="67" x2="10.5" y2="67" stroke="#3d2a0c" stroke-width="1"/>
+                <use href="#m-forma" fill="url(#m-brillo)"/>
+              </svg>
+
+              <svg class="cara dorso" viewBox="0 0 200 200" aria-hidden="true">
+                <g transform="translate(200 0) scale(-1 1)">
+                  <use href="#m-forma" fill="url(#m-oro-dentro)"/>
+                  <use href="#m-forma" fill="none" stroke="#3d2a0c" stroke-width="2.5"/>
+                  <g transform="translate(100 96) scale(.84) translate(-100 -96)">
+                    <use href="#m-forma" fill="none" stroke="#4a3310" stroke-width="1.2"/>
+                  </g>
+                </g>
+      
+                <path d="M78 120 h44 M100 114 v12" stroke="#4a3310" stroke-width=".9"/>
+              </svg>
+            </div>
+          </div>
+        
+    </div>
+
+    <audio id="cancion" src="./davy-jones.mp3" preload="none"></audio>
+
+    <!-- Definiciones compartidas del medallón -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <path id="m-forma" d="M100 182 C 46 140 8 104 8 62 C 8 32 30 12 57 12 C 77 12 92 23 100 40 C 108 23 123 12 143 12 C 170 12 192 32 192 62 C 192 104 154 140 100 182 Z"/>
+        <linearGradient id="m-oro" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f3dc9a"/>
+          <stop offset=".28" stop-color="#c9973f"/>
+          <stop offset=".55" stop-color="#8a6324"/>
+          <stop offset=".78" stop-color="#5c3f14"/>
+          <stop offset="1" stop-color="#a87a30"/>
+        </linearGradient>
+        <linearGradient id="m-oro-v" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5c3f14"/>
+          <stop offset=".45" stop-color="#f0d68e"/>
+          <stop offset="1" stop-color="#6e4c1a"/>
+        </linearGradient>
+        <radialGradient id="m-oro-dentro" cx=".5" cy=".45" r=".6">
+          <stop offset="0" stop-color="#ecd28a"/>
+          <stop offset=".6" stop-color="#b78a3a"/>
+          <stop offset="1" stop-color="#6b4a18"/>
+        </radialGradient>
+        <radialGradient id="m-hueco" cx=".5" cy=".45" r=".6">
+          <stop offset="0" stop-color="#4c3712"/>
+          <stop offset=".7" stop-color="#2a1c08"/>
+          <stop offset="1" stop-color="#140d03"/>
+        </radialGradient>
+        <radialGradient id="m-brillo" cx=".32" cy=".25" r=".45">
+          <stop offset="0" stop-color="#fff8dc" stop-opacity=".55"/>
+          <stop offset="1" stop-color="#fff8dc" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="m-patina" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="7"/>
+          <feColorMatrix values="0 0 0 0 .2  0 0 0 0 .13  0 0 0 0 .04  0 0 0 -1.4 1.1"/>
+          <feComposite in2="SourceGraphic" operator="in"/>
+        </filter>
+        <g id="m-grabado" fill="none" stroke-width="1.2" stroke-linecap="round">
+          <circle cx="100" cy="90" r="22"/>
+          <circle cx="100" cy="90" r="3"/>
+          <path d="M100 58 L106 84 L132 90 L106 96 L100 122 L94 96 L68 90 L94 84 Z"/>
+          <path d="M100 68 L100 112 M78 90 L122 90" stroke-width=".7"/>
+          <path d="M84 74 L97 87 M116 74 L103 87 M84 106 L97 93 M116 106 L103 93" stroke-width=".9"/>
+          <path d="M40 54 c 6 -18 30 -20 34 -4 c 3 12 -12 16 -16 7 c -2 -5 4 -8 7 -5"/>
+          <path d="M160 54 c -6 -18 -30 -20 -34 -4 c -3 12 12 16 16 7 c 2 -5 -4 -8 -7 -5"/>
+          <path d="M52 120 c 14 6 26 4 34 -6 M148 120 c -14 6 -26 4 -34 -6"/>
+          <path d="M92 150 c 4 -6 12 -6 16 0 M100 140 v20" stroke-width=".9"/>
+        </g>
+      </defs>
+    </svg>
 
     <!-- LEMA -->
     <div class="lema-algebra revelar" id="lema-algebra">
@@ -784,8 +1043,7 @@
     <!-- OTROS PUERTOS -->
     <section class="revelar" id="recomendados">
       <div class="cabecera">
-        <span class="numero">
-          <span class="numero"> </span>
+        <span class="numero">⚓</span>
         <h2>Otros puertos</h2>
       </div>
 
@@ -950,6 +1208,163 @@
         e.preventDefault();
         alternar();
       }
+    });
+  })();
+
+  /* ---------- Medallón: mecanismo, apertura y música ---------- */
+  (() => {
+    const medallon = document.getElementById("medallon");
+    const tapa = document.getElementById("tapa");
+    const perla = document.getElementById("perla");
+    const leyenda = document.getElementById("leyenda");
+    const cancion = document.getElementById("cancion");
+    const NS = "http://www.w3.org/2000/svg";
+    let audio, ocupado = false;
+
+    /* Engranajes del interior */
+    function engranaje(cx, cy, r, n) {
+      const ri = r * 0.8, paso = (2 * Math.PI) / n;
+      let d = "";
+      for (let i = 0; i < n; i++) {
+        const a = i * paso;
+        const p = [
+          [ri, a], [r, a + paso * 0.2], [r, a + paso * 0.5], [ri, a + paso * 0.7]
+        ].map(([rr, aa]) => `${(cx + rr * Math.cos(aa)).toFixed(2)} ${(cy + rr * Math.sin(aa)).toFixed(2)}`);
+        d += (i ? "L" : "M") + p.join(" L") + " ";
+      }
+      const g = document.createElementNS(NS, "g");
+      g.innerHTML =
+        `<path d="${d}Z" fill="url(#m-oro)" stroke="#2a1c07" stroke-width=".8"/>` +
+        `<circle cx="${cx}" cy="${cy}" r="${ri * 0.62}" fill="none" stroke="#3d2a0c" stroke-width="1"/>` +
+        `<path d="M${cx - ri * 0.62} ${cy} H${cx + ri * 0.62} M${cx} ${cy - ri * 0.62} V${cy + ri * 0.62}" stroke="#3d2a0c" stroke-width="1.6"/>` +
+        `<circle cx="${cx}" cy="${cy}" r="${Math.max(2, r * 0.14)}" fill="#2a1c07"/>`;
+      g.setAttribute("class", "engranaje");
+      return g;
+    }
+    const caja = document.getElementById("m-engranajes");
+    [[68, 72, 26, 14, false], [129, 70, 20, 11, true], [100, 128, 17, 10, true], [146, 108, 11, 8, false]]
+      .forEach(([x, y, r, n, inv]) => {
+        const g = engranaje(x, y, r, n);
+        if (inv) g.classList.add("inverso");
+        g.setAttribute("opacity", ".85");
+        caja.appendChild(g);
+      });
+
+    /* Sonidos del mecanismo, sintetizados (no necesitan archivos) */
+    function audioCtx() {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === "suspended") audio.resume();
+      return audio;
+    }
+
+    function ruido(ctx) {
+      const b = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+      const d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      return b;
+    }
+
+    function tic(t, frec, vol, dur = 0.025) {
+      const ctx = audioCtx();
+      const s = ctx.createBufferSource();
+      s.buffer = ruido(ctx);
+      const f = ctx.createBiquadFilter();
+      f.type = "bandpass"; f.frequency.value = frec; f.Q.value = 9;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s.connect(f).connect(g).connect(ctx.destination);
+      s.start(t); s.stop(t + dur + 0.02);
+    }
+
+    function campana(t, frec, vol, dur) {
+      const ctx = audioCtx();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = frec;
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ctx.destination);
+      o.start(t); o.stop(t + dur);
+    }
+
+    function sonidoCuerda() {            // trinquete que se va soltando
+      const t0 = audioCtx().currentTime + 0.02;
+      let t = t0, paso = 0.085;
+      for (let i = 0; i < 11; i++) {
+        tic(t, 3200 + Math.random() * 1400, 0.5);
+        tic(t + 0.006, 7000, 0.12, 0.01);
+        t += paso; paso *= 0.9;
+      }
+      return t - t0;
+    }
+
+    function sonidoCierre(t) {           // pestillo que salta + resorte
+      tic(t, 1300, 0.9, 0.05);
+      tic(t + 0.004, 2600, 0.6, 0.04);
+      campana(t + 0.01, 1870, 0.05, 0.6);
+      campana(t + 0.01, 2810, 0.03, 0.45);
+    }
+
+    /* Abrir y cerrar */
+    function abrir() {
+      ocupado = true;
+      const dur = sonidoCuerda();
+      setTimeout(() => {
+        sonidoCierre(audioCtx().currentTime);
+        medallon.classList.add("abierto");
+        tapa.setAttribute("aria-expanded", "true");
+        tapa.setAttribute("aria-label", "Cerrar el medallón");
+        perla.tabIndex = 0;
+        leyenda.textContent = "Pulsa la perla";
+        setTimeout(() => { ocupado = false; }, 900);
+      }, dur * 1000);
+    }
+
+    function cerrar() {
+      ocupado = true;
+      cancion.pause();
+      medallon.classList.remove("abierto", "sonando");
+      tapa.setAttribute("aria-expanded", "false");
+      tapa.setAttribute("aria-label", "Abrir el medallón");
+      perla.tabIndex = -1;
+      leyenda.textContent = "Ábreme";
+      setTimeout(() => { sonidoCierre(audioCtx().currentTime); ocupado = false; }, 1150);
+    }
+
+    function alternar() {
+      if (ocupado) return;
+      medallon.classList.contains("abierto") ? cerrar() : abrir();
+    }
+
+    tapa.addEventListener("click", alternar);
+    tapa.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternar(); }
+    });
+
+    /* La perla: tocar / pausar la canción */
+    perla.addEventListener("click", () => {
+      tic(audioCtx().currentTime, 2200, 0.5, 0.03);
+      if (cancion.paused) {
+        cancion.play().then(() => {
+          medallon.classList.add("sonando");
+          leyenda.textContent = "Sonando…";
+        }).catch(() => {
+          leyenda.textContent = "Falta davy-jones.mp3";
+        });
+      } else {
+        cancion.pause();
+      }
+    });
+
+    cancion.addEventListener("pause", () => {
+      medallon.classList.remove("sonando");
+      if (medallon.classList.contains("abierto") && !cancion.error) leyenda.textContent = "Pulsa la perla";
+    });
+    cancion.addEventListener("ended", () => cancion.currentTime = 0);
+    cancion.addEventListener("error", () => {
+      medallon.classList.remove("sonando");
+      leyenda.textContent = "Falta davy-jones.mp3";
     });
   })();
 
