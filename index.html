@@ -3,884 +3,995 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Seaweed+Script:wght@400&display=swap">
-
   <title>Diario de a bordo</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@300;400;500&display=swap">
+
   <style>
-    * {
-      box-sizing: border-box;
+    /* =========================================
+       PALETA Y TIPOGRAFÍA
+       Noche (portada) · Papel (contenido) · Oro (acento)
+    ========================================= */
+    :root {
+      --noche:   #0c1524;
+      --noche-2: #13213a;
+      --papel:   #f6f2ea;
+      --papel-2: #fbf9f4;
+      --tinta:   #1d2633;
+      --tinta-2: #5b6573;
+      --linea:   #e2dccf;
+      --oro:     #c9a14a;
+      --oro-2:   #a8822f;
+
+      --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      --sans:  "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
-      padding: 30px 16px;
-      font-family: Arial, sans-serif;
-      background: #ffffff;
-      color: #222222;
+      font-family: var(--sans);
+      font-weight: 300;
+      background: var(--papel);
+      color: var(--tinta);
+      -webkit-font-smoothing: antialiased;
     }
 
-    main {
-      max-width: 1000px;
-      margin: 0 auto;
+    a { color: inherit; }
+
+    /* =========================================
+       PORTADA: el mar de flechas
+    ========================================= */
+    .portada {
+      position: relative;
+      height: 100vh;
+      height: 100svh;
+      min-height: 560px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 40%, var(--noche-2) 0%, var(--noche) 70%);
+      color: var(--papel);
+      text-align: center;
     }
 
-    /* TÍTULO PRINCIPAL */
+    #mar {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-h1 {
-  font-family: 'Seaweed Script', cursive !important;
-  font-size: 60px;
-  font-weight: 400;
-  font-style: normal;
-  text-align: center;
-  margin: 0 0 10px;
-  letter-spacing: 0.3px;
-}
+    .portada-texto {
+      position: relative;
+      z-index: 1;
+      padding: 0 20px;
+      pointer-events: none;
+    }
 
-   
+    .antetitulo {
+      margin: 0 0 22px;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.42em;
+      text-transform: uppercase;
+      color: var(--oro);
+      opacity: 0;
+      animation: aparecer 1.4s ease 0.3s forwards;
+    }
 
-    /* INTRODUCCIÓN */
+    h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(54px, 11vw, 136px);
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+    }
 
-    .introduccion {
-      color: #555555;
+    h1 .letra {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(0.35em);
+      filter: blur(8px);
+      animation: letra 1.2s cubic-bezier(.2,.7,.2,1) forwards;
+    }
+
+    .poema {
+      margin: 34px 0 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(19px, 2.4vw, 24px);
       line-height: 1.6;
-      margin-bottom: 25px;
+      color: rgba(246, 242, 234, 0.72);
+      opacity: 0;
+      animation: aparecer 1.6s ease 1.9s forwards;
     }
 
-    
-/* PORTADA POÉTICA */
+    .poema::before {
+      content: "";
+      display: block;
+      width: 40px;
+      height: 1px;
+      margin: 0 auto 26px;
+      background: var(--oro);
+    }
 
-.portada-poetica {
-    max-width: 900px;
-    width: 100%;
-    margin: 0 auto 38px;
-    padding: 12px 16px 26px;
-    text-align: center;
-}
+    .bajar {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      z-index: 1;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: rgba(246, 242, 234, 0.55);
+      opacity: 0;
+      animation: aparecer 1.4s ease 2.8s forwards;
+    }
 
-.portada-poetica .poema {
-    font-family: "Times New Roman", serif;
-    font-size: 19px;
-    line-height: 1.9;
-    font-style: italic;
-    color: #454545;
-    margin: 22px 0;
-}
+    .bajar::after {
+      content: "";
+      width: 1px;
+      height: 42px;
+      background: linear-gradient(var(--oro), transparent);
+      animation: ola 2.2s ease-in-out infinite;
+      transform-origin: top;
+    }
 
-.portada-poetica img {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 6;
-    object-fit: cover;
-    margin: 22px auto 14px;
-    border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
+    .bajar:hover { color: var(--oro); }
 
+    @keyframes aparecer { to { opacity: 1; } }
 
-    /* SECCIONES Y PROGRAMAS */
+    @keyframes letra {
+      to { opacity: 1; transform: none; filter: blur(0); }
+    }
 
+    @keyframes ola {
+      0%   { transform: scaleY(0); opacity: 1; }
+      60%  { transform: scaleY(1); opacity: 1; }
+      100% { transform: scaleY(1); opacity: 0; }
+    }
+
+    /* =========================================
+       CONTENIDO
+    ========================================= */
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 0 22px 90px;
+    }
+
+    /* Imagen del barco */
+    .lamina {
+      margin: 80px auto 0;
+    }
+
+    .lamina img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 7;
+      object-fit: cover;
+      border-radius: 4px;
+      box-shadow: 0 30px 60px -30px rgba(12, 21, 36, 0.45);
+    }
+
+    /* Lema de Álgebra Lineal */
+    .lema-algebra {
+      margin: 90px auto 70px;
+      text-align: center;
+    }
+
+    .lema-algebra .frase {
+      margin: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(32px, 5vw, 50px);
+      line-height: 1.25;
+      color: var(--tinta);
+      cursor: pointer;
+      transition: color 0.4s ease;
+    }
+
+    .lema-algebra .frase:hover { color: var(--oro-2); }
+
+    .lema-algebra .frase:focus-visible {
+      outline: 1px solid var(--oro);
+      outline-offset: 10px;
+    }
+
+    .lema-cambiante { display: inline-grid; }
+
+    .lema-cambiante > span {
+      grid-area: 1 / 1;
+      transition: opacity 0.7s ease, transform 0.7s ease, filter 0.7s ease;
+    }
+
+    .texto-nuevo {
+      opacity: 0;
+      transform: translateY(10px);
+      filter: blur(4px);
+      pointer-events: none;
+    }
+
+    .lema-algebra.activo .texto-original {
+      opacity: 0;
+      transform: translateY(-10px);
+      filter: blur(4px);
+    }
+
+    .lema-algebra.activo .texto-nuevo {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+
+    .lema-algebra .firma {
+      margin: 18px 0 0;
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--oro-2);
+    }
+
+    .lema-algebra .firma::before,
+    .lema-algebra .firma::after {
+      content: "";
+      display: inline-block;
+      width: 26px;
+      height: 1px;
+      margin: 0 14px;
+      vertical-align: middle;
+      background: var(--oro);
+    }
+
+    /* =========================================
+       ENTRADAS DEL DIARIO
+    ========================================= */
     section {
-      max-width: 850px;
-      margin: 0 auto 30px;
-      padding: 14px;
-      border: 1px solid #dddddd;
-      border-radius: 12px;
-      background: #fafafa;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+      padding: 64px 0;
+      border-top: 1px solid var(--linea);
+      scroll-margin-top: 20px;
+    }
+
+    .cabecera {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      align-items: baseline;
+      margin-bottom: 26px;
+    }
+
+    .numero {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 22px;
+      color: var(--oro-2);
     }
 
     section h2 {
-      font-size: 20px;
-      font-weight: 600;
-      margin: 0 0 12px;
+      margin: 0;
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(28px, 4vw, 38px);
+      line-height: 1.15;
+      letter-spacing: -0.005em;
     }
 
-    .programa iframe {
+    .subtitulo {
+      grid-column: 2;
+      margin: 8px 0 0;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--tinta-2);
+    }
+
+    .marco {
+      background: var(--papel-2);
+      border: 1px solid var(--linea);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: box-shadow 0.4s ease, transform 0.4s ease;
+    }
+
+    .marco:hover {
+      box-shadow: 0 22px 50px -28px rgba(12, 21, 36, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .marco iframe {
       display: block;
       width: 100%;
-      height: 500px;
-      border: none;
-      border-radius: 8px;
-      background: #ffffff;
+      height: 540px;
+      border: 0;
+      background: #fff;
     }
 
-  /* ENLACES */
-
-.enlace {
-  display: inline-block;
-  margin: 8px 0 12px;
-  color: #0759b8;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.enlace:hover {
-  text-decoration: underline;
-}
-
-/* DOCUMENTOS PDF */
-
-.pdf {
-  margin-top: 24px;
-}
-
-.pdf h3 {
-  font-size: 16px;
-  margin: 0 0 10px;
-}
-
-.pdf iframe {
-  display: block;
-  width: 100%;
-  height: 500px;
-  border: 1px solid #dddddd;
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-/* MÓVILES */
-
-@media (max-width: 600px) {
-  body {
-    padding: 20px 10px;
-  }
-
- h1 {
-  font-size: 30px;
-}
-
-  .portada-poetica {
-        width: 100%;
-        padding: 8px 2px 20px;
+    .pie {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px 24px;
+      margin-top: 16px;
     }
 
-  .portada-poetica .poema {
-    font-size: 17px;
-  }
-
-  .portada-poetica img {
-        width: 100%;
-        max-width: 100%;
-        aspect-ratio: 16 / 9;
-        object-fit: cover;
-        margin: 18px auto;
+    .sentencia {
+      margin: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 20px;
+      line-height: 1.45;
+      color: var(--tinta);
     }
 
-  section {
-    padding: 8px;
-  }
+    .enlace {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--tinta-2);
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
+      transition: color 0.25s, border-color 0.25s;
+      white-space: nowrap;
+    }
 
-  .programa iframe,
-  .pdf iframe {
-    height: 420px;
-  }
-}
+    .enlace:hover {
+      color: var(--oro-2);
+      border-color: var(--oro);
+    }
 
-/* PÁGINAS RECOMENDADAS */
+    /* PDF */
+    .pdf + .pdf { margin-top: 46px; }
 
-.recomendados {
-  margin-top: 40px;
-  padding: 22px;
-  background: #f7f9fc;
-  border: 1px solid #e1e7ef;
-  border-radius: 14px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
-}
+    .pdf h3 {
+      margin: 0 0 14px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--tinta-2);
+    }
 
-.recomendados h2 {
-  margin-bottom: 8px;
-}
+    .agradecimiento {
+      margin: 0;
+      font-size: 14px;
+      color: var(--tinta-2);
+    }
 
-.enlace-recomendado {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: 20px;
-  padding: 16px;
-  color: #263b53;
-  text-decoration: none;
-  background: #ffffff;
-  border: 1px solid #e0e6ed;
-  border-radius: 10px;
-  transition: border-color 0.2s, transform 0.2s;
-}
+    .agradecimiento strong {
+      font-weight: 500;
+      color: var(--tinta);
+    }
 
-.enlace-recomendado:hover {
-  border-color: #8aa9cc;
-  transform: translateY(-2px);
-}
+    /* Otros puertos */
+    .puertos {
+      display: grid;
+      gap: 14px;
+    }
 
-.icono-enlace {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: #e8eff8;
-  color: #28598b;
-  font-size: 23px;
-}
+    .enlace-recomendado {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 20px;
+      padding: 22px 26px;
+      text-decoration: none;
+      background: var(--papel-2);
+      border: 1px solid var(--linea);
+      border-radius: 6px;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    }
 
-.enlace-recomendado strong,
-.enlace-recomendado small {
-  display: block;
-}
+    .enlace-recomendado:hover {
+      border-color: var(--oro);
+      transform: translateY(-2px);
+      box-shadow: 0 18px 40px -26px rgba(12, 21, 36, 0.35);
+    }
 
-.enlace-recomendado strong {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
+    .enlace-recomendado strong {
+      display: block;
+      font-family: var(--serif);
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--tinta);
+    }
 
-.enlace-recomendado small {
-  color: #526174;
-  font-size: 15px;
-  font-weight: bold;
-  line-height: 1.6;
-}
+    .enlace-recomendado small {
+      display: block;
+      margin-top: 4px;
+      font-size: 14px;
+      color: var(--tinta-2);
+    }
 
-      /* ÍNDICE LATERAL FIJO */
+    .flecha {
+      font-size: 20px;
+      color: var(--oro-2);
+      transition: transform 0.3s;
+    }
 
-   .indice {
-  position: fixed !important;
-  top: 24px;
-  left: 20px;
-  right: auto;
-  width: 220px;
-  margin: 0 !important;
-  padding: 18px 16px;
-  background: #f7f9fc;
-  border: 1px solid #e1e7ef;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
-  z-index: 1000;
-}
+    .enlace-recomendado:hover .flecha { transform: translate(3px, -3px); }
+
+    footer {
+      padding: 40px 0 10px;
+      text-align: center;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 17px;
+      color: var(--tinta-2);
+    }
+
+    /* Aparición suave al hacer scroll */
+    .revelar {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity 1s ease, transform 1s cubic-bezier(.2,.7,.2,1);
+    }
+
+    .revelar.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* =========================================
+       ÍNDICE
+       Escritorio: lateral fino y fijo (aparece tras la portada).
+       Tablet/móvil: barra horizontal desplazable.
+    ========================================= */
+    .indice {
+      position: fixed;
+      top: 50%;
+      left: 28px;
+      z-index: 50;
+      transform: translateY(-50%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    .indice.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
 
     .indice h2 {
-      margin: 0 0 14px;
-      font-size: 16px;
-      color: #35465a;
+      margin: 0 0 18px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--oro-2);
     }
 
     .indice ul {
       list-style: none;
       margin: 0;
-      padding: 0;
+      padding: 0 0 0 14px;
+      border-left: 1px solid var(--linea);
     }
 
-    .indice li {
-      margin: 0 0 13px;
-    }
+    .indice li { margin: 0 0 12px; }
 
     .indice a {
-      color: #0759b8;
-      font-size: 14px;
-      line-height: 1.5;
+      position: relative;
+      display: block;
+      font-size: 13px;
+      line-height: 1.4;
       text-decoration: none;
+      color: var(--tinta-2);
+      transition: color 0.25s;
     }
 
-    .indice a:hover {
-      color: #003c80;
-      text-decoration: underline;
+    .indice a::before {
+      content: "";
+      position: absolute;
+      left: -18px;
+      top: 50%;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--papel);
+      border: 1px solid var(--linea);
+      transform: translateY(-50%);
+      transition: background 0.25s, border-color 0.25s;
     }
 
-    /* DEJA ESPACIO PARA EL ÍNDICE EN PANTALLAS GRANDES */
+    .indice a:hover,
+    .indice a.actual { color: var(--tinta); }
 
-    @media (min-width: 1400px) {
-      main {
-        max-width: 1000px;
+    .indice a.actual::before {
+      background: var(--oro);
+      border-color: var(--oro);
+    }
+
+    @media (max-width: 1240px) {
+      .indice {
+        position: sticky;
+        top: 0;
+        left: auto;
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+        margin: 0 -22px;
+        padding: 12px 22px;
+        background: rgba(246, 242, 234, 0.92);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--linea);
       }
+
+      .indice h2 { display: none; }
+
+      .indice ul {
+        display: flex;
+        gap: 8px;
+        padding: 0;
+        border: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .indice ul::-webkit-scrollbar { display: none; }
+
+      .indice li { margin: 0; flex: 0 0 auto; }
+
+      .indice a {
+        padding: 7px 13px;
+        font-size: 12.5px;
+        border: 1px solid var(--linea);
+        border-radius: 999px;
+        background: var(--papel-2);
+        white-space: nowrap;
+      }
+
+      .indice a::before { display: none; }
+
+      .indice a.actual {
+        border-color: var(--oro);
+        color: var(--tinta);
+      }
+
+      .lamina { margin-top: 36px; }
+      section { scroll-margin-top: 64px; }
     }
 
-    /* Lema de Álgebra Lineal */
-.lema-algebra {
-  max-width: 760px;
-  margin: 0 auto 26px;
-  padding: 24px 28px;
-  text-align: center;
-  border: 1px solid #d8bd78;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #fffdf7, #f8f0dc);
-  box-shadow: 0 4px 16px rgba(150, 115, 45, 0.12);
-}
+    @media (max-width: 600px) {
+      main { padding: 0 16px 70px; }
+      .indice { margin: 0 -16px; padding: 10px 16px; }
+      .cabecera { grid-template-columns: 1fr; }
+      .subtitulo { grid-column: 1; }
+      .numero { font-size: 18px; margin-bottom: 4px; }
+      section { padding: 48px 0; }
+      .marco iframe { height: 440px; }
+      .lamina img { aspect-ratio: 16 / 10; }
+      .enlace-recomendado { padding: 18px; }
+      .enlace-recomendado strong { font-size: 21px; }
+    }
 
-.lema-algebra .frase {
-  margin: 0 0 8px;
-  color: #d4a017;
-  font-family: Georgia, serif;
-  font-size: clamp(25px, 3.4vw, 35px);
-  font-weight: normal;
-  font-style: italic;
-  line-height: 1.4;
-  text-shadow:
-    0 0 2px rgba(212, 160, 23, 0.45),
-    0 0 8px rgba(255, 196, 55, 0.35),
-    0 0 16px rgba(255, 215, 100, 0.18);
-}
-
-.lema-algebra .firma {
-  margin: 0;
-  color: #b58a24;
-  font-family: Georgia, serif;
-  font-size: 14px;
-  font-style: italic;
-  letter-spacing: 1px;
-  text-shadow: 0 0 7px rgba(212, 160, 23, 0.3);
-}
-
-@media (max-width: 600px) {
-  .lema-algebra {
-    padding: 20px 14px;
-    margin-bottom: 20px;
-  }
-
-  .lema-algebra .frase {
-    font-size: 25px;
-  }
-}
-
-/* Animación del lema: estirar y sumar ↔ combinación lineal */
-.lema-algebra .frase {
-  cursor: pointer;
-  transition: transform 0.3s ease, text-shadow 0.3s ease;
-}
-
-.lema-algebra .frase:hover {
-  transform: scale(1.025);
-  text-shadow: 0 0 10px rgba(255, 196, 55, 0.65);
-}
-
-.lema-algebra .frase:focus-visible {
-  outline: 2px solid #d4a017;
-  outline-offset: 6px;
-  border-radius: 4px;
-}
-
-.lema-cambiante {
-  display: inline-grid;
-  vertical-align: baseline;
-}
-
-.lema-cambiante > span {
-  grid-area: 1 / 1;
-  transition: opacity 0.65s ease, transform 0.65s ease;
-}
-
-.texto-original {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.texto-nuevo {
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-}
-
-.lema-algebra.activo .texto-original {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-.lema-algebra.activo .texto-nuevo {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.indicacion-lema {
-  margin: 0 0 10px;
-  color: #b58a24;
-  font-size: 11px;
-  letter-spacing: 1px;
-  opacity: 0.8;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lema-cambiante > span,
-  .lema-algebra .frase {
-    transition: none;
-  }
-}
-
-
-    
-    
-  
-
-/* =========================================
-   ÍNDICE RESPONSIVE
-   Escritorio: lateral fijo.
-   Tablet/móvil: integrado en el flujo,
-   debajo del título y antes del contenido.
-========================================= */
-
-@media screen and (max-width: 1100px) {
-  nav.indice {
-    position: static !important;
-    inset: auto !important;
-    float: none !important;
-    transform: none !important;
-
-    display: block !important;
-    width: 100% !important;
-    max-width: 850px !important;
-    height: auto !important;
-    max-height: none !important;
-
-    margin: 16px auto 28px !important;
-    padding: 14px !important;
-    box-sizing: border-box !important;
-
-    overflow: visible !important;
-    z-index: auto !important;
-
-    background: #f7f9fc;
-    border: 1px solid #e1e7ef;
-    border-radius: 12px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
-  }
-
-  nav.indice h2 {
-    margin: 0 0 10px !important;
-    font-size: 15px !important;
-  }
-
-  nav.indice ul {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 7px 12px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  nav.indice li {
-    margin: 0 !important;
-  }
-
-  nav.indice a {
-    display: inline-block;
-    padding: 5px 7px;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-}
-
-/* Móviles: compacto, pero sin tapar ni ocultar contenido. */
-@media screen and (max-width: 600px) {
-  body {
-    padding: 12px 10px !important;
-  }
-
-  h1 {
-    font-size: clamp(27px, 8vw, 34px) !important;
-    line-height: 1.2;
-  }
-
-  nav.indice {
-    width: 100% !important;
-    max-width: none !important;
-    max-height: none !important;
-    margin: 12px auto 22px !important;
-    padding: 10px 11px !important;
-  }
-
-  nav.indice h2 {
-    font-size: 13px !important;
-    margin-bottom: 7px !important;
-  }
-
-  nav.indice ul {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 5px 7px !important;
-  }
-
-  nav.indice li {
-    min-width: 0;
-  }
-
-  nav.indice a {
-    display: block;
-    padding: 6px 5px;
-    font-size: 11px;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-  }
-
-  .portada-poetica img {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-  }
-
-  .programa iframe,
-  .pdf iframe {
-    height: 420px;
-  }
-
-  .enlace-recomendado {
-    gap: 10px;
-    padding: 12px;
-  }
-
-  .enlace-recomendado small {
-    font-size: 13px;
-  }
-}
-
-</style>
-
-
-
-
-  
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: 0.01ms !important;
+      }
+      html { scroll-behavior: auto; }
+      .revelar { opacity: 1; transform: none; }
+    }
+  </style>
 </head>
 
 <body>
+
+  <!-- PORTADA -->
+  <header class="portada">
+    <canvas id="mar" aria-hidden="true"></canvas>
+
+    <div class="portada-texto">
+      <p class="antetitulo">Álgebra lineal</p>
+      <h1 id="titulo">Diario de a bordo</h1>
+      <p class="poema">
+        Affectus imprimit,<br>
+        similitudo revocat.
+      </p>
+    </div>
+
+    <a class="bajar" href="#lema-algebra">Zarpar</a>
+  </header>
+
   <main>
 
-    <!-- TÍTULO -->
+    <!-- ÍNDICE DE NAVEGACIÓN -->
+    <nav class="indice" id="indice" aria-label="Índice de contenidos">
+      <h2>Bitácora</h2>
+      <ul>
+        <li><a href="#espacio-vectorial">🌱 Espacio vectorial</a></li>
+        <li><a href="#dependencia-bases">⬆️ Dependencia y bases</a></li>
+        <li><a href="#aplicacion-lineal">🪞 Aplicación lineal</a></li>
+        <li><a href="#coordenadas">📍 Coordenadas</a></li>
+        <li><a href="#matriz-lineal">🦬 Matriz de una lineal</a></li>
+        <li><a href="#ejercicios">📚 Ejercicios resueltos</a></li>
+        <li><a href="brujula-interior.html" target="_blank" rel="noopener noreferrer">🧭 La brújula interior</a></li>
+        <li><a href="cofre-de-las-ideas.html?v=3" target="_blank" rel="noopener noreferrer">🪎 El cofre de las ideas</a></li>
+        <li><a href="#recomendados">⚓ Otros puertos</a></li>
+      </ul>
+    </nav>
 
-    <h1>Diario de a bordo</h1>
+    <!-- IMAGEN -->
+    <figure class="lamina revelar">
+      <img src="./barco-diario.jpg" alt="Barco del Diario de a bordo">
+    </figure>
 
-<!-- ÍNDICE DE NAVEGACIÓN -->
-
-<nav class="indice" aria-label="Índice de contenidos">
-  <h2>☰ Navegar por el diario</h2>
-  <ul>
-    <li><a href="#espacio-vectorial">🌱 Espacio vectorial</a></li>
-    <li><a href="#dependencia-bases">⬆️ Dependencia y bases</a></li>
-    <li><a href="#aplicacion-lineal">🪞 Aplicación lineal</a></li>
-    <li><a href="#coordenadas">📍 Coordenadas</a></li>
-    <li><a href="#matriz-lineal">🦬 Matriz de una lineal</a></li>
-    <li><a href="#ejercicios">📚 Ejercicios resueltos</a></li>
-    <li>
-  <a href="brujula-interior.html" target="_blank" rel="noopener noreferrer">
-    🧭 La brújula interior
-  </a>
-</li>
-
-   <li>
-  <a href="cofre-de-las-ideas.html?v=3" target="_blank" rel="noopener noreferrer">
-    🪎 El cofre de las ideas
-  </a>
-</li>
-    
-    <li><a href="#recomendados">⚓ Otros puertos</a></li>
-  </ul>
-</nav>
-
-<!-- PORTADA POÉTICA -->
-
-    <div class="portada-poetica">
-
-      <hr class="separador">
-
-      <div class="poema">
-        Affectus imprimit,<br>
-        similitudo revocat.<br>
-      </div>
-
-      <!--
-        Sube tu imagen al repositorio junto a index.html.
-        Llámala imagen-matematicas.png o cambia esta ruta.
-      -->
-
-      <img
-        src="./barco-diario.jpg"
-       >
-
-     <!-- <div class="lema">
-        Matemáticas: el arte de descubrir relaciones.
-      </div>
-      -->
-      <hr class="separador">
-
-    </div>
-    
-
-<div class="lema-algebra" id="lema-algebra">
-  <p
-    class="frase"
-    id="frase-lema"
-    role="button"
-    tabindex="0"
-    aria-pressed="false"
-    aria-label="Pulsa para transformar el lema">
-    <span class="lema-cambiante">
-      <span class="texto-original">Todo es estirar y sumar</span>
-      <span class="texto-nuevo">Todo es combinación lineal</span>
-    </span>
-  </p>
-  <p class="firma">— Álgebra Lineal</p>
-</div>
-
-    
-    <!-- PROGRAMA 1: ESPACIO VECTORIAL -->
-
-     <section class="programa"  id="espacio-vectorial">
-      <h2>🌱 Espacio vectorial: mundo de flechas que pueden sumarse y estirarse sin salirse</h2>
-
-      <iframe
-        src="./ecosistema-vectorial.html"
-        title="Programa interactivo: Un espacio vectorial"
-        loading="eager">
-      </iframe>
-
-      <a
-        class="enlace"
-        href="./ecosistema-vectorial.html"
-        target="_blank"
-        rel="noopener">
-        Abrir el programa en una ventana nueva ↗
-      </a>
-    </section>
-
- <!-- PROGRAMA 2: LD, LI Y BASES -->
-
-<section class="programa" id="dependencia-bases">
-      <h2>⬆️ Dependencia, generadores y bases: lo que se alcanza estirando y sumando flechas</h2>
-
-      <iframe
-        src="./Dependencia, generadores y bases.html"
-        title="Programa interactivo: Dependencia, generadores y bases"
-        loading="eager">
-      </iframe>
-
-      <a
-        class="enlace"
-        href="./Dependencia, generadores y bases.html"
-        target="_blank"
-        rel="noopener">
-        
-        Abrir el programa en una ventana nueva ↗
-      </a>
-    </section>
-
-
-    <!-- PROGRAMA 3: APLICACIÓN LINEAL -->
-
-    <section class="programa" id="aplicacion-lineal">
-      <h2>🪞 Aplicación lineal: puente entre dos espacios vectoriales</h2>
-
-      <iframe
-        src="./Aplicación lineal.html"
-        title="Programa interactivo: Una aplicación lineal"
-        loading="lazy">
-      </iframe>
-
-      <a
-        class="enlace"
-        href="./Aplicación lineal.html"
-        target="_blank"
-        rel="noopener">
-        Abrir el programa en una ventana nueva ↗
-      </a>
-       <br>
-      <strong>La estructura del 1º se refleja en el 2º</strong>
-      <br>
-
-    </section>
-
-  <!-- PROGRAMA 4: COORDENADAS -->
-
- <section class="programa" id="coordenadas">
-      <h2>📍 Tomar coordenadas de un vector desde una base</h2>
-
-      <iframe
-        src="./Coordenadas de un vector respecto de una base.html"
-        title="Coordenadas"
-        loading="lazy">
-      </iframe>
-
-      <a
-        class="enlace"
-        href="./Coordenadas de un vector respecto de una base.html"
-        target="_blank"
-        rel="noopener">      
-        Abrir el programa en una ventana nueva ↗
-        </a>
-        <br>
-<strong>Las componentes describen</strong>
-<br>
-<strong>Las coordenadas localizan </strong>
-      
-    </section>
-
-
-    
-  <!-- PROGRAMA 5: MATRIZ DE APLICACIÓN LINEAL -->
-<section class="programa" id="matriz-lineal">
-      <h2>🦬 Matriz de una aplicación lineal entre 2 bases</h2>
-
-      <iframe
-        src="./Cómo se construye la matriz de una aplicación lineal.html"
-        title="Matriz aplicación lineal"
-        loading="lazy">
-      </iframe>
-
-      <a
-        class="enlace"
-        href="./Cómo se construye la matriz de una aplicación lineal.html"
-        target="_blank"
-        rel="noopener">         
-        Abrir el programa en una ventana nueva ↗
-     </a>
-       <br>
-      <strong>La matriz representa la aplicación lineal entre ambas bases</strong>  
-    </section>
-
-    
-
-    <!-- EJERCICIOS RESUELTOS -->
-
-    <section id="ejercicios">
-      <h2>📚 Ejercicios resueltos y Mapas mentales</h2>
-
-      <p class="introduccion">
-        Consulta aquí los ejercicios y mapas en PDF.
+    <!-- LEMA -->
+    <div class="lema-algebra revelar" id="lema-algebra">
+      <p class="frase" id="frase-lema" role="button" tabindex="0"
+         aria-pressed="false" aria-label="Pulsa para transformar el lema">
+        <span class="lema-cambiante">
+          <span class="texto-original">Todo es estirar y sumar</span>
+          <span class="texto-nuevo">Todo es combinación lineal</span>
+        </span>
       </p>
+      <p class="firma">Álgebra Lineal</p>
+    </div>
 
-      <!-- PDF: TEMA 2 -->
+    <!-- I. ESPACIO VECTORIAL -->
+    <section class="programa revelar" id="espacio-vectorial">
+      <div class="cabecera">
+        <span class="numero">I</span>
+        <h2>Espacio vectorial</h2>
+        <p class="subtitulo">Mundo de flechas que pueden sumarse y estirarse sin salirse.</p>
+      </div>
+      <div class="marco">
+        <iframe src="./ecosistema-vectorial.html"
+                title="Programa interactivo: Un espacio vectorial"
+                loading="eager"></iframe>
+      </div>
+      <div class="pie">
+        <span></span>
+        <a class="enlace" href="./ecosistema-vectorial.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+      </div>
+    </section>
+
+    <!-- II. DEPENDENCIA, GENERADORES Y BASES -->
+    <section class="programa revelar" id="dependencia-bases">
+      <div class="cabecera">
+        <span class="numero">II</span>
+        <h2>Dependencia, generadores y bases</h2>
+        <p class="subtitulo">Lo que se alcanza estirando y sumando flechas.</p>
+      </div>
+      <div class="marco">
+        <iframe src="./Dependencia, generadores y bases.html"
+                title="Programa interactivo: Dependencia, generadores y bases"
+                loading="lazy"></iframe>
+      </div>
+      <div class="pie">
+        <span></span>
+        <a class="enlace" href="./Dependencia, generadores y bases.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+      </div>
+    </section>
+
+    <!-- III. APLICACIÓN LINEAL -->
+    <section class="programa revelar" id="aplicacion-lineal">
+      <div class="cabecera">
+        <span class="numero">III</span>
+        <h2>Aplicación lineal</h2>
+        <p class="subtitulo">Puente entre dos espacios vectoriales.</p>
+      </div>
+      <div class="marco">
+        <iframe src="./Aplicación lineal.html"
+                title="Programa interactivo: Una aplicación lineal"
+                loading="lazy"></iframe>
+      </div>
+      <div class="pie">
+        <p class="sentencia">La estructura del primero se refleja en el segundo.</p>
+        <a class="enlace" href="./Aplicación lineal.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+      </div>
+    </section>
+
+    <!-- IV. COORDENADAS -->
+    <section class="programa revelar" id="coordenadas">
+      <div class="cabecera">
+        <span class="numero">IV</span>
+        <h2>Coordenadas</h2>
+        <p class="subtitulo">Tomar coordenadas de un vector desde una base.</p>
+      </div>
+      <div class="marco">
+        <iframe src="./Coordenadas de un vector respecto de una base.html"
+                title="Coordenadas"
+                loading="lazy"></iframe>
+      </div>
+      <div class="pie">
+        <p class="sentencia">Las componentes describen.<br>Las coordenadas localizan.</p>
+        <a class="enlace" href="./Coordenadas de un vector respecto de una base.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+      </div>
+    </section>
+
+    <!-- V. MATRIZ DE UNA APLICACIÓN LINEAL -->
+    <section class="programa revelar" id="matriz-lineal">
+      <div class="cabecera">
+        <span class="numero">V</span>
+        <h2>Matriz de una aplicación lineal</h2>
+        <p class="subtitulo">Entre dos bases.</p>
+      </div>
+      <div class="marco">
+        <iframe src="./Cómo se construye la matriz de una aplicación lineal.html"
+                title="Matriz aplicación lineal"
+                loading="lazy"></iframe>
+      </div>
+      <div class="pie">
+        <p class="sentencia">La matriz representa la aplicación lineal entre ambas bases.</p>
+        <a class="enlace" href="./Cómo se construye la matriz de una aplicación lineal.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+      </div>
+    </section>
+
+    <!-- VI. EJERCICIOS RESUELTOS -->
+    <section class="revelar" id="ejercicios">
+      <div class="cabecera">
+        <span class="numero">VI</span>
+        <h2>Ejercicios resueltos y mapas mentales</h2>
+        <p class="subtitulo">Consulta aquí los ejercicios y mapas en PDF.</p>
+      </div>
 
       <div class="pdf">
         <h3>Ejercicios resueltos · Tema 2</h3>
-
-        <iframe
-          src="./Tema2Resueltos.pdf"
-          title="Ejercicios resueltos del Tema 2"
-          loading="lazy">
-        </iframe>
-
-        <a
-          class="enlace"
-          href="./Tema2Resueltos.pdf"
-          target="_blank"
-          rel="noopener">
-          Abrir o descargar el PDF del Tema 2 ↗
-        </a>
+        <div class="marco">
+          <iframe src="./Tema2Resueltos.pdf" title="Ejercicios resueltos del Tema 2" loading="lazy"></iframe>
+        </div>
+        <div class="pie">
+          <span></span>
+          <a class="enlace" href="./Tema2Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+        </div>
       </div>
-
-      <!-- PDF: TEMA 3 -->
 
       <div class="pdf">
         <h3>Ejercicios resueltos · Tema 3</h3>
-
-        <iframe
-          src="./Tema3Resueltos.pdf"
-          title="Ejercicios resueltos del Tema 3"
-          loading="lazy">
-        </iframe>
-
-        <a
-          class="enlace"
-          href="./Tema3Resueltos.pdf"
-          target="_blank"
-          rel="noopener">
-          Abrir o descargar el PDF del Tema 3 ↗
-        </a>
+        <div class="marco">
+          <iframe src="./Tema3Resueltos.pdf" title="Ejercicios resueltos del Tema 3" loading="lazy"></iframe>
+        </div>
+        <div class="pie">
+          <span></span>
+          <a class="enlace" href="./Tema3Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+        </div>
       </div>
 
-<!-- MAPA: TEMA 4 -->
-
-   <div class="pdf">
+      <div class="pdf">
         <h3>Mapa mental · Tema 4</h3>
-
-        <iframe
-          src="./mapa4.pdf"
-          title="Mapa mental del Tema 4"
-          loading="lazy">
-        </iframe>
-
-        <a
-          class="enlace"
-          href="./mapa4.pdf"
-          target="_blank"
-          rel="noopener">
-          Abrir o descargar el Mapa del Tema 4 ↗
-        </a>
-     <br>
-<strong>Autora: Carla Villarreal Conde</strong>
-<br>
-<strong>¡Muchas gracias, Carla! </strong>
+        <div class="marco">
+          <iframe src="./mapa4.pdf" title="Mapa mental del Tema 4" loading="lazy"></iframe>
+        </div>
+        <div class="pie">
+          <p class="agradecimiento">Autora: <strong>Carla Villarreal Conde</strong> · ¡Muchas gracias, Carla!</p>
+          <a class="enlace" href="./mapa4.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+        </div>
       </div>
-
-
-
     </section>
 
-<!-- RECOMENDADOS -->
+    <!-- OTROS PUERTOS -->
+    <section class="revelar" id="recomendados">
+      <div class="cabecera">
+        <span class="numero">⚓</span>
+        <h2>Otros puertos</h2>
+      </div>
 
-<section class="recomendados" id="recomendados">
-  <h2>⚓ Otros puertos</h2>
+      <div class="puertos">
+        <a class="enlace-recomendado" href="https://claude.ai/artifact/BMyZvbrsASDPD9mZm8YSAn"
+           target="_blank" rel="noopener noreferrer">
+          <span>
+            <strong>Checklist Temas 1, 2 y 3</strong>
+            <small>Autor: Javier García Pavón · ¡Muchas gracias, Javi!</small>
+          </span>
+          <span class="flecha">↗</span>
+        </a>
 
-  <a
-    class="enlace-recomendado"
-    href="https://claude.ai/artifact/BMyZvbrsASDPD9mZm8YSAn"
-    target="_blank"
-    rel="noopener noreferrer">
-    <span class="icono-enlace">↗</span>
-    <span>
-      <strong>Checklist Temas 1, 2 y 3</strong>
-      <strong>Autor: Javier García Pavón</strong>
-      <small>¡Muchas gracias Javi!</small>
-    </span>
-  </a>
+        <a class="enlace-recomendado" href="https://claude.ai/artifact/3HS6CtWczo1eLQvRMfPwUK"
+           target="_blank" rel="noopener noreferrer">
+          <span>
+            <strong>El cine de las aplicaciones lineales</strong>
+            <small>¡Muchas gracias, Carla, por recordármelo!</small>
+          </span>
+          <span class="flecha">↗</span>
+        </a>
+      </div>
+    </section>
 
-
-<a
-    class="enlace-recomendado"
-    href="https://claude.ai/artifact/3HS6CtWczo1eLQvRMfPwUK"
-    target="_blank"
-    rel="noopener noreferrer">
-    <span class="icono-enlace">↗</span>
-    <span>
-      <strong>El cine de las aplicaciones lineales</strong>
-      <small>¡Muchas gracias Carla por recordármelo!</small>
-    </span>
-  </a>
-  
-
-</section>
-
-    
+    <footer>Affectus imprimit, similitudo revocat.</footer>
 
   </main>
 
+  <script>
+  /* ---------- Título: letras que emergen una a una ---------- */
+  (() => {
+    const t = document.getElementById("titulo");
+    const texto = t.textContent;
+    t.setAttribute("aria-label", texto);
+    t.textContent = "";
+    let i = 0;
+    texto.split(" ").forEach((palabra, n) => {
+      if (n > 0) t.appendChild(document.createTextNode(" "));
+      const p = document.createElement("span");
+      p.style.whiteSpace = "nowrap";
+      p.setAttribute("aria-hidden", "true");
+      [...palabra].forEach((c) => {
+        const s = document.createElement("span");
+        s.className = "letra";
+        s.textContent = c;
+        s.style.animationDelay = (0.5 + i++ * 0.06) + "s";
+        p.appendChild(s);
+      });
+      i++;
+      t.appendChild(p);
+    });
+  })();
 
-<!-- ANIMACIÓN -->
-  
-<script>
-(() => {
-  const tarjeta = document.getElementById("lema-algebra");
-  const frase = document.getElementById("frase-lema");
+  /* ---------- Portada: un mar de flechas (campo vectorial) ----------
+     Cada flecha es un vector del campo. El ratón (o el dedo)
+     es un remolino: las flechas cercanas giran a su alrededor. */
+  (() => {
+    const lienzo = document.getElementById("mar");
+    const ctx = lienzo.getContext("2d");
+    const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let w, h, dpr, paso, cols, filas, t = 0, visible = true;
+    const raton = { x: -9999, y: -9999, f: 0 };
 
-  if (!tarjeta || !frase) return;
-
-  function alternarLema() {
-    const activado = tarjeta.classList.toggle("activo");
-    frase.setAttribute("aria-pressed", String(activado));
-  }
-
-  frase.addEventListener("click", alternarLema);
-
-  frase.addEventListener("keydown", (evento) => {
-    if (evento.key === "Enter" || evento.key === " ") {
-      evento.preventDefault();
-      alternarLema();
+    function medir() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = lienzo.clientWidth;
+      h = lienzo.clientHeight;
+      lienzo.width = w * dpr;
+      lienzo.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      paso = w < 600 ? 30 : 38;
+      cols = Math.ceil(w / paso) + 1;
+      filas = Math.ceil(h / paso) + 1;
     }
-  });
-})();
-</script>
 
+    function dibujar() {
+      ctx.clearRect(0, 0, w, h);
+      raton.f += ((raton.x > -999 ? 1 : 0) - raton.f) * 0.05;
 
-  
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < filas; j++) {
+          const x = i * paso + (j % 2) * paso / 2;
+          const y = j * paso;
+
+          // Corriente de fondo: suma de dos ondas lentas
+          let vx = Math.cos(y * 0.006 + t * 0.6) + 0.6 * Math.sin(x * 0.004 - t * 0.4);
+          let vy = Math.sin(x * 0.005 + t * 0.5) * 0.8 + 0.3 * Math.cos(y * 0.008 - t * 0.3);
+
+          // Remolino alrededor del cursor: vector perpendicular al radio
+          const dx = x - raton.x, dy = y - raton.y;
+          const d2 = dx * dx + dy * dy;
+          const k = raton.f * 2.6 * Math.exp(-d2 / 26000);
+          vx += -dy / Math.sqrt(d2 + 1) * k;
+          vy +=  dx / Math.sqrt(d2 + 1) * k;
+
+          const m = Math.hypot(vx, vy) || 1;
+          const largo = Math.min(paso * 0.62, 6 + m * 7);
+          const ux = vx / m, uy = vy / m;
+          const x2 = x + ux * largo, y2 = y + uy * largo;
+
+          const brillo = Math.min(1, m / 2.2);
+          ctx.strokeStyle = `rgba(201, 161, 74, ${0.10 + brillo * 0.35 + k * 0.15})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x2, y2);
+          // punta
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(x2 - ux * 4 - uy * 2.6, y2 - uy * 4 + ux * 2.6);
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(x2 - ux * 4 + uy * 2.6, y2 - uy * 4 - ux * 2.6);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function bucle() {
+      if (visible) {
+        t += 0.006;
+        dibujar();
+      }
+      requestAnimationFrame(bucle);
+    }
+
+    function mover(e) {
+      const r = lienzo.getBoundingClientRect();
+      const p = e.touches ? e.touches[0] : e;
+      raton.x = p.clientX - r.left;
+      raton.y = p.clientY - r.top;
+    }
+
+    function salir() { raton.x = raton.y = -9999; }
+
+    medir();
+    addEventListener("resize", medir);
+    const portada = lienzo.parentElement;
+    portada.addEventListener("pointermove", mover);
+    portada.addEventListener("pointerleave", salir);
+    portada.addEventListener("touchmove", mover, { passive: true });
+    portada.addEventListener("touchend", salir);
+
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; })
+      .observe(portada);
+
+    if (quieto) dibujar(); else bucle();
+  })();
+
+  /* ---------- Lema: estirar y sumar ↔ combinación lineal ---------- */
+  (() => {
+    const tarjeta = document.getElementById("lema-algebra");
+    const frase = document.getElementById("frase-lema");
+    if (!tarjeta || !frase) return;
+
+    function alternar() {
+      const activo = tarjeta.classList.toggle("activo");
+      frase.setAttribute("aria-pressed", String(activo));
+    }
+
+    frase.addEventListener("click", alternar);
+    frase.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        alternar();
+      }
+    });
+  })();
+
+  /* ---------- Aparición al hacer scroll ---------- */
+  (() => {
+    const obs = new IntersectionObserver((entradas) => {
+      entradas.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add("visible");
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll(".revelar").forEach((el) => obs.observe(el));
+  })();
+
+  /* ---------- Índice: aparece tras la portada y marca la sección actual ---------- */
+  (() => {
+    const indice = document.getElementById("indice");
+    const portada = document.querySelector(".portada");
+    const enlaces = [...indice.querySelectorAll('a[href^="#"]')];
+
+    new IntersectionObserver(([e]) => {
+      indice.classList.toggle("visible", !e.isIntersecting);
+    }, { threshold: 0.15 }).observe(portada);
+
+    const obs = new IntersectionObserver((entradas) => {
+      entradas.forEach((e) => {
+        if (!e.isIntersecting) return;
+        enlaces.forEach((a) => {
+          const es = a.getAttribute("href") === "#" + e.target.id;
+          a.classList.toggle("actual", es);
+          if (es && getComputedStyle(indice).position === "sticky") {
+            a.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+          }
+        });
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+
+    enlaces.forEach((a) => {
+      const s = document.querySelector(a.getAttribute("href"));
+      if (s) obs.observe(s);
+    });
+  })();
+  </script>
+
 </body>
 </html>
