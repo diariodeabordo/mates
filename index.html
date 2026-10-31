@@ -309,40 +309,113 @@ h1 {
 
     /* EN MÓVILES: ÍNDICE NORMAL, SIN TAPAR EL CONTENIDO */
 
-    @media (max-width: 1100px) {
-      .indice {
-        position: static;
-        width: 100%;
-        max-width: 850px;
-        margin: 20px auto;
-      }
+    
+/* =========================================
+   ÍNDICE RESPONSIVE: TABLETS Y MÓVILES
+========================================= */
 
-      .indice ul {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px 18px;
-      }
+@media (max-width: 1100px) {
 
-      .indice li {
-        margin: 0;
-      }
-    }
+  nav.indice {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+
+    transform: none !important;
+
+    width: 100% !important;
+    max-width: 850px !important;
+    height: auto;
+    max-height: none;
+
+    margin: 20px auto 30px !important;
+    padding: 16px;
+
+    box-sizing: border-box;
+    z-index: auto;
+
+    background: #f7f9fc;
+    border: 1px solid #e1e7ef;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  nav.indice h2 {
+    font-size: 15px;
+    margin-bottom: 14px;
+  }
+
+  nav.indice ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 8px 14px;
+
+    margin: 0;
+    padding: 0;
+  }
+
+  nav.indice li {
+    margin: 0;
+    min-width: 0;
+  }
+
+  nav.indice a {
+    display: block;
+    padding: 8px 10px;
+
+    font-size: 13px;
+    line-height: 1.4;
+
+    background: #ffffff;
+    border: 1px solid #e7edf4;
+    border-radius: 7px;
+
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  nav.indice a:hover {
+    background: #edf3fa;
+    border-color: #c5d5e8;
+  }
+}
+
+
+/* =========================================
+   AJUSTES ESPECÍFICOS PARA MÓVILES
+========================================= */
+
+@media (max-width: 600px) {
+
+  nav.indice {
+    margin: 12px auto 24px !important;
+    padding: 12px;
+  }
+
+  nav.indice h2 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  nav.indice ul {
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 7px;
+  }
+
+  nav.indice a {
+    padding: 9px 7px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
 
 
     /* POSICIÓN DEFINITIVA DEL ÍNDICE LATERAL */
 
-    nav.indice {
-      position: fixed !important;
-      top: 24px !important;
-      left: 20px !important;
-      right: auto !important;
-      bottom: auto !important;
-      width: 220px !important;
-      max-width: 220px !important;
-      margin: 0 !important;
-      transform: none !important;
-      z-index: 9999;
-    }
+    
 
     @media (max-width: 1100px) {
       nav.indice {
