@@ -734,6 +734,332 @@
       html { scroll-behavior: auto; }
       .revelar { opacity: 1; transform: none; }
     }
+
+    /* =========================================
+       CARTA DE NAVEGACIÓN: los tres bloques
+    ========================================= */
+    .carta {
+      margin: 90px 0 0;
+      text-align: center;
+      scroll-margin-top: 70px;
+    }
+
+    .carta .rotulo {
+      margin: 0 0 8px;
+      font-size: 11px;
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: var(--oro-2);
+    }
+
+    .carta h2 {
+      margin: 0 0 26px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(30px, 4.5vw, 44px);
+    }
+
+    .mapa {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: var(--papel-2);
+      border: 1px solid var(--linea);
+      border-radius: 6px;
+      box-shadow: 0 30px 60px -40px rgba(12, 21, 36, .35);
+    }
+
+    .mapa .rejilla { stroke: #ebe4d6; stroke-width: 1; }
+    .mapa .ola     { fill: none; stroke: #cfc3a9; stroke-width: 1.1; stroke-linecap: round; }
+    .mapa .rosa    { fill: none; stroke: #b9a77f; stroke-width: 1; }
+
+    .isla { cursor: pointer; outline: none; }
+    .isla .agua    { fill: none; stroke: #a9bcbc; stroke-width: .8; opacity: .7; }
+    .isla .rayado  { fill: none; stroke: #4c5a66; stroke-width: 7; stroke-dasharray: .8 2.6; opacity: .38; }
+    .isla .costa   { fill: #f3e8cb; stroke: var(--tinta); stroke-width: 1.3; transition: fill .4s; }
+    .isla .nivel   { fill: none; stroke: #b9a77f; stroke-width: .8; stroke-dasharray: 4 3; }
+    .isla.activa .costa { fill: #f6e6b8; }
+    .isla .cartela path { fill: var(--papel-2); stroke: var(--tinta); stroke-width: .9; transition: fill .4s, stroke .4s; }
+    .isla .cartela text { font-family: var(--serif); font-size: 19px; fill: var(--tinta); }
+    .isla .cartela .num { font-style: italic; fill: var(--oro-2); }
+    .isla.activa .cartela path { fill: #f6ebcc; stroke: var(--oro-2); }
+    .isla .simbolo { fill: none; stroke: var(--tinta); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .isla .numeral { font-family: var(--serif); font-style: italic; font-size: 15px; fill: var(--oro-2); }
+    .isla .nombre  { font-family: var(--serif); font-size: 27px; fill: var(--tinta); transition: fill .4s; }
+    .isla .bandera { opacity: 0; transform: scaleY(0); transform-box: fill-box; transform-origin: bottom; transition: opacity .5s, transform .5s; }
+
+    .isla:hover .costa { fill: #f7ecd0; }
+    .isla:hover .cartela path { stroke: var(--oro-2); }
+    .isla:focus-visible .costa { stroke: var(--oro-2); stroke-width: 2.4; }
+    .isla.activa .bandera { opacity: 1; transform: scaleY(1); }
+    .isla.lejana .simbolo { opacity: .55; }
+
+    .ruta {
+      fill: none;
+      stroke: var(--oro-2);
+      stroke-width: 1.6;
+      stroke-dasharray: 2 7;
+      stroke-linecap: round;
+      opacity: 0;
+      transition: opacity .8s;
+    }
+    .ruta.viva { opacity: .9; }
+    .rutas-fijas path { fill: none; stroke: #b9a77f; stroke-width: 1; stroke-dasharray: 1 6; stroke-linecap: round; opacity: .8; }
+
+    #barco-carta .casco  { fill: var(--tinta); }
+    #barco-carta .vela   { fill: var(--papel); stroke: var(--tinta); stroke-width: 1; }
+    #barco-carta .mastil { stroke: var(--tinta); stroke-width: 1.3; }
+    #barco-carta .estela { fill: none; stroke: #9c8a63; stroke-width: 1; stroke-linecap: round; }
+    .cabeceo { animation: cabeceo 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+
+    @keyframes cabeceo {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50%      { transform: translateY(-2px) rotate(2deg); }
+    }
+
+    .rumbos {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0 0;
+    }
+
+    .rumbos button {
+      font: inherit;
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--tinta-2);
+      padding: 9px 16px;
+      background: var(--papel-2);
+      border: 1px solid var(--linea);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: border-color .3s, color .3s;
+    }
+
+    .rumbos button:hover { color: var(--tinta); }
+    .rumbos button[aria-pressed="true"] { color: var(--tinta); border-color: var(--oro); }
+
+    /* Bloques: solo se ve el del rumbo elegido */
+    .bloque { display: none; }
+    .bloque.activo { display: block; animation: llegar .9s cubic-bezier(.2,.7,.2,1); }
+
+    @keyframes llegar {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .bloque-cabecera {
+      margin: 90px 0 0;
+      text-align: center;
+    }
+
+    .travesia {
+      margin: 0 0 6px;
+      font-size: 11px;
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: var(--oro-2);
+    }
+
+    .bloque-cabecera h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: clamp(46px, 8vw, 76px);
+      line-height: 1;
+    }
+
+    .bloque-cabecera .entrada {
+      max-width: 520px;
+      margin: 14px auto 0;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--tinta-2);
+    }
+
+    /* Bloques aún por navegar */
+    .horizonte {
+      margin: 60px 0 20px;
+      padding: 50px 20px 46px;
+      text-align: center;
+      border-top: 1px solid var(--linea);
+    }
+
+    .horizonte svg { width: 100%; max-width: 520px; height: auto; display: block; margin: 0 auto 26px; }
+    .horizonte .linea-mar { stroke: var(--tinta-2); stroke-width: 1; opacity: .5; }
+    .horizonte .velero { animation: deriva 9s ease-in-out infinite alternate; }
+
+    @keyframes deriva { from { transform: translateX(-30px); } to { transform: translateX(30px); } }
+
+    .horizonte p {
+      margin: 0 auto;
+      max-width: 460px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 21px;
+      line-height: 1.5;
+      color: var(--tinta-2);
+    }
+
+    @media (max-width: 600px) {
+      .carta { margin-top: 60px; }
+      .bloque-cabecera { margin-top: 60px; }
+    }
+
+
+    /* Piezas dentro de cada tema */
+    .pieza { margin-top: 52px; }
+    .cabecera + .pieza { margin-top: 10px; }
+
+    .pieza .tipo {
+      margin: 0 0 6px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--oro-2);
+    }
+
+    .pieza h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(23px, 3vw, 28px);
+      line-height: 1.2;
+    }
+
+    .pieza-sub {
+      margin: 6px 0 0;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--tinta-2);
+    }
+
+    .pieza .marco { margin-top: 18px; }
+
+    .tema .numero { font-size: 18px; white-space: nowrap; }
+    .tema .cabecera { grid-template-columns: 90px 1fr; }
+
+    .vacio {
+      margin: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 19px;
+      color: var(--tinta-2);
+    }
+
+    @media (max-width: 600px) {
+      .tema .cabecera { grid-template-columns: 1fr; }
+    }
+
+
+    /* Bitácora: islas y temas */
+    .indice li.rumbo { margin-top: 4px; }
+    .indice li.rumbo > a { font-family: var(--serif); font-size: 17px; color: var(--tinta); }
+    .indice li.rumbo .num { font-style: italic; color: var(--oro-2); margin-right: 4px; }
+    .indice li.rumbo.abierto > a::before { background: var(--oro); border-color: var(--oro); }
+    .indice li.sub { margin: -4px 0 10px 12px; }
+    .indice li.sub a { font-size: 12.5px; }
+    .indice li.sub a::before { width: 5px; height: 5px; left: -30px; }
+    .indice li.fijo:first-of-type, .indice li.rumbo + li.fijo { margin-top: 20px; }
+
+    /* Títulos de las piezas de cada tema */
+    .pieza .pieza-titulo {
+      margin: 0 0 14px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--oro-2);
+    }
+    .pieza .marco { margin-top: 0; }
+
+    @media (max-width: 1240px) {
+      .indice li.rumbo, .indice li.sub { margin: 0; }
+      .indice li.rumbo > a { font-size: 14px; }
+      .indice li.rumbo.abierto > a { border-color: var(--oro); background: #f6ebcc; }
+      .indice li.sub a { font-size: 12px; }
+      .indice li.fijo:first-of-type, .indice li.rumbo + li.fijo { margin-top: 0; }
+    }
+
+    /* Los dossieres llevan pestañas: un poco más de alto */
+    .marco iframe[title="Animaciones"] { height: 660px; }
+    @media (max-width: 600px) { .marco iframe[title="Animaciones"] { height: 560px; } }
+
+    .pieza[hidden] { display: none; }
+
+
+    /* Ventana de cada tema con tres pestañas */
+    .ventana {
+      background: var(--papel-2);
+      border: 1px solid var(--linea);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: box-shadow .4s ease;
+    }
+    .ventana:hover { box-shadow: 0 22px 50px -28px rgba(12, 21, 36, .35); }
+    .ventana[hidden], .ventana [hidden] { display: none !important; }
+
+    .pestanas {
+      display: flex;
+      gap: 4px;
+      padding: 10px 12px 0;
+      background: var(--papel);
+      border-bottom: 1px solid var(--linea);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .pestanas::-webkit-scrollbar { display: none; }
+
+    .pestanas button {
+      flex: 0 0 auto;
+      padding: 10px 16px 11px;
+      margin-bottom: -1px;
+      font: inherit;
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--tinta-2);
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: 0;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      transition: color .25s, background .25s;
+    }
+    .pestanas button:hover { color: var(--tinta); }
+    .pestanas button[aria-selected="true"] {
+      color: var(--oro-2);
+      background: var(--papel-2);
+      border-color: var(--linea);
+    }
+    .pestanas button:focus-visible { outline: 1px solid var(--oro); outline-offset: -3px; }
+
+    .ventana .panel { display: none; padding: 0; border-top: 0; }
+    .ventana .panel.activo { display: block; }
+    .panel iframe { display: block; width: 100%; height: 640px; border: 0; background: #fff; }
+
+    .pie-panel {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px 20px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--linea);
+    }
+
+    @media (max-width: 600px) {
+      .panel iframe { height: 520px; }
+      .pestanas button { padding: 9px 11px 10px; letter-spacing: .1em; }
+    }
+
     .leyenda { display: none; }
   </style>
 </head>
@@ -753,24 +1079,19 @@
       </p>
     </div>
 
-    <a class="bajar" href="#lema-algebra">Zarpar</a>
+    <a class="bajar" href="#carta">Zarpar</a>
   </header>
 
   <main>
 
     <!-- ÍNDICE DE NAVEGACIÓN -->
     <nav class="indice" id="indice" aria-label="Índice de contenidos">
-      <h2>Bitácora</h2>
-      <ul>
-        <li><a href="#espacio-vectorial">🌱 Espacio vectorial</a></li>
-        <li><a href="#dependencia-bases">⬆️ Dependencia y bases</a></li>
-        <li><a href="#aplicacion-lineal">🪞 Aplicación lineal</a></li>
-        <li><a href="#coordenadas">📍 Coordenadas</a></li>
-        <li><a href="#matriz-lineal">🦬 Matriz de una lineal</a></li>
-        <li><a href="#ejercicios">📚 Ejercicios resueltos</a></li>
-        <li><a href="brujula-interior.html" target="_blank" rel="noopener noreferrer">🧭 La brújula interior</a></li>
-        <li><a href="cofre-de-las-ideas.html?v=3" target="_blank" rel="noopener noreferrer">🪎 El cofre de las ideas</a></li>
-        <li><a href="#recomendados">⚓ Otros puertos</a></li>
+      <h2 id="indice-titulo">Bitácora</h2>
+      <ul id="indice-lista">
+        <!-- Las secciones del bloque elegido se añaden aquí automáticamente -->
+        <li class="fijo"><a href="#carta">🗺️ Carta de navegación</a></li>
+        <li class="fijo"><a href="brujula-interior.html" target="_blank" rel="noopener noreferrer">🧭 La brújula interior</a></li>
+        <li class="fijo"><a href="cofre-de-las-ideas.html?v=3" target="_blank" rel="noopener noreferrer">🪎 El cofre de las ideas</a></li>
       </ul>
     </nav>
 
@@ -899,212 +1220,482 @@
       </defs>
     </svg>
 
-    <!-- LEMA -->
-    <div class="lema-algebra revelar" id="lema-algebra">
-      <p class="frase" id="frase-lema" role="button" tabindex="0"
-         aria-pressed="false" aria-label="Pulsa para transformar el lema">
-        <span class="lema-cambiante">
-          <span class="texto-original">Todo es estirar y sumar</span>
-          <span class="texto-nuevo">Todo es combinación lineal</span>
-        </span>
-      </p>
-      <p class="firma">Álgebra Lineal</p>
+    <!-- =========================================================
+         CARTA DE NAVEGACIÓN
+         Cada isla es un bloque del curso. Al pulsarla, el barco
+         navega hasta ella y debajo aparece el bloque.
+    ========================================================== -->
+    <section class="carta revelar" id="carta" style="border-top:0;padding:0">
+      <p class="rotulo">Carta de navegación</p>
+      <h2>Elige rumbo</h2>
+
+      <svg class="mapa" viewBox="0 0 800 340" role="group" aria-label="Mapa de los tres bloques del curso">
+        <defs>
+          <marker id="punta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 1 L9 5 L0 9 Z" fill="#1d2633"/>
+          </marker>
+          <marker id="punta-oro" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 1 L9 5 L0 9 Z" fill="#a8822f"/>
+          </marker>
+          <radialGradient id="arena" cx=".45" cy=".4" r=".7">
+            <stop offset="0" stop-color="#f8ecc9"/><stop offset="1" stop-color="#e6d3a2"/>
+          </radialGradient>
+          <radialGradient id="tierra" cx=".4" cy=".35" r=".75">
+            <stop offset="0" stop-color="#e9ead0"/><stop offset="1" stop-color="#cfd3a6"/>
+          </radialGradient>
+                    <path id="forma-algebra" d="M-74 -6 C-78 -30 -58 -50 -34 -54 C-20 -66 4 -62 14 -54 C34 -60 62 -48 70 -26 C80 -6 72 18 56 30 C44 46 18 50 0 44 C-18 52 -46 44 -58 30 C-70 22 -72 8 -74 -6 Z"/>
+          <path id="forma-calculo" d="M-64 -14 C-66 -38 -42 -56 -14 -54 C2 -62 30 -58 46 -44 C66 -32 70 -6 60 14 C52 34 30 46 6 42 C-14 48 -40 42 -54 26 C-64 14 -62 0 -64 -14 Z"/>
+          <path id="forma-estadistica" d="M-70 4 C-76 -22 -56 -46 -28 -50 C-10 -58 18 -56 36 -46 C58 -36 72 -16 68 8 C64 30 44 46 18 46 C0 52 -26 50 -44 38 C-60 30 -66 18 -70 4 Z"/>
+        </defs>
+
+        <!-- rejilla de meridianos y paralelos -->
+        <g class="rejilla">
+          <path d="M100 0 V340 M200 0 V340 M300 0 V340 M400 0 V340 M500 0 V340 M600 0 V340 M700 0 V340"/>
+          <path d="M0 85 H800 M0 170 H800 M0 255 H800"/>
+        </g>
+
+        <!-- olas -->
+        <g class="ola">
+          <path d="M40 60 q6 -5 12 0 t12 0"/>   <path d="M320 40 q6 -5 12 0 t12 0"/>
+          <path d="M560 70 q6 -5 12 0 t12 0"/>  <path d="M40 300 q6 -5 12 0 t12 0"/>
+          <path d="M300 290 q6 -5 12 0 t12 0"/> <path d="M470 310 q6 -5 12 0 t12 0"/>
+          <path d="M640 312 q6 -5 12 0 t12 0"/> <path d="M290 120 q6 -5 12 0 t12 0"/>
+          <path d="M530 110 q6 -5 12 0 t12 0"/> <path d="M770 120 q6 -5 12 0 t12 0"/>
+        </g>
+
+        <!-- rosa de los vientos -->
+        <g class="rosa" transform="translate(748 292)">
+          <circle r="28"/><circle r="20"/>
+          <path d="M0 -36 L5 -5 L36 0 L5 5 L0 36 L-5 5 L-36 0 L-5 -5 Z" fill="#efe5cd"/>
+          <path d="M0 -36 L5 -5 L0 0 Z" fill="#b9a77f"/>
+          <text y="-41" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="13" fill="#a8822f" stroke="none">N</text>
+        </g>
+
+
+        <!-- ISLA I · ÁLGEBRA -->
+        <g class="isla" data-bloque="algebra" transform="translate(170 178)" tabindex="0" role="button" aria-label="Bloque I: Álgebra">
+          <use href="#forma-algebra" class="agua" transform="scale(1.36)"/>
+          <use href="#forma-algebra" class="agua" transform="scale(1.2)"/>
+          <use href="#forma-algebra" class="rayado" transform="scale(1.07)"/>
+          <use href="#forma-algebra" class="costa"/>
+          <use href="#forma-algebra" class="nivel" transform="scale(.78)"/>
+          <use href="#forma-algebra" class="nivel" transform="scale(.56)"/>
+          <g class="simbolo">
+            <path d="M-30 18 L-2 -10" marker-end="url(#punta)"/>
+            <path d="M-30 18 L4 22" marker-end="url(#punta)"/>
+            <path d="M-2 -10 L32 -6 M4 22 L32 -6" stroke-dasharray="3 4" stroke-width="1"/>
+            <path d="M-30 18 L30 -5" stroke="#a8822f" marker-end="url(#punta-oro)"/>
+          </g>
+          <g class="bandera"><path d="M0 -54 V-86" stroke="#1d2633" stroke-width="1.4"/><path d="M0 -86 L19 -80 L0 -74 Z" fill="#c9a14a"/></g>
+          <g class="cartela">
+            <path d="M-72 -118 H72 L64 -105 L72 -92 H-72 L-64 -105 Z"/>
+            <text y="-99" text-anchor="middle"><tspan class="num">I</tspan> · Álgebra</text>
+          </g>
+        </g>
+
+        <!-- ISLA II · CÁLCULO -->
+        <g class="isla" data-bloque="calculo" transform="translate(410 178)" tabindex="0" role="button" aria-label="Bloque II: Cálculo">
+          <use href="#forma-calculo" class="agua" transform="scale(1.36)"/>
+          <use href="#forma-calculo" class="agua" transform="scale(1.2)"/>
+          <use href="#forma-calculo" class="rayado" transform="scale(1.07)"/>
+          <use href="#forma-calculo" class="costa"/>
+          <use href="#forma-calculo" class="nivel" transform="scale(.78)"/>
+          <use href="#forma-calculo" class="nivel" transform="scale(.56)"/>
+          <g class="simbolo">
+            <path d="M-42 22 C -24 22 -14 -28 6 -24 S 32 12 44 -4"/>
+            <path d="M-28.4 3 L13.6 -40" stroke="#a8822f" stroke-width="1.5"/>
+            <circle cx="-7.4" cy="-18.5" r="3" fill="#a8822f" stroke="#1d2633" stroke-width="1"/>
+          </g>
+          <g class="bandera"><path d="M0 -54 V-86" stroke="#1d2633" stroke-width="1.4"/><path d="M0 -86 L19 -80 L0 -74 Z" fill="#c9a14a"/></g>
+          <g class="cartela">
+            <path d="M-72 -118 H72 L64 -105 L72 -92 H-72 L-64 -105 Z"/>
+            <text y="-99" text-anchor="middle"><tspan class="num">II</tspan> · Cálculo</text>
+          </g>
+        </g>
+
+        <!-- ISLA III · ESTADÍSTICA -->
+        <g class="isla" data-bloque="estadistica" transform="translate(640 178)" tabindex="0" role="button" aria-label="Bloque III: Estadística">
+          <use href="#forma-estadistica" class="agua" transform="scale(1.36)"/>
+          <use href="#forma-estadistica" class="agua" transform="scale(1.2)"/>
+          <use href="#forma-estadistica" class="rayado" transform="scale(1.07)"/>
+          <use href="#forma-estadistica" class="costa"/>
+          <use href="#forma-estadistica" class="nivel" transform="scale(.78)"/>
+          <use href="#forma-estadistica" class="nivel" transform="scale(.56)"/>
+          <g class="simbolo">
+            <path d="M-30 22 V10 M-18 22 V-4 M-6 22 V-18 M6 22 V-20 M18 22 V-6 M30 22 V8" stroke-width="5" stroke="#d4c49c" stroke-linecap="butt"/>
+            <path d="M-44 22 C -24 22 -16 -28 0 -28 C 16 -28 24 22 44 22"/>
+            <path d="M-44 22 H44" stroke-width="1"/>
+          </g>
+          <g class="bandera"><path d="M0 -54 V-86" stroke="#1d2633" stroke-width="1.4"/><path d="M0 -86 L19 -80 L0 -74 Z" fill="#c9a14a"/></g>
+          <g class="cartela">
+            <path d="M-88 -118 H88 L80 -105 L88 -92 H-88 L-80 -105 Z"/>
+            <text y="-99" text-anchor="middle"><tspan class="num">III</tspan> · Estadística</text>
+          </g>
+        </g>
+
+        <!-- el barco -->
+        <g id="barco-carta" transform="translate(186 262)">
+          <g id="barco-giro">
+            <g class="cabeceo">
+              <path class="estela" d="M-26 12 q5 -3 10 0 M-34 15 q4 -2 8 0"/>
+              <path class="mastil" d="M0 4 V-24"/>
+              <path class="vela" d="M1.5 -22 L1.5 1 L17 1 Z"/>
+              <path class="vela" d="M-1.5 -18 L-1.5 1 L-13 1 Z"/>
+              <path class="casco" d="M-18 4 L18 4 L12 12 L-12 12 Z"/>
+            </g>
+          </g>
+        </g>
+      </svg>
+
+    </section>
+
+    <!-- =========================================================
+         BLOQUE I · ÁLGEBRA
+    ========================================================== -->
+    <div class="bloque" id="algebra" data-nombre="Álgebra" data-numeral="I">
+
+      <header class="bloque-cabecera">
+        <p class="travesia">Travesía I</p>
+        <h2>Álgebra</h2>
+      </header>
+
+      <!-- LEMA -->
+      <div class="lema-algebra revelar" id="lema-algebra">
+        <p class="frase" id="frase-lema" role="button" tabindex="0"
+           aria-pressed="false" aria-label="Pulsa para transformar el lema">
+          <span class="lema-cambiante">
+            <span class="texto-original">Todo es estirar y sumar</span>
+            <span class="texto-nuevo">Todo es combinación lineal</span>
+          </span>
+        </p>
+        <p class="firma">Álgebra Lineal</p>
+      </div>
+
+      <!-- =====================================================
+           TEMA 1 · ESPACIOS VECTORIALES
+           Una ventana con cuatro pestañas: Teoría · Animaciones · Ejercicios resueltos · Mapa mental.
+           Si el archivo de una pestaña no está subido, esa pestaña no se muestra.
+      ====================================================== -->
+      <section class="tema" id="espacios-vectoriales" data-corto="Espacios vectoriales">
+        <div class="cabecera">
+          <span class="numero">Tema 1</span>
+          <h2>Espacios vectoriales</h2>
+        </div>
+
+        <div class="ventana revelar">
+          <nav class="pestanas" role="tablist" aria-label="Materiales del tema">
+            <button role="tab" id="t-espacios-vectoriales-1" aria-controls="p-espacios-vectoriales-1" aria-selected="false" tabindex="-1">Teoría</button>
+            <button role="tab" id="t-espacios-vectoriales-2" aria-controls="p-espacios-vectoriales-2" aria-selected="false" tabindex="-1">Animaciones</button>
+            <button role="tab" id="t-espacios-vectoriales-3" aria-controls="p-espacios-vectoriales-3" aria-selected="false" tabindex="-1">Ejercicios resueltos</button>
+            <button role="tab" id="t-espacios-vectoriales-4" aria-controls="p-espacios-vectoriales-4" aria-selected="false" tabindex="-1">Mapa mental</button>
+          </nav>
+          <div class="paneles">
+            <!-- PESTAÑA «TEORÍA»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-espacios-vectoriales-1" role="tabpanel" aria-labelledby="t-espacios-vectoriales-1" data-src="./Tema2.pdf">
+              <iframe title="Teoría"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema2.pdf" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «ANIMACIONES»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-espacios-vectoriales-2" role="tabpanel" aria-labelledby="t-espacios-vectoriales-2" data-src="./Tema2_animaciones.html">
+              <iframe title="Animaciones"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema2_animaciones.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «EJERCICIOS RESUELTOS»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-espacios-vectoriales-3" role="tabpanel" aria-labelledby="t-espacios-vectoriales-3" data-src="./Tema2Resueltos.pdf">
+              <iframe title="Ejercicios resueltos"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema2Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «MAPA MENTAL»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-espacios-vectoriales-4" role="tabpanel" aria-labelledby="t-espacios-vectoriales-4" data-src="./mapa-espacios-vectoriales.pdf">
+              <iframe title="Mapa mental"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./mapa-espacios-vectoriales.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           TEMA 2 · ESPACIOS EUCLÍDEOS
+           Una ventana con cuatro pestañas: Teoría · Animaciones · Ejercicios resueltos · Mapa mental.
+           Si el archivo de una pestaña no está subido, esa pestaña no se muestra.
+      ====================================================== -->
+      <section class="tema" id="espacios-euclideos" data-corto="Espacios euclídeos">
+        <div class="cabecera">
+          <span class="numero">Tema 2</span>
+          <h2>Espacios euclídeos</h2>
+        </div>
+
+        <div class="ventana revelar">
+          <nav class="pestanas" role="tablist" aria-label="Materiales del tema">
+            <button role="tab" id="t-espacios-euclideos-1" aria-controls="p-espacios-euclideos-1" aria-selected="false" tabindex="-1">Teoría</button>
+            <button role="tab" id="t-espacios-euclideos-2" aria-controls="p-espacios-euclideos-2" aria-selected="false" tabindex="-1">Animaciones</button>
+            <button role="tab" id="t-espacios-euclideos-3" aria-controls="p-espacios-euclideos-3" aria-selected="false" tabindex="-1">Ejercicios resueltos</button>
+            <button role="tab" id="t-espacios-euclideos-4" aria-controls="p-espacios-euclideos-4" aria-selected="false" tabindex="-1">Mapa mental</button>
+          </nav>
+          <div class="paneles">
+            <!-- PESTAÑA «TEORÍA»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-espacios-euclideos-1" role="tabpanel" aria-labelledby="t-espacios-euclideos-1" data-src="./Tema3.pdf">
+              <iframe title="Teoría"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema3.pdf" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «ANIMACIONES»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-espacios-euclideos-2" role="tabpanel" aria-labelledby="t-espacios-euclideos-2" data-src="./Tema3_animaciones.html">
+              <iframe title="Animaciones"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema3_animaciones.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «EJERCICIOS RESUELTOS»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-espacios-euclideos-3" role="tabpanel" aria-labelledby="t-espacios-euclideos-3" data-src="./Tema3Resueltos.pdf">
+              <iframe title="Ejercicios resueltos"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema3Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «MAPA MENTAL»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-espacios-euclideos-4" role="tabpanel" aria-labelledby="t-espacios-euclideos-4" data-src="./mapa-espacios-euclideos.pdf">
+              <iframe title="Mapa mental"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./mapa-espacios-euclideos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           TEMA 3 · APLICACIONES LINEALES
+           Una ventana con cuatro pestañas: Teoría · Animaciones · Ejercicios resueltos · Mapa mental.
+           Si el archivo de una pestaña no está subido, esa pestaña no se muestra.
+      ====================================================== -->
+      <section class="tema" id="aplicaciones-lineales" data-corto="Aplicaciones lineales">
+        <div class="cabecera">
+          <span class="numero">Tema 3</span>
+          <h2>Aplicaciones lineales</h2>
+        </div>
+
+        <div class="ventana revelar">
+          <nav class="pestanas" role="tablist" aria-label="Materiales del tema">
+            <button role="tab" id="t-aplicaciones-lineales-1" aria-controls="p-aplicaciones-lineales-1" aria-selected="false" tabindex="-1">Teoría</button>
+            <button role="tab" id="t-aplicaciones-lineales-2" aria-controls="p-aplicaciones-lineales-2" aria-selected="false" tabindex="-1">Animaciones</button>
+            <button role="tab" id="t-aplicaciones-lineales-3" aria-controls="p-aplicaciones-lineales-3" aria-selected="false" tabindex="-1">Ejercicios resueltos</button>
+            <button role="tab" id="t-aplicaciones-lineales-4" aria-controls="p-aplicaciones-lineales-4" aria-selected="false" tabindex="-1">Mapa mental</button>
+          </nav>
+          <div class="paneles">
+            <!-- PESTAÑA «TEORÍA»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-aplicaciones-lineales-1" role="tabpanel" aria-labelledby="t-aplicaciones-lineales-1" data-src="./Tema4.pdf">
+              <iframe title="Teoría"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema4.pdf" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «ANIMACIONES»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-aplicaciones-lineales-2" role="tabpanel" aria-labelledby="t-aplicaciones-lineales-2" data-src="./Tema4_animaciones.html">
+              <iframe title="Animaciones"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema4_animaciones.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «EJERCICIOS RESUELTOS»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-aplicaciones-lineales-3" role="tabpanel" aria-labelledby="t-aplicaciones-lineales-3" data-src="./Tema4Resueltos.pdf">
+              <iframe title="Ejercicios resueltos"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema4Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «MAPA MENTAL»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-aplicaciones-lineales-4" role="tabpanel" aria-labelledby="t-aplicaciones-lineales-4" data-src="./mapa4.pdf">
+              <iframe title="Mapa mental"></iframe>
+              <div class="pie-panel">
+                <p class="agradecimiento">Autora: <strong>Carla Villarreal Conde</strong> · ¡Muchas gracias, Carla!</p>
+                <a class="enlace" href="./Tema 4. Mapa mental.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================
+           TEMA 4 · DIAGONALIZACIÓN
+           Una ventana con cuatro pestañas: Teoría · Animaciones · Ejercicios resueltos · Mapa mental.
+           Si el archivo de una pestaña no está subido, esa pestaña no se muestra.
+      ====================================================== -->
+      <section class="tema" id="diagonalizacion" data-corto="Diagonalización">
+        <div class="cabecera">
+          <span class="numero">Tema 4</span>
+          <h2>Diagonalización</h2>
+        </div>
+
+        <div class="ventana revelar">
+          <nav class="pestanas" role="tablist" aria-label="Materiales del tema">
+            <button role="tab" id="t-diagonalizacion-1" aria-controls="p-diagonalizacion-1" aria-selected="false" tabindex="-1">Teoría</button>
+            <button role="tab" id="t-diagonalizacion-2" aria-controls="p-diagonalizacion-2" aria-selected="false" tabindex="-1">Animaciones</button>
+            <button role="tab" id="t-diagonalizacion-3" aria-controls="p-diagonalizacion-3" aria-selected="false" tabindex="-1">Ejercicios resueltos</button>
+            <button role="tab" id="t-diagonalizacion-4" aria-controls="p-diagonalizacion-4" aria-selected="false" tabindex="-1">Mapa mental</button>
+          </nav>
+          <div class="paneles">
+            <!-- PESTAÑA «TEORÍA»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-diagonalizacion-1" role="tabpanel" aria-labelledby="t-diagonalizacion-1" data-src="./Tema5.pdf">
+              <iframe title="Teoría"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema5.pdf" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «ANIMACIONES»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-diagonalizacion-2" role="tabpanel" aria-labelledby="t-diagonalizacion-2" data-src="./dossier-diagonalizacion.html">
+              <iframe title="Animaciones"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./dossier-diagonalizacion.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «EJERCICIOS RESUELTOS»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-diagonalizacion-3" role="tabpanel" aria-labelledby="t-diagonalizacion-3" data-src="./Tema4Resueltos.pdf">
+              <iframe title="Ejercicios resueltos"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./Tema4Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+              </div>
+            </section>
+            <!-- PESTAÑA «MAPA MENTAL»: pon aquí el nombre de tu archivo (en data-src y en href) -->
+            <section class="panel" id="p-diagonalizacion-4" role="tabpanel" aria-labelledby="t-diagonalizacion-4" data-src="./mapa-diagonalizacion.pdf">
+              <iframe title="Mapa mental"></iframe>
+              <div class="pie-panel">
+                <span></span>
+                <a class="enlace" href="./mapa-diagonalizacion.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- OTROS PUERTOS DEL ÁLGEBRA -->
+      <section class="tema revelar" id="recomendados" data-corto="Otros puertos">
+        <div class="cabecera">
+          <span class="numero">⚓</span>
+          <h2>Otros puertos</h2>
+        </div>
+        <div class="puertos">
+          <a class="enlace-recomendado" href="https://claude.ai/artifact/BMyZvbrsASDPD9mZm8YSAn" target="_blank" rel="noopener noreferrer">
+            <span>
+              <strong>Checklist Temas 1, 2 y 3</strong>
+              <small>Autor: Javier García Pavón · ¡Muchas gracias, Javi!</small>
+            </span>
+            <span class="flecha">↗</span>
+          </a>
+          <a class="enlace-recomendado" href="https://claude.ai/artifact/3HS6CtWczo1eLQvRMfPwUK" target="_blank" rel="noopener noreferrer">
+            <span>
+              <strong>El cine de las aplicaciones lineales</strong>
+              <small>¡Muchas gracias, Carla, por recordármelo!</small>
+            </span>
+            <span class="flecha">↗</span>
+          </a>
+          <a class="enlace-recomendado" href="./polcar.pdf" target="_blank" rel="noopener noreferrer">
+            <span>
+              <strong>¿Todo polinomio es el polinomio característico de alguna matriz?</strong>
+              <small>Autor: Ángel Escribano Martínez · Preguntas de investigación</small>
+            </span>
+            <span class="flecha">↗</span>
+          </a>
+        </div>
+      </section>
+
+    </div><!-- /bloque álgebra -->
+
+    <!-- =========================================================
+         BLOQUE II · CÁLCULO
+         Para añadir un tema: copia aquí una <section class="tema"> del álgebra
+         (cambia su id, data-corto, número, nombre y los archivos de sus cuatro pestañas)
+         y borra el <div class="horizonte">.
+    ========================================================== -->
+    <div class="bloque" id="calculo" data-nombre="Cálculo" data-numeral="II">
+      <header class="bloque-cabecera">
+        <p class="travesia">Travesía II</p>
+        <h2>Cálculo</h2>
+      </header>
+
+      <div class="horizonte">
+        <svg viewBox="0 0 520 90" aria-hidden="true">
+          <path class="linea-mar" d="M0 70 H520"/>
+          <g transform="translate(260 0)"><g class="velero">
+            <path d="M0 66 V40" stroke="#5b6573" stroke-width="1"/>
+            <path d="M1 41 L1 64 L13 64 Z" fill="#fbf9f4" stroke="#5b6573" stroke-width=".8"/>
+            <path d="M-10 66 L10 66 L7 70 L-7 70 Z" fill="#5b6573"/>
+          </g></g>
+        </svg>
+        <p>Este rumbo aún está por navegar. Aquí irán apareciendo las animaciones, los dossieres y los ejercicios de cálculo.</p>
+      </div>
+
+      <!-- OTROS PUERTOS DE CÁLCULO
+           Para añadir uno, copia aquí un <a class="enlace-recomendado"> del álgebra
+           dentro de <div class="puertos"> y borra el párrafo «vacio». -->
+      <section class="tema" id="puertos-calculo" data-corto="Otros puertos">
+        <div class="cabecera">
+          <span class="numero">⚓</span>
+          <h2>Otros puertos</h2>
+        </div>
+        <div class="puertos">
+          <p class="vacio">Todavía no hay puertos en este rumbo.</p>
+        </div>
+      </section>
     </div>
 
-    <!-- I. ESPACIO VECTORIAL -->
-    <section class="programa revelar" id="espacio-vectorial">
-      <div class="cabecera">
-        <span class="numero">I</span>
-        <h2>Espacio vectorial</h2>
-        <p class="subtitulo">Mundo de flechas que pueden sumarse y estirarse sin salirse.</p>
-      </div>
-      <div class="marco">
-        <iframe src="./ecosistema-vectorial.html"
-                title="Programa interactivo: Un espacio vectorial"
-                loading="eager"></iframe>
-      </div>
-      <div class="pie">
-        <span></span>
-        <a class="enlace" href="./ecosistema-vectorial.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-      </div>
-    </section>
+    <!-- =========================================================
+         BLOQUE III · ESTADÍSTICA
+    ========================================================== -->
+    <div class="bloque" id="estadistica" data-nombre="Estadística" data-numeral="III">
+      <header class="bloque-cabecera">
+        <p class="travesia">Travesía III</p>
+        <h2>Estadística</h2>
+      </header>
 
-    <!-- II. DEPENDENCIA, GENERADORES Y BASES -->
-    <section class="programa revelar" id="dependencia-bases">
-      <div class="cabecera">
-        <span class="numero">II</span>
-        <h2>Dependencia, generadores y bases</h2>
-        <p class="subtitulo">Lo que se alcanza estirando y sumando flechas.</p>
-      </div>
-      <div class="marco">
-        <iframe src="./Dependencia, generadores y bases.html"
-                title="Programa interactivo: Dependencia, generadores y bases"
-                loading="lazy"></iframe>
-      </div>
-      <div class="pie">
-        <span></span>
-        <a class="enlace" href="./Dependencia, generadores y bases.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-      </div>
-    </section>
-
-    <!-- III. APLICACIÓN LINEAL -->
-    <section class="programa revelar" id="aplicacion-lineal">
-      <div class="cabecera">
-        <span class="numero">III</span>
-        <h2>Aplicación lineal</h2>
-        <p class="subtitulo">Puente entre dos espacios vectoriales.</p>
-      </div>
-      <div class="marco">
-        <iframe src="./Aplicación lineal.html"
-                title="Programa interactivo: Una aplicación lineal"
-                loading="lazy"></iframe>
-      </div>
-      <div class="pie">
-        <p class="sentencia">La estructura del primero se refleja en el segundo.</p>
-        <a class="enlace" href="./Aplicación lineal.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-      </div>
-    </section>
-
-    <!-- IV. COORDENADAS -->
-    <section class="programa revelar" id="coordenadas">
-      <div class="cabecera">
-        <span class="numero">IV</span>
-        <h2>Coordenadas</h2>
-        <p class="subtitulo">Tomar coordenadas de un vector desde una base.</p>
-      </div>
-      <div class="marco">
-        <iframe src="./Coordenadas de un vector respecto de una base.html"
-                title="Coordenadas"
-                loading="lazy"></iframe>
-      </div>
-      <div class="pie">
-        <p class="sentencia">Las componentes describen.<br>Las coordenadas localizan.</p>
-        <a class="enlace" href="./Coordenadas de un vector respecto de una base.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-      </div>
-    </section>
-
-    <!-- V. MATRIZ DE UNA APLICACIÓN LINEAL -->
-    <section class="programa revelar" id="matriz-lineal">
-      <div class="cabecera">
-        <span class="numero">V</span>
-        <h2>Matriz de una aplicación lineal</h2>
-        <p class="subtitulo">Entre dos bases.</p>
-      </div>
-      <div class="marco">
-        <iframe src="./Cómo se construye la matriz de una aplicación lineal.html"
-                title="Matriz aplicación lineal"
-                loading="lazy"></iframe>
-      </div>
-      <div class="pie">
-        <p class="sentencia">La matriz representa la aplicación lineal entre ambas bases.</p>
-        <a class="enlace" href="./Cómo se construye la matriz de una aplicación lineal.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-      </div>
-    </section>
-
-    <!-- VI. EJERCICIOS RESUELTOS -->
-    <section class="revelar" id="ejercicios">
-      <div class="cabecera">
-        <span class="numero">VI</span>
-        <h2>Ejercicios resueltos y mapas mentales</h2>
-        <p class="subtitulo">Consulta aquí los ejercicios y mapas en PDF.</p>
+      <div class="horizonte">
+        <svg viewBox="0 0 520 90" aria-hidden="true">
+          <path class="linea-mar" d="M0 70 H520"/>
+          <g transform="translate(260 0)"><g class="velero">
+            <path d="M0 66 V40" stroke="#5b6573" stroke-width="1"/>
+            <path d="M1 41 L1 64 L13 64 Z" fill="#fbf9f4" stroke="#5b6573" stroke-width=".8"/>
+            <path d="M-10 66 L10 66 L7 70 L-7 70 Z" fill="#5b6573"/>
+          </g></g>
+        </svg>
+        <p>Este rumbo aún está por navegar. Aquí irán apareciendo las animaciones, los dossieres y los ejercicios de estadística.</p>
       </div>
 
-      <div class="pdf">
-        <h3>Ejercicios resueltos · Tema 2</h3>
-        <div class="marco">
-          <iframe src="./Tema2Resueltos.pdf" title="Ejercicios resueltos del Tema 2" loading="lazy"></iframe>
+      <!-- OTROS PUERTOS DE ESTADÍSTICA
+           Para añadir uno, copia aquí un <a class="enlace-recomendado"> del álgebra
+           dentro de <div class="puertos"> y borra el párrafo «vacio». -->
+      <section class="tema" id="puertos-estadistica" data-corto="Otros puertos">
+        <div class="cabecera">
+          <span class="numero">⚓</span>
+          <h2>Otros puertos</h2>
         </div>
-        <div class="pie">
-          <span></span>
-          <a class="enlace" href="./Tema2Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
+        <div class="puertos">
+          <p class="vacio">Todavía no hay puertos en este rumbo.</p>
         </div>
-      </div>
-
-      <div class="pdf">
-        <h3>Ejercicios resueltos · Tema 3</h3>
-        <div class="marco">
-          <iframe src="./Tema3Resueltos.pdf" title="Ejercicios resueltos del Tema 3" loading="lazy"></iframe>
-        </div>
-        <div class="pie">
-          <span></span>
-          <a class="enlace" href="./Tema3Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-        </div>
-      </div>
-
-      <div class="pdf">
-        <h3>Mapa mental · Tema 4</h3>
-        <div class="marco">
-          <iframe src="./mapa4.pdf" title="Mapa mental del Tema 4" loading="lazy"></iframe>
-        </div>
-        <div class="pie">
-          <p class="agradecimiento">Autora: <strong>Carla Villarreal Conde</strong> · ¡Muchas gracias, Carla!</p>
-          <a class="enlace" href="./mapa4.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-        </div>
-      </div>
-
-       <div class="pdf">
-        <h3>Ejercicios resueltos · Tema 4</h3>
-        <div class="marco">
-          <iframe src="./Tema4Res.pdf" title="Ejercicios resueltos del Tema 4" loading="lazy"></iframe>
-        </div>
-        <div class="pie">
-          <span></span>
-          <a class="enlace" href="./Tema4Res.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-        </div>
-      </div>
-
-
-
-
-
-
-
-      
-    </section>
-
-    <!-- OTROS PUERTOS -->
-    <section class="revelar" id="recomendados">
-      <div class="cabecera">
-        <span class="numero">VII</span>
-        <h2>Otros puertos</h2>
-      </div>
-
-      <div class="puertos">
-
-        
-        <a class="enlace-recomendado" href="https://claude.ai/artifact/BMyZvbrsASDPD9mZm8YSAn"
-           target="_blank" rel="noopener noreferrer">
-          <span>
-            <strong>Checklist Temas 1, 2 y 3</strong>
-            <small>Autor: Javier García Pavón · ¡Muchas gracias, Javi!</small>
-          </span>
-          <span class="flecha">↗</span>
-        </a>
-
-        <a class="enlace-recomendado" href="https://claude.ai/artifact/3HS6CtWczo1eLQvRMfPwUK"
-           target="_blank" rel="noopener noreferrer">
-          <span>
-            <strong>El cine de las aplicaciones lineales</strong>
-            <small>¡Muchas gracias, Carla, por recordármelo!</small>
-          </span>
-          <span class="flecha">↗</span>
-        </a>
-
-      <a class="enlace-recomendado" href="./polcar.pdf"
-           target="_blank" rel="noopener noreferrer">
-          <span>
-            <strong>¿Todo polinomio es el polinomio característico de alguna matriz?</strong>
-            <small>Autor: Ángel Escribano Martínez · Preguntas de investigación</small>
-          </span>
-          <span class="flecha">↗</span>
-        </a>
-
-
-
-
-        
-      </div>
-    </section>
+      </section>
+    </div>
 
   </main>
 
@@ -1404,6 +1995,50 @@
     });
   })();
 
+  /* ---------- Ventanas de cada tema: pestañas ---------- */
+  (() => {
+    document.querySelectorAll(".ventana").forEach(async (ventana) => {
+      const tabs = [...ventana.querySelectorAll('[role="tab"]')];
+      const panel = (t) => document.getElementById(t.getAttribute("aria-controls"));
+
+      function abrir(tab, enfocar) {
+        tabs.forEach((t) => {
+          const si = t === tab;
+          t.setAttribute("aria-selected", String(si));
+          t.tabIndex = si ? 0 : -1;
+          const p = panel(t);
+          p.classList.toggle("activo", si);
+          // el archivo se carga la primera vez que se abre su pestaña
+          if (si && !p.querySelector("iframe").getAttribute("src")) {
+            p.querySelector("iframe").setAttribute("src", p.dataset.src);
+          }
+        });
+        if (enfocar) tab.focus();
+      }
+
+      tabs.forEach((t) => {
+        t.addEventListener("click", () => abrir(t));
+        t.addEventListener("keydown", (e) => {
+          const vis = tabs.filter((x) => !x.hidden), i = vis.indexOf(t);
+          if (e.key === "ArrowRight") abrir(vis[(i + 1) % vis.length], true);
+          if (e.key === "ArrowLeft")  abrir(vis[(i - 1 + vis.length) % vis.length], true);
+        });
+      });
+
+      // Oculta las pestañas cuyo archivo aún no está subido
+      await Promise.all(tabs.map(async (t) => {
+        try {
+          const r = await fetch(panel(t).dataset.src, { method: "HEAD", cache: "no-store" });
+          if (!r.ok) { t.hidden = true; panel(t).hidden = true; }
+        } catch (e) { /* abierta en local sin servidor: se deja visible */ }
+      }));
+
+      const primera = tabs.find((t) => !t.hidden);
+      if (primera) abrir(primera);
+      else ventana.hidden = true;
+    });
+  })();
+
   /* ---------- Aparición al hacer scroll ---------- */
   (() => {
     const obs = new IntersectionObserver((entradas) => {
@@ -1417,33 +2052,165 @@
     document.querySelectorAll(".revelar").forEach((el) => obs.observe(el));
   })();
 
-  /* ---------- Índice: aparece tras la portada y marca la sección actual ---------- */
+  /* ---------- Carta de navegación e índice por bloques ---------- */
   (() => {
-    const indice = document.getElementById("indice");
+    const bloques = [...document.querySelectorAll(".bloque")];
+    const nombres = bloques.map((b) => b.id);
+    const islas   = [...document.querySelectorAll(".isla")];
+    const barco   = document.getElementById("barco-carta");
+    const giro    = document.getElementById("barco-giro");
+    const indice  = document.getElementById("indice");
+    const lista   = document.getElementById("indice-lista");
+    const titulo  = document.getElementById("indice-titulo");
     const portada = document.querySelector(".portada");
-    const enlaces = [...indice.querySelectorAll('a[href^="#"]')];
+    const quieto  = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    // Fondeaderos: dónde atraca el barco junto a cada isla
+    const puerto = {
+      algebra:     { x: 186, y: 262 },
+      calculo:     { x: 426, y: 262 },
+      estadistica: { x: 656, y: 262 }
+    };
+
+    let actual = null, pos = { ...puerto.algebra }, viaje = 0, obsSecciones;
+
+    // Ruta entre dos puertos: curva suave que sale y llega en horizontal,
+    // por el mar abierto que queda bajo las islas.
+    function curva(a, b) {
+      const dx = b.x - a.x, sg = Math.sign(dx) || 1, k = Math.max(Math.abs(dx) * 0.45, 30);
+      return [a, { x: a.x + sg * k, y: a.y + 16 }, { x: b.x - sg * k, y: b.y + 16 }, b];
+    }
+    const enCurva = ([p0, p1, p2, p3], t) => {
+      const u = 1 - t;
+      return {
+        x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+        y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y
+      };
+    };
+    const tangente = ([p0, p1, p2, p3], t) => {
+      const u = 1 - t;
+      return {
+        x: 3*(u*u*(p1.x-p0.x) + 2*u*t*(p2.x-p1.x) + t*t*(p3.x-p2.x)),
+        y: 3*(u*u*(p1.y-p0.y) + 2*u*t*(p2.y-p1.y) + t*t*(p3.y-p2.y))
+      };
+    };
+    const trazo = ([p0, p1, p2, p3]) => `M${p0.x} ${p0.y} C${p1.x} ${p1.y} ${p2.x} ${p2.y} ${p3.x} ${p3.y}`;
+
+    let rumbo = 1;   // 1: proa a la derecha, -1: proa a la izquierda
+    function colocar(p, inclinacion = 0) {
+      barco.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+      giro.setAttribute("transform", `scale(${rumbo} 1) rotate(${inclinacion.toFixed(1)})`);
+    }
+
+    function navegar(destino) {
+      const a = { ...pos }, b = puerto[destino];
+      if (Math.abs(b.x - a.x) < 1 && Math.abs(b.y - a.y) < 1) return;
+      const c = curva(a, b);
+      rumbo = Math.sign(b.x - a.x) || rumbo;   // el barco no se da la vuelta a mitad de viaje
+      const id = ++viaje, dur = quieto ? 1 : 1900, t0 = performance.now();
+      const suave = (t) => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+      (function paso(ahora) {
+        if (id !== viaje) return;
+        const t = suave(Math.min(1, (ahora - t0) / dur));
+        pos = enCurva(c, t);
+        const d = tangente(c, t);
+        let ang = Math.atan2(d.y, d.x * rumbo) * 180 / Math.PI;
+        ang = Math.max(-14, Math.min(14, ang));                    // solo un leve cabeceo
+        colocar(pos, t < 1 ? ang * Math.sin(Math.PI * Math.min(1, t * 1.15)) : 0);
+        if (t < 1) requestAnimationFrame(paso);
+      })(t0);
+    }
+
+    function construirIndice(activo) {
+      lista.querySelectorAll("li.dinamico").forEach((li) => li.remove());
+      const primeroFijo = lista.querySelector("li.fijo");
+      if (obsSecciones) obsSecciones.disconnect();
+      obsSecciones = new IntersectionObserver((entradas) => {
+        entradas.forEach((e) => {
+          if (!e.isIntersecting) return;
+          lista.querySelectorAll("li.sub a").forEach((a) => {
+            const es = a.getAttribute("href") === "#" + e.target.id;
+            a.classList.toggle("actual", es);
+            if (es && getComputedStyle(indice).position === "sticky") {
+              a.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+            }
+          });
+        });
+      }, { rootMargin: "-45% 0px -50% 0px" });
+
+      bloques.forEach((bloque) => {
+        const li = document.createElement("li");
+        li.className = "dinamico rumbo" + (bloque === activo ? " abierto" : "");
+        const a = document.createElement("a");
+        a.href = "#" + bloque.id;
+        a.innerHTML = `<span class="num">${bloque.dataset.numeral}</span> ${bloque.dataset.nombre}`;
+        li.appendChild(a);
+        lista.insertBefore(li, primeroFijo);
+
+        if (bloque !== activo) return;
+        bloque.querySelectorAll(":scope > section[id]").forEach((sec) => {
+          const sub = document.createElement("li");
+          sub.className = "dinamico sub";
+          const s = document.createElement("a");
+          s.href = "#" + sec.id;
+          s.textContent = sec.dataset.corto || sec.querySelector("h2")?.textContent || sec.id;
+          sub.appendChild(s);
+          lista.insertBefore(sub, primeroFijo);
+          obsSecciones.observe(sec);
+        });
+      });
+    }
+
+    function activar(nombre, animar = true) {
+      if (!nombres.includes(nombre) || nombre === actual) return;
+      actual = nombre;
+      bloques.forEach((b) => b.classList.toggle("activo", b.id === nombre));
+      islas.forEach((i) => {
+        i.classList.toggle("activa", i.dataset.bloque === nombre);
+        i.classList.toggle("lejana", i.dataset.bloque !== nombre);
+      });
+      construirIndice(document.getElementById(nombre));
+      if (animar) navegar(nombre);
+      else { pos = { ...puerto[nombre] }; colocar(pos); }
+    }
+
+    function elegir(nombre) {
+      activar(nombre, true);
+      history.replaceState(null, "", "#" + nombre);
+    }
+
+    islas.forEach((isla) => {
+      isla.addEventListener("click", () => elegir(isla.dataset.bloque));
+      isla.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); elegir(isla.dataset.bloque); }
+      });
+    });
+
+    // Al cargar: #algebra, #calculo, #estadistica o una sección concreta
+    function desdeEnlace(animar) {
+      const h = decodeURIComponent(location.hash.slice(1));
+      if (nombres.includes(h)) {
+        activar(h, animar);
+        if (animar) requestAnimationFrame(() => document.getElementById(h).scrollIntoView({ behavior: "smooth" }));
+        return;
+      }
+      const el = h && document.getElementById(h);
+      const b = el && el.closest(".bloque");
+      if (b) {
+        activar(b.id, animar);
+        requestAnimationFrame(() => el.scrollIntoView());
+      }
+    }
+
+    desdeEnlace(false);
+    if (!actual) activar("algebra", false);
+    addEventListener("hashchange", () => desdeEnlace(true));
+
+    // El índice aparece al dejar atrás la portada
     new IntersectionObserver(([e]) => {
       indice.classList.toggle("visible", !e.isIntersecting);
     }, { threshold: 0.15 }).observe(portada);
-
-    const obs = new IntersectionObserver((entradas) => {
-      entradas.forEach((e) => {
-        if (!e.isIntersecting) return;
-        enlaces.forEach((a) => {
-          const es = a.getAttribute("href") === "#" + e.target.id;
-          a.classList.toggle("actual", es);
-          if (es && getComputedStyle(indice).position === "sticky") {
-            a.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
-          }
-        });
-      });
-    }, { rootMargin: "-45% 0px -50% 0px" });
-
-    enlaces.forEach((a) => {
-      const s = document.querySelector(a.getAttribute("href"));
-      if (s) obs.observe(s);
-    });
   })();
   </script>
 
