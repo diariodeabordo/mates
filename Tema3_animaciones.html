@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema 3 · Espacios vectoriales euclídeos</title>
+<style>
+:root{ --tema:#E5A50A; --temaD:#9a6d00; --temaL:#FDF3DC;
+  --bg:#ffffff; --fg:#20201e; --muted:#7a7873; --line:#eadfc6; --habitat:#c8bea8; --gold:#c99a2e; --bad:#d2553f; --ok:#1e963c; }
+*{box-sizing:border-box} html,body{margin:0;height:100%}
+body{background:#fff;color:var(--fg);display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+  font-family:"Latin Modern Sans","CMU Sans Serif","Helvetica Neue",Arial,sans-serif}
+header{background:var(--tema);color:#fff;text-align:center;padding:10px 10px 0}
+header h1{margin:0 0 8px;font-weight:400;font-size:22px} header h1 b{font-weight:700}
+#tabs{display:flex;justify-content:center;flex-wrap:wrap;gap:2px}
+#tabs button{background:transparent;border:0;color:#fff8e6;font:inherit;font-size:14.5px;padding:7px 12px 8px;border-radius:8px 8px 0 0;cursor:pointer;opacity:.9}
+#tabs button.on{background:#fff;color:var(--temaD);opacity:1;font-weight:700}
+main{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;padding:10px 14px 8px}
+.stage{display:none;flex:1;min-height:0;width:100%;max-width:1240px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;position:relative}
+.stage.on{display:block} .stage canvas{width:100%;height:100%;display:block;touch-action:none}
+.bar{display:none;justify-content:center;flex-wrap:wrap;gap:8px;padding:10px 0 2px;min-height:46px} .bar.on{display:flex}
+.bar .inner{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;align-items:center}
+button.pill{font:inherit;font-size:15px;line-height:1;cursor:pointer;min-width:38px;height:34px;padding:0 15px;border-radius:999px;
+  border:1.5px solid var(--tema);background:#fff;color:var(--temaD);white-space:nowrap}
+button.pill:hover{background:var(--temaL)} button.pill[aria-pressed="true"]{background:var(--tema);color:#fff}
+.cap{position:absolute;left:12px;top:10px;background:rgba(255,255,255,.9);padding:6px 12px;border-radius:8px;
+  font-size:19px;line-height:1.8;color:#503050;pointer-events:none;max-width:70%}
+.cap mjx-container{margin:0!important} .cap mjx-assistive-mml{display:none!important}
+</style>
+<script>window.MathJax={tex:{},svg:{fontCache:'local'},options:{enableAssistiveMml:false},startup:{typeset:false}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head><body>
+<header><h1>Tema 3. Espacios vectoriales <b>euclídeos</b></h1><nav id="tabs">
+<button data-mod="som">Producto escalar</button>
+<button data-mod="mat">Matriz G</button>
+<button data-mod="nor">Norma y ángulo</button>
+<button data-mod="ort">Ortogonalidad</button>
+<button data-mod="com3">Complemento ortogonal</button>
+<button data-mod="gs">Gram-Schmidt</button>
+<button data-mod="pro">Proyección ortogonal</button>
+</nav></header>
+<main>
+<div class="stage" id="st-som"><canvas id="som-cv"></canvas></div>
+<div class="stage" id="st-mat"><canvas id="mat-cv"></canvas></div>
+<div class="stage" id="st-nor"><canvas id="nor-cv"></canvas></div>
+<div class="stage" id="st-ort"><canvas id="ort-cv"></canvas><canvas id="ort3-cv"></canvas></div>
+<div class="stage" id="st-com3"><canvas id="com3-cv"></canvas></div>
+<div class="stage" id="st-gs"><canvas id="gs-cv"></canvas></div>
+<div class="stage" id="st-pro"><canvas id="pro-cv"></canvas></div>
+<div class="bar" id="bar-som"><div id="som-bar" class="inner"></div></div>
+<div class="bar" id="bar-mat"><div id="mat-bar" class="inner"></div></div>
+<div class="bar" id="bar-nor"><div id="nor-bar" class="inner"></div></div>
+<div class="bar" id="bar-ort"><div id="ort-bar" class="inner"></div></div>
+<div class="bar" id="bar-com3"><div id="com3-bar" class="inner"></div></div>
+<div class="bar" id="bar-gs"><div id="gs-bar" class="inner"></div></div>
+<div class="bar" id="bar-pro"><div id="pro-bar" class="inner"></div></div>
+</main>
+<script>
+/* =====================================================================
+   Utilidades comunes de los módulos nuevos (mismo trazo que los antiguos)
+   ===================================================================== */
+const CSSV=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const hcol=(h,l)=>`hsl(${h},68%,${l||55}%)`;
+function hexA(h,a){ h=h.replace('#',''); return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`; }
+const V2={add:(a,b)=>[a[0]+b[0],a[1]+b[1]], sub:(a,b)=>[a[0]-b[0],a[1]-b[1]], mul:(k,a)=>[k*a[0],k*a[1]],
+  len:a=>Math.hypot(a[0],a[1]), cross:(a,b)=>a[0]*b[1]-a[1]*b[0], dot:(a,b)=>a[0]*b[0]+a[1]*b[1]};
+const V3={add:(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]], mul:(k,a)=>[k*a[0],k*a[1],k*a[2]],
+  dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], cross:(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],
+  len:a=>Math.hypot(a[0],a[1],a[2]), unit:a=>{const l=Math.hypot(a[0],a[1],a[2])||1; return [a[0]/l,a[1]/l,a[2]/l];}};
+const clampN=(x,a,b)=>Math.max(a,Math.min(b,x)), lerpN=(a,b,t)=>a+(b-a)*t, easeN=g=>g*g*(3-2*g), randN=(a,b)=>a+Math.random()*(b-a);
+const HU=[22,205,140,300];
+
+function makeKit(cv){
+  const ctx=cv.getContext('2d');
+  const K={cv,ctx,W:0,H:0,k:1,onfit:null};
+  K.fit=()=>{ const r=cv.getBoundingClientRect(); if(!r.width) return; const d=window.devicePixelRatio||1;
+    cv.width=r.width*d; cv.height=r.height*d; K.W=r.width; K.H=r.height; ctx.setTransform(d,0,0,d,0,0); if(K.onfit) K.onfit(); };
+  new ResizeObserver(K.fit).observe(cv);
+  K.bg=()=>{ ctx.fillStyle=CSSV('--bg'); ctx.fillRect(0,0,K.W,K.H); };
+  K.arrow=(p1,p2,color,alpha,lw,halo)=>{
+    const [x1,y1]=p1,[x2,y2]=p2, Lp=Math.hypot(x2-x1,y2-y1); if(Lp<1.5) return;
+    const hl=Math.min(Lp*0.4,lw*2.4+6), hw=lw*1.6+4, ang=Math.atan2(y2-y1,x2-x1);
+    const bx=x2-hl*Math.cos(ang), by=y2-hl*Math.sin(ang), nx=-Math.sin(ang), ny=Math.cos(ang);
+    ctx.save(); ctx.globalAlpha=alpha; ctx.lineCap='round'; ctx.lineJoin='round';
+    if(halo){ ctx.strokeStyle=halo; ctx.lineWidth=lw+4; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+      ctx.fillStyle=halo; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(bx+nx*hw/2,by+ny*hw/2); ctx.lineTo(bx-nx*hw/2,by-ny*hw/2); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(bx,by); ctx.stroke();
+    ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(bx+nx*hw/2,by+ny*hw/2); ctx.lineTo(bx-nx*hw/2,by-ny*hw/2); ctx.closePath(); ctx.fill();
+    ctx.restore(); };
+  K.dash=(a,b,color,alpha,lw,dash)=>{ ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw||1.8; ctx.setLineDash(dash||[5,5]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.restore(); };
+  K.ring=(pt,r,color,alpha,lw,dash)=>{ ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw; if(dash) ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.arc(pt[0],pt[1],Math.max(0,r),0,7); ctx.stroke(); ctx.restore(); };
+  K.dot=(pt,r,color,alpha)=>{ ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle=color; ctx.beginPath(); ctx.arc(pt[0],pt[1],r,0,7); ctx.fill(); ctx.restore(); };
+  K.cross=(pt,s,color,alpha)=>{ ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=2.8*K.k; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(pt[0]-s,pt[1]-s); ctx.lineTo(pt[0]+s,pt[1]+s); ctx.moveTo(pt[0]+s,pt[1]-s); ctx.lineTo(pt[0]-s,pt[1]+s); ctx.stroke(); ctx.restore(); };
+  K.origin=(pt,t,col)=>{ const color=col||CSSV('--gold'), br=1+0.12*Math.sin(t*2.4), rad=30*K.k*br;
+    const g=ctx.createRadialGradient(pt[0],pt[1],0,pt[0],pt[1],rad);
+    g.addColorStop(0,hexA(color,.6)); g.addColorStop(.35,hexA(color,.22)); g.addColorStop(1,hexA(color,0));
+    ctx.save(); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(pt[0],pt[1],rad,0,7); ctx.fill(); ctx.restore();
+    K.ring(pt,9*K.k*br,color,.55,1.6); K.dot(pt,5.5*K.k+1,color,1); K.dot(pt,2.2*K.k+.4,'#ffffff',.9); };
+  K.habitat=(C,R)=>{ const gold=CSSV('--gold'), hab=CSSV('--habitat');
+    ctx.save(); ctx.fillStyle=hexA(gold,0.05); ctx.beginPath(); ctx.arc(C[0],C[1],R,0,7); ctx.fill(); ctx.restore();
+    K.ring(C,R,hab,.6,1.4,[2,6]); };
+  K.habitatFuerte=(C,R,S)=>{ // el plano R^2 como disco bien marcado, con sus ejes
+    ctx.save(); ctx.beginPath(); ctx.arc(C[0],C[1],R,0,7); ctx.fillStyle=hexA(CSSV('--tema'),0.04); ctx.fill(); ctx.clip();
+    ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
+    for(let k=-12;k<=12;k++){ ctx.beginPath(); ctx.moveTo(C[0]+k*S,C[1]-R); ctx.lineTo(C[0]+k*S,C[1]+R); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(C[0]-R,C[1]+k*S); ctx.lineTo(C[0]+R,C[1]+k*S); ctx.stroke(); }
+    ctx.strokeStyle='#8c9bad'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(C[0]-R,C[1]); ctx.lineTo(C[0]+R,C[1]); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(C[0],C[1]-R); ctx.lineTo(C[0],C[1]+R); ctx.stroke(); ctx.restore();
+    K.ring(C,R,'#8c9bad',.9,1.8); };
+  K.loop=fn=>{ let last=performance.now();
+    const L=now=>{ const dt=Math.min(.05,(now-last)/1000); last=now;
+      if(cv.offsetParent){ if(!K.W) K.fit(); if(K.W) fn(dt,now/1000); } else if(K.capEl) K.capEl.style.display='none'; requestAnimationFrame(L); };
+    requestAnimationFrame(L); };
+  K.ptr=e=>{ const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; };
+  return K;
+}
+function planoR2(K,C,S){ // R^2: cuadrícula suave y ejes continuos con flecha
+  const ctx=K.ctx; ctx.save(); ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
+  for(let k=-20;k<=20;k++){ const x=C[0]+k*S, y=C[1]+k*S;
+    if(x>0&&x<K.W){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,K.H); ctx.stroke(); }
+    if(y>0&&y<K.H){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(K.W,y); ctx.stroke(); } }
+  ctx.strokeStyle='#8c9bad'; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.moveTo(8,C[1]); ctx.lineTo(K.W-8,C[1]); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(C[0],K.H-8); ctx.lineTo(C[0],8); ctx.stroke();
+  ctx.fillStyle='#8c9bad';
+  ctx.beginPath(); ctx.moveTo(K.W-6,C[1]); ctx.lineTo(K.W-16,C[1]-5); ctx.lineTo(K.W-16,C[1]+5); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(C[0],6); ctx.lineTo(C[0]-5,16); ctx.lineTo(C[0]+5,16); ctx.closePath(); ctx.fill();
+  ctx.restore(); }
+function makeBar(id){ return document.getElementById(id); }
+function pill(bar,txt,title,fn,pressed){
+  const b=document.createElement('button'); b.className='pill'; b.textContent=txt; if(title) b.title=title; b.onclick=()=>fn(b);
+  if(pressed!==undefined) b.setAttribute('aria-pressed',pressed); bar.appendChild(b); return b; }
+
+/* =====================================================================
+   Motor 3D mínimo (giro con el ratón)
+   ===================================================================== */
+function make3D(K){
+  const V={yaw:0.75,pitch:0.38,S:30,C:[0,0],drag:null,idle:0};
+  V.rot=p=>{ const c=Math.cos(V.yaw), s=Math.sin(V.yaw), x=p[0]*c-p[1]*s, y=p[0]*s+p[1]*c, z=p[2];
+    const cp=Math.cos(V.pitch), sp=Math.sin(V.pitch); return [x, z*cp - y*sp, y*cp + z*sp]; };
+  V.P=p=>{ const r=V.rot(p); return [V.C[0]+r[0]*V.S, V.C[1]-r[1]*V.S]; };
+  V.depth=p=>V.rot(p)[2];
+  K.cv.addEventListener('pointerdown',e=>{ V.drag=K.ptr(e); K.cv.setPointerCapture(e.pointerId); });
+  K.cv.addEventListener('pointermove',e=>{ if(!V.drag) return; const p=K.ptr(e);
+    V.yaw-=(p[0]-V.drag[0])*0.008; V.pitch=clampN(V.pitch+(p[1]-V.drag[1])*0.006,-0.2,1.2); V.drag=p; V.idle=0; });
+  K.cv.addEventListener('pointerup',()=>{V.drag=null;});
+  V.tick=dt=>{ V.idle+=dt; if(!V.drag && V.idle>1.5) V.yaw+=dt*0.16; };
+  V.fit=()=>{ V.C=[K.W/2,K.H/2]; V.S=Math.min(K.W,K.H)/14.5; K.k=clampN(V.S/40,.6,1.2); };
+  V.cube=(L,alpha,color)=>{ const ctx=K.ctx, c=[-L,L], pts=[];
+    for(const x of c) for(const y of c) for(const z of c) pts.push([x,y,z]);
+    const pp=pts.map(V.P), faces=[[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]];
+    ctx.save(); ctx.fillStyle=CSSV('--tema'); ctx.globalAlpha=0.025;
+    faces.forEach(f=>{ ctx.beginPath(); f.forEach((i,k)=>k?ctx.lineTo(pp[i][0],pp[i][1]):ctx.moveTo(pp[i][0],pp[i][1])); ctx.closePath(); ctx.fill(); });
+    ctx.strokeStyle=color||'#8ea3bb'; ctx.globalAlpha=0.9; ctx.lineWidth=1.5; ctx.lineJoin='round';
+    for(let i=0;i<8;i++) for(let j=i+1;j<8;j++){ const d=[0,1,2].filter(k=>pts[i][k]!==pts[j][k]).length;
+      if(d===1){ const a=pp[i], b=pp[j]; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); } }
+    ctx.restore(); };
+  V.axes=L=>{ const g='#a9b6c6'; [[1,0,0],[0,1,0],[0,0,1]].forEach(e=>{ const a=V.P(V3.mul(-L,e)), b=V.P(V3.mul(L,e));
+    K.ctx.save(); K.ctx.strokeStyle=g; K.ctx.globalAlpha=.8; K.ctx.lineWidth=1.2; K.ctx.beginPath(); K.ctx.moveTo(a[0],a[1]); K.ctx.lineTo(b[0],b[1]); K.ctx.stroke(); K.ctx.restore(); }); };
+  V.planeBasis=n=>{ const nn=V3.unit(n), a=V3.unit(Math.abs(nn[0])<.9?V3.cross(nn,[1,0,0]):V3.cross(nn,[0,1,0])); return [a,V3.cross(nn,a)]; };
+  V.disc=(a,b,r,fill,fa,edge,ea)=>{ // trozo cuadrado del plano generado por a, b
+    const ctx=K.ctx, cs=[[1,1],[-1,1],[-1,-1],[1,-1]].map(([i,j])=>V.P(V3.add(V3.mul(i*r,a),V3.mul(j*r,b))));
+    ctx.save(); ctx.beginPath(); cs.forEach((q,k)=>k?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.closePath();
+    ctx.globalAlpha=fa; ctx.fillStyle=fill; ctx.fill();
+    if(edge){ ctx.globalAlpha=ea; ctx.strokeStyle=edge; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.stroke(); }
+    // retícula tenue sobre la hoja: se ve que es plana
+    ctx.globalAlpha=(edge?ea:fa)*0.35; ctx.strokeStyle=edge||fill; ctx.lineWidth=1;
+    for(let k=-3;k<=3;k++){ const t=k/4*r;
+      let q1=V.P(V3.add(V3.mul(t,a),V3.mul(-r,b))), q2=V.P(V3.add(V3.mul(t,a),V3.mul(r,b)));
+      ctx.beginPath(); ctx.moveTo(q1[0],q1[1]); ctx.lineTo(q2[0],q2[1]); ctx.stroke();
+      q1=V.P(V3.add(V3.mul(-r,a),V3.mul(t,b))); q2=V.P(V3.add(V3.mul(r,a),V3.mul(t,b)));
+      ctx.beginPath(); ctx.moveTo(q1[0],q1[1]); ctx.lineTo(q2[0],q2[1]); ctx.stroke(); }
+    ctx.restore(); };
+  V.line=(d,L,color,alpha)=>{ const ctx=K.ctx, u=V3.unit(d), a=V.P(V3.mul(-L,u)), b=V.P(V3.mul(L,u));
+    ctx.save(); ctx.lineCap='round'; ctx.strokeStyle=hexA(color,.16*alpha); ctx.lineWidth=16*K.k; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    ctx.strokeStyle=hexA(color,.85*alpha); ctx.lineWidth=2.6*K.k; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); ctx.restore(); };
+  V.solidCube=(L,alpha)=>{ // el espacio entero, encendido
+    const gold=CSSV('--gold'), ctx=K.ctx, c=[-L,L], pts=[]; for(const x of c) for(const y of c) for(const z of c) pts.push(V.P([x,y,z]));
+    const faces=[[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]];
+    ctx.save(); faces.forEach(f=>{ ctx.beginPath(); f.forEach((i,k)=>k?ctx.lineTo(pts[i][0],pts[i][1]):ctx.moveTo(pts[i][0],pts[i][1])); ctx.closePath();
+      ctx.globalAlpha=.06*alpha; ctx.fillStyle=gold; ctx.fill(); ctx.globalAlpha=.55*alpha; ctx.strokeStyle=gold; ctx.lineWidth=1.6; ctx.stroke(); }); ctx.restore(); };
+  return V;
+}
+
+
+</script>
+<script>
+/* =====================================================================
+   Tema 3 · Espacios vectoriales euclídeos — la luz del sol
+   u: rojo teja · v: gris oscuro · sombra: azul claro · sol: dorado
+   ===================================================================== */
+function fit3(K,V){ K.onfit=()=>{ V.fit(); V.S=Math.min(K.W,K.H)/12; K.k=clampN(V.S/34,.7,1.25); }; }
+const UC='#B5452B', VC='#3d4b5c', SH='#5E9FD8', SUN='#F2B90C', OKC='#1e963c';
+
+function sun2(K,pt,r,t){ const ctx=K.ctx, R=r*K.k;
+  const g=ctx.createRadialGradient(pt[0],pt[1],0,pt[0],pt[1],R*3.2);
+  g.addColorStop(0,'rgba(255,248,210,1)'); g.addColorStop(.25,'rgba(255,214,90,.75)'); g.addColorStop(1,'rgba(255,214,90,0)');
+  ctx.save(); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(pt[0],pt[1],R*3.2,0,7); ctx.fill();
+  ctx.strokeStyle=SUN; ctx.lineWidth=2*K.k; ctx.lineCap='round';
+  for(let k=0;k<12;k++){ const a=k*Math.PI/6+t*0.3; ctx.globalAlpha=.7;
+    ctx.beginPath(); ctx.moveTo(pt[0]+Math.cos(a)*R*1.5,pt[1]+Math.sin(a)*R*1.5); ctx.lineTo(pt[0]+Math.cos(a)*R*2.2,pt[1]+Math.sin(a)*R*2.2); ctx.stroke(); }
+  ctx.globalAlpha=1; ctx.fillStyle='#FFF6CF'; ctx.beginPath(); ctx.arc(pt[0],pt[1],R,0,7); ctx.fill();
+  ctx.restore(); }
+function cone(K,s,a,b,alpha){ const ctx=K.ctx;
+  const g=ctx.createLinearGradient(s[0],s[1],(a[0]+b[0])/2,(a[1]+b[1])/2);
+  g.addColorStop(0,`rgba(255,215,80,${.45*alpha})`); g.addColorStop(1,`rgba(255,215,80,${.12*alpha})`);
+  ctx.save(); ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(s[0],s[1]); ctx.lineTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.closePath(); ctx.fill(); ctx.restore(); }
+function shadowSeg(K,a,b,color,alpha){ const ctx=K.ctx; ctx.save(); ctx.lineCap='round';
+  ctx.globalAlpha=.28*alpha; ctx.strokeStyle=color; ctx.lineWidth=16*K.k; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+  ctx.globalAlpha=.95*alpha; ctx.lineWidth=5*K.k; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+  ctx.globalAlpha=.9*alpha; ctx.strokeStyle='#ffffff'; ctx.lineWidth=1.6*K.k; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+  ctx.restore(); }
+function rightAngle(K,O,a,b,s,color,alpha){ // a, b: direcciones en pantalla (unitarias)
+  const ctx=K.ctx, p1=[O[0]+a[0]*s,O[1]+a[1]*s], p2=[p1[0]+b[0]*s,p1[1]+b[1]*s], p3=[O[0]+b[0]*s,O[1]+b[1]*s];
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=2*K.k; ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.lineTo(p3[0],p3[1]); ctx.stroke(); ctx.restore(); }
+
+const MATHC='#503050', MF=sz=>`italic ${sz}px "Latin Modern Math","CMU Serif","Cambria Math","Times New Roman",serif`;
+function texNode(t){ if(!(window.MathJax&&MathJax.tex2svg)) return null; try{ return MathJax.tex2svg(t,{display:false}); }catch(e){ return null; } }
+function cap(K,lines){ // rótulo matemático en LaTeX, arriba a la izquierda del lienzo
+  if(!K.capEl){ const d=document.createElement('div'); d.className='cap'; K.cv.parentElement.appendChild(d); K.capEl=d; }
+  K.capEl.style.display='block';
+  const ready=!!(window.MathJax&&MathJax.tex2svg), key=JSON.stringify(lines)+ready+(K.capCv=K.cv.id);
+  if(K.capKey===key) return; K.capKey=key; K.capEl.innerHTML='';
+  if(!ready) return;
+  lines.forEach(l=>{ const row=document.createElement('div'); row.style.color=(l&&l.c)||'#503050';
+    const n=texNode(typeof l==='string'?l:l.t); if(n) row.appendChild(n); K.capEl.appendChild(row); });
+}
+function tag(K,pt,txt,color){ const ctx=K.ctx, sz=Math.round(clampN(19*K.k,15,24)); ctx.save(); ctx.font=`italic ${sz+2}px "Latin Modern Math","STIX Two Math","Times New Roman",serif`;
+  ctx.fillStyle=color; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.strokeText(txt,pt[0],pt[1]); ctx.fillText(txt,pt[0],pt[1]); ctx.restore(); }
+function tipTag(K,O,T,txt,color){ const d=unit2([T[0]-O[0],T[1]-O[1]]); tag(K,[T[0]+d[0]*20*K.k+(-d[1])*12*K.k,T[1]+d[1]*20*K.k+d[0]*12*K.k],txt,color); }
+function matLabel(K,x,y,M){ // G = ( a b ; c d )
+  const ctx=K.ctx, sz=Math.round(clampN(17*K.k,14,22)), cw=sz*1.6, rh=sz*1.25;
+  ctx.save(); ctx.font=MF(sz); ctx.fillStyle=MATHC; ctx.textBaseline='middle'; ctx.fillText('G =',x,y+rh);
+  const x0=x+sz*2.9; ctx.strokeStyle=MATHC; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.moveTo(x0+6,y+2); ctx.quadraticCurveTo(x0-2,y+rh,x0+6,y+2*rh-2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x0+2*cw+6,y+2); ctx.quadraticCurveTo(x0+2*cw+14,y+rh,x0+2*cw+6,y+2*rh-2); ctx.stroke();
+  ctx.font=`${sz}px "Latin Modern Math","CMU Serif","Times New Roman",serif`; ctx.textAlign='center';
+  for(let i=0;i<2;i++) for(let j=0;j<2;j++) ctx.fillText(M[i][j],x0+10+cw*(j+.5)-4,y+rh*(i+.5)+2);
+  ctx.restore(); }
+
+const unit2=a=>{ const l=Math.hypot(a[0],a[1])||1; return [a[0]/l,a[1]/l]; };
+function lineThrough(K,P,d,color,alpha){ const a=P(V2.mul(-40,d)), b=P(V2.mul(40,d)); K.dash(a,b,color,alpha,1.4,[6,6]); }
+function view2(K,f){ const V={C:[0,0],S:40}; K.onfit=()=>{ V.C=[K.W/2,K.H*0.6]; V.S=Math.min(K.W,K.H)/(f||8); K.k=clampN(V.S/50,.7,1.3); };
+  V.P=p=>[V.C[0]+p[0]*V.S, V.C[1]-p[1]*V.S]; V.unP=(x,y)=>[(x-V.C[0])/V.S,(V.C[1]-y)/V.S]; return V; }
+function handles(K,V,list,onmove){ // asas arrastrables en las puntas
+  let drag=null; K.hov=null;
+  K.cv.addEventListener('pointerdown',e=>{ const p=K.ptr(e); for(const h of list()) if(Math.hypot(p[0]-V.P(h.get())[0],p[1]-V.P(h.get())[1])<26*K.k){ drag=h; K.cv.setPointerCapture(e.pointerId); K.dragging=true; return; } });
+  K.cv.addEventListener('pointermove',e=>{ const p=K.ptr(e);
+    if(drag){ let q=V.unP(p[0],p[1]); const L=V2.len(q); if(L>4.2) q=V2.mul(4.2/L,q); if(L<0.5) q=V2.mul(0.5/(L||1),q); drag.set(q); if(onmove) onmove(); return; }
+    K.hov=null; for(const h of list()) if(Math.hypot(p[0]-V.P(h.get())[0],p[1]-V.P(h.get())[1])<26*K.k) K.hov=h.id; K.cv.style.cursor=K.hov?'grab':'default'; });
+  K.cv.addEventListener('pointerup',()=>{ drag=null; K.dragging=false; });
+}
+
+/* ---------- 1. SOMBRA: el producto escalar ---------- */
+(function(){
+  const K=makeKit(document.getElementById('som-cv')), bar=makeBar('som-bar'), V=view2(K,8.5);
+  let u=[3.2,0], ang=1.0, r=3.0, v=[r*Math.cos(1),r*Math.sin(1)], rect=false, tt=0;
+  handles(K,V,()=>[{id:'u',get:()=>u,set:q=>u=q},{id:'v',get:()=>v,set:q=>{v=q; r=V2.len(q); ang=Math.atan2(q[1],q[0]);}}]);
+  function build(){ bar.innerHTML=''; pill(bar,'▭ u·v','el producto escalar como área: largo de u por la sombra de v',b=>{rect=!rect; b.setAttribute('aria-pressed',rect);},rect); }
+  K.loop((dt,t)=>{
+    K.bg(); planoR2(K,V.C,V.S);
+    if(!K.dragging){ tt+=dt; ang+=dt*0.22; v=[r*Math.cos(ang),r*Math.sin(ang)]; }
+    const du=unit2(u), s=V2.dot(v,du), foot=V2.mul(s,du), O=V.P([0,0]), n=[-du[1],du[0]];
+    const h=V2.dot(v,n), side=h>=0?1:-1, sunW=V2.add(V2.add(foot,V2.mul(Math.max(0,0)+0,n)),V2.mul(h+side*1.5,n));
+    lineThrough(K,V.P,du,'#7d8a99',.8);
+    // cono de luz desde el sol hasta la sombra
+    const a=V.P(V2.mul(Math.min(0,s)-0.25,du)), b=V.P(V2.mul(Math.max(0,s)+0.25,du));
+    cone(K,V.P(sunW),a,b,1);
+    if(rect && Math.abs(s)>0.02){ const L=V2.len(u), q1=V.P(foot), q2=V.P(V2.add(foot,V2.mul(-side*L,n))), q3=V.P(V2.mul(-side*L,n));
+      const ctx=K.ctx; ctx.save(); ctx.globalAlpha=.18; ctx.fillStyle=s>=0?CSSV('--tema'):'#d2553f'; ctx.beginPath(); ctx.moveTo(O[0],O[1]); ctx.lineTo(q1[0],q1[1]); ctx.lineTo(q2[0],q2[1]); ctx.lineTo(q3[0],q3[1]); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha=.6; ctx.strokeStyle=s>=0?CSSV('--tema'):'#d2553f'; ctx.lineWidth=1.5; ctx.stroke(); ctx.restore();
+      K.dash(O,q3,UC,.6,2,[4,4]); }
+    K.dash(V.P(v),V.P(foot),'#8a96a5',.8,1.4,[3,4]);
+    K.arrow(O,V.P(u),UC,1,6*K.k+1,'#ffffff');
+    shadowSeg(K,O,V.P(foot), s>=0?SH:'#d2553f',1);
+    K.arrow(O,V.P(v),VC,1,6*K.k+1,'#ffffff');
+    sun2(K,V.P(sunW),9,t);
+    [['u',u,UC],['v',v,VC]].forEach(([id,w,c])=>K.ring(V.P(w),13*K.k,c,K.hov===id?.9:.35,1.6,[3,4]));
+    tipTag(K,O,V.P(u),'u',UC); tipTag(K,O,V.P(v),'v',VC);
+    cap(K, rect ? [String.raw`u\cdot v=\|u\|\cdot\big(\text{sombra con signo de } v \text{ sobre } u\big)`, {t:String.raw`\text{= área del rectángulo}`,c:'#9a6d00'}]
+                : [String.raw`u\cdot v=\|u\|\cdot\big(\text{sombra con signo de } v \text{ sobre } u\big)`, {t: s>=0.02?String.raw`\text{la sombra cae hacia } u:\ \ u\cdot v>0`:(s<=-0.02?String.raw`\text{la sombra cae al revés}:\ \ u\cdot v<0`:String.raw`\text{sin sombra}:\ \ u\cdot v=0`), c: s>=0.02?'#3d7cc0':(s<=-0.02?'#d2553f':OKC)}]);
+    K.origin(O,t);
+  });
+  build();
+})();
+
+/* ---------- 2. MATRIZ G: cada producto escalar mide a su manera ---------- */
+(function(){
+  const K=makeKit(document.getElementById('mat-cv')), bar=makeBar('mat-bar'), V=view2(K,4.6);
+  const MS=[[[1,0],[0,1]],[[1,1],[1,3]],[[2,0],[0,0.5]],[[1,2],[2,4]]];
+  const ML=[String.raw`1&0\\0&1`,String.raw`1&1\\1&3`,String.raw`2&0\\0&\tfrac12`,String.raw`1&2\\2&4`];
+  const EQ=[String.raw`x^2+y^2=1`,String.raw`x^2+2xy+3y^2=1`,String.raw`2x^2+\tfrac12\,y^2=1`,String.raw`x^2+4xy+4y^2=1\iff(x+2y)^2=1`];
+  const NOTE=['\\text{el círculo de siempre}','\\text{una elipse inclinada}','\\text{una elipse estirada}','\\text{dos rectas: no es un producto escalar}'];
+  let idx=0, G=[[1,0],[0,1]], ang=0.4;
+  const q=(G,v)=>G[0][0]*v[0]*v[0]+2*G[0][1]*v[0]*v[1]+G[1][1]*v[1]*v[1];
+  function build(){ bar.innerHTML='';
+    ['I','(1 1 / 1 3)','(2 0 / 0 ½)','(1 2 / 2 4)'].forEach((txt,i)=>pill(bar,['usual','G₁','G₂','G₃ (no def. pos.)'][i],txt,()=>{idx=i;build();},idx===i)); }
+  K.loop((dt,t)=>{
+    K.bg(); planoR2(K,V.C,V.S); const T=MS[idx], k=Math.min(1,dt*3);
+    for(let i=0;i<2;i++) for(let j=0;j<2;j++) G[i][j]+=(T[i][j]-G[i][j])*k;
+    const ctx=K.ctx, gold=CSSV('--tema'), O=V.P([0,0]);
+    // la "circunferencia unidad" de G: { v : v·v = 1 }
+    ctx.save(); ctx.strokeStyle=gold; ctx.lineWidth=3*K.k; ctx.beginPath(); let pen=false;
+    for(let i=0;i<=720;i++){ const th=i/720*2*Math.PI, d=[Math.cos(th),Math.sin(th)], qq=q(G,d);
+      if(qq<1e-3){ pen=false; continue; } const p=V.P(V2.mul(1/Math.sqrt(qq),d));
+      if(Math.hypot(p[0]-O[0],p[1]-O[1])>Math.max(K.W,K.H)){ pen=false; continue; }
+      pen?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]); pen=true; }
+    ctx.stroke(); ctx.restore();
+    const bad=(G[0][0]*G[1][1]-G[0][1]*G[0][1])<0.05;
+    if(bad){ // direcciones de "longitud cero": no es un producto escalar
+      const z=unit2([-G[0][1],G[0][0]]); K.arrow(O,V.P(V2.mul(1.8,z)),'#d2553f',1,5*K.k+1,'#fff'); K.arrow(O,V.P(V2.mul(-1.8,z)),'#d2553f',1,5*K.k+1,'#fff');
+      K.cross(V.P(V2.mul(1.8,z)),9*K.k,'#d2553f',.6+.3*Math.sin(t*5)); }
+    else{
+      ang+=dt*0.35; let u=[Math.cos(ang),Math.sin(ang)]; u=V2.mul(1/Math.sqrt(q(G,u)),u);
+      const Gu=[G[0][0]*u[0]+G[0][1]*u[1],G[1][0]*u[0]+G[1][1]*u[1]]; let w=[-Gu[1],Gu[0]]; w=V2.mul(1/Math.sqrt(q(G,w)),w);
+      K.arrow(O,V.P(u),UC,1,5.5*K.k+1,'#fff'); K.arrow(O,V.P(w),VC,1,5.5*K.k+1,'#fff');
+      // marca de "ortogonales para G" (aunque no lo parezcan a la vista)
+      const a=unit2([V.P(u)[0]-O[0],V.P(u)[1]-O[1]]), b=unit2([V.P(w)[0]-O[0],V.P(w)[1]-O[1]]);
+      const ctx2=K.ctx, s=16*K.k; ctx2.save(); ctx2.strokeStyle=OKC; ctx2.lineWidth=2*K.k; ctx2.beginPath();
+      ctx2.moveTo(O[0]+a[0]*s,O[1]+a[1]*s); ctx2.lineTo(O[0]+(a[0]+b[0])*s,O[1]+(a[1]+b[1])*s); ctx2.lineTo(O[0]+b[0]*s,O[1]+b[1]*s); ctx2.stroke(); ctx2.restore();
+    }
+    K.origin(O,t);
+    // qué estamos viendo: la "circunferencia unidad" de este producto escalar (v = (x, y) vector fila)
+    cap(K,[String.raw`\text{circunferencia unidad: }\ \{\,v \mid v\cdot v=1\,\}=\{\,v \mid v\,G\,v^{T}=1\,\}`,
+           String.raw`G=\begin{pmatrix}`+ML[idx]+String.raw`\end{pmatrix}`,
+           EQ[idx], {t:NOTE[idx],c: idx===3?'#d2553f':'#9a6d00'}]
+           .concat(idx===3?[]:[{t:String.raw`u\perp v\ \text{ para } G:\ \ u\,G\,v^{T}=0`,c:OKC}]));
+  });
+  build();
+})();
+
+/* ---------- 3. NORMA Y ÁNGULO ---------- */
+(function(){
+  const K=makeKit(document.getElementById('nor-cv')), bar=makeBar('nor-bar'), V=view2(K,9);
+  let u=[3,0.6], v=[1.2,2.4], mode='ang';
+  handles(K,V,()=>[{id:'u',get:()=>u,set:q=>u=q},{id:'v',get:()=>v,set:q=>v=q}]);
+  function build(){ bar.innerHTML='';
+    pill(bar,'∠ Ángulo','',()=>{mode='ang';build();},mode==='ang');
+    pill(bar,'Schwarz','la sombra nunca es más larga que la flecha',()=>{mode='sch';build();},mode==='sch');
+    pill(bar,'Triangular','el camino recto es el más corto',()=>{mode='tri';build();},mode==='tri'); }
+  let tt=0;
+  K.loop((dt,t)=>{
+    K.bg(); planoR2(K,V.C,V.S); tt+=dt; const ctx=K.ctx, O=V.P([0,0]), gold=CSSV('--tema');
+    if(!K.dragging && mode!=='tri'){ const a=Math.atan2(v[1],v[0])+dt*0.2, l=V2.len(v); v=[l*Math.cos(a),l*Math.sin(a)]; }
+    K.ring(O,V.S,gold,.55,1.6,[4,5]); // circunferencia unidad: la vara de medir
+    if(mode==='ang'){
+      const a1=Math.atan2(u[1],u[0]), a2=Math.atan2(v[1],v[0]); let d=a2-a1; d=Math.atan2(Math.sin(d),Math.cos(d));
+      ctx.save(); ctx.fillStyle=hexA(gold,.22); ctx.strokeStyle=gold; ctx.lineWidth=3*K.k; ctx.beginPath(); ctx.moveTo(O[0],O[1]);
+      ctx.arc(O[0],O[1],V.S*1.0,-a1,-a2,d>0); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(O[0],O[1],V.S*1.0,-a1,-a2,d>0); ctx.stroke(); ctx.restore();
+      K.dot(V.P(unit2(u)),5*K.k,UC,1); K.dot(V.P(unit2(v)),5*K.k,VC,1);
+    }
+    if(mode==='sch'){
+      const du=unit2(u), s=V2.dot(v,du), L=V2.len(v);
+      lineThrough(K,V.P,du,'#7d8a99',.7);
+      // la flecha v se "tumba" sobre la recta de u: su longitud frente a su sombra
+      const ph=(tt%6)/6, fold=easeN(clampN((ph-0.2)/0.4,0,1))*(ph<0.85?1:easeN(clampN((1-ph)/0.15,0,1)));
+      const av=Math.atan2(v[1],v[0]), au=Math.atan2(du[1],du[0])+(s<0?Math.PI:0); let dd=au-av; dd=Math.atan2(Math.sin(dd),Math.cos(dd));
+      const aa=av+dd*fold, vf=[L*Math.cos(aa),L*Math.sin(aa)];
+      shadowSeg(K,O,V.P(V2.mul(s,du)),SH,1);
+      K.dash(V.P(v),V.P(V2.mul(s,du)),'#8a96a5',.7,1.4,[3,4]);
+      if(fold>0.01) K.arrow(O,V.P(vf),VC,.35+.4*fold,4*K.k,null);
+    }
+    if(mode==='tri'){
+      const w=V2.add(u,v);
+      // ley del paralelogramo: copias de v (desde la punta de u) y de u (desde la punta de v)
+      K.arrow(V.P(u),V.P(w),VC,.45,3.4*K.k,null); K.arrow(V.P(v),V.P(w),UC,.45,3.4*K.k,null);
+      K.ctx.save(); K.ctx.globalAlpha=.06; K.ctx.fillStyle=gold; K.ctx.beginPath(); [O,V.P(u),V.P(w),V.P(v)].forEach((q,i)=>i?K.ctx.lineTo(q[0],q[1]):K.ctx.moveTo(q[0],q[1])); K.ctx.closePath(); K.ctx.fill(); K.ctx.restore();
+      K.arrow(O,V.P(w),gold,1,6*K.k+1,'#fff');
+      // barras: |u|+|v| frente a |u+v|
+      const x0=K.W-60*K.k, yb=K.H-30, sc=V.S*0.6;
+      const l1=V2.len(u), l2=V2.len(v), l3=V2.len(w);
+      ctx.save(); ctx.lineCap='butt'; ctx.lineWidth=12*K.k;
+      ctx.strokeStyle=UC; ctx.beginPath(); ctx.moveTo(x0,yb); ctx.lineTo(x0,yb-l1*sc); ctx.stroke();
+      ctx.strokeStyle=VC; ctx.beginPath(); ctx.moveTo(x0,yb-l1*sc); ctx.lineTo(x0,yb-(l1+l2)*sc); ctx.stroke();
+      ctx.strokeStyle=gold; ctx.beginPath(); ctx.moveTo(x0+22*K.k,yb); ctx.lineTo(x0+22*K.k,yb-l3*sc); ctx.stroke(); ctx.restore();
+    }
+    K.arrow(O,V.P(u),UC,1,6*K.k+1,'#fff'); K.arrow(O,V.P(v),VC,1,6*K.k+1,'#fff');
+    [['u',u,UC],['v',v,VC]].forEach(([id,w,c])=>K.ring(V.P(w),13*K.k,c,K.hov===id?.9:.35,1.6,[3,4]));
+    tipTag(K,O,V.P(u),'u',UC); tipTag(K,O,V.P(v),'v',VC); if(mode==='tri') tipTag(K,O,V.P(V2.add(u,v)),'u + v','#9a6d00');
+    if(mode==='ang') cap(K,[String.raw`\|v\|=\sqrt{v\cdot v}\qquad\big(\text{circunferencia: } \|v\|=1\big)`,String.raw`\cos\alpha=\dfrac{u\cdot v}{\|u\|\,\|v\|}`]);
+    if(mode==='sch') cap(K,[String.raw`\text{Schwarz: }\ |u\cdot v|\le\|u\|\,\|v\|`,
+        {t:String.raw`|u\cdot v|=\|u\|\cdot|\text{sombra de } v|\ \ \text{ y }\ \ |\text{sombra de } v|\le\|v\|`,c:'#3d7cc0'},
+        {t:String.raw`\text{(la sombra azul de } v \text{ nunca es más larga que la propia } v\text{)}`,c:'#7a7873'}]);
+    if(mode==='tri') cap(K,[String.raw`\text{Triangular: }\ \|u+v\|\le\|u\|+\|v\|`,{t:String.raw`\text{barras: }\ \|u\|+\|v\|\ \ \text{frente a}\ \ \|u+v\|`,c:'#9a6d00'}]);
+    K.origin(O,t);
+  });
+  build();
+})();
+
+/* ---------- 4. ORTOGONALIDAD ---------- */
+(function(){
+  const K=makeKit(document.getElementById('ort-cv')), bar=makeBar('ort-bar');
+  let mode=2, ang=0.6, hold=0;
+  const V=view2(K,8.5), K3=makeKit(document.getElementById('ort3-cv'));
+  const V3d=make3D(K3); fit3(K3,V3d);
+  function build(){ bar.innerHTML='';
+    pill(bar,'En el plano','',()=>{mode=2;sw();build();},mode===2);
+    pill(bar,'Sistema ortogonal (3D)','',()=>{mode=3;sw();build();},mode===3); }
+  function sw(){ document.getElementById('ort-cv').style.display=mode===2?'block':'none'; document.getElementById('ort3-cv').style.display=mode===3?'block':'none'; }
+  K.loop((dt,t)=>{
+    K.bg(); planoR2(K,V.C,V.S);
+    const target=Math.PI/2; let d=ang-target;
+    if(Math.abs(d)<0.03){ hold+=dt; if(hold>2.2){ ang+=0.04; hold=0; } } else { ang+=dt*0.28; if(ang>Math.PI*0.95) ang=0.25; }
+    if(Math.abs(ang-target)<0.03 && hold===0) ang=target;
+    const u=[3.4,0], v=[2.9*Math.cos(ang),2.9*Math.sin(ang)], O=V.P([0,0]), s=v[0], perp=Math.abs(s)<0.04;
+    lineThrough(K,V.P,[1,0],'#7d8a99',.8);
+    const sunW=[s,v[1]+1.5];
+    cone(K,V.P(sunW),V.P([Math.min(0,s)-0.35,0]),V.P([Math.max(0,s)+0.35,0]),1);
+    K.dash(V.P(v),V.P([s,0]),'#8a96a5',.7,1.4,[3,4]);
+    K.arrow(O,V.P(u),UC,1,6*K.k+1,'#fff');
+    if(!perp) shadowSeg(K,O,V.P([s,0]),s>=0?SH:'#d2553f',1);
+    else { K.dot(O,8*K.k,SH,.9); rightAngle(K,O,[1,0],[0,-1],18*K.k,OKC,1); K.ring(O,(26+6*Math.sin(t*5))*K.k,OKC,.6,2); }
+    K.arrow(O,V.P(v),VC,1,6*K.k+1,'#fff');
+    sun2(K,V.P(sunW),9,t);
+    tipTag(K,O,V.P(u),'u',UC); tipTag(K,O,V.P(v),'v',VC);
+    cap(K,[String.raw`u\perp v\iff u\cdot v=0`,{t: perp?String.raw`\text{sin sombra: son ortogonales}`:String.raw`\text{todavía hay sombra}`, c: perp?OKC:'#3d7cc0'}]);
+    K.origin(O,t);
+  });
+  K3.loop((dt,t)=>{
+    V3d.tick(dt); K3.bg(); V3d.cube(3.2,.9); V3d.axes(3.2);
+    const e=[[2.6,0.6,0.4],[-0.62,2.55,0.2],null]; e[2]=V3.mul(2.7,V3.unit(V3.cross(e[0],e[1])));
+    const O=V3d.P([0,0,0]);
+    [[0,1],[1,2],[0,2]].forEach(([i,j])=>{ const a=V3.mul(0.42,V3.unit(e[i])), b=V3.mul(0.42,V3.unit(e[j]));
+      const p1=V3d.P(a), p2=V3d.P(V3.add(a,b)), p3=V3d.P(b), ctx=K3.ctx; ctx.save(); ctx.strokeStyle=OKC; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.lineTo(p3[0],p3[1]); ctx.stroke(); ctx.restore(); });
+    [UC,VC,CSSV('--tema')].forEach((c,i)=>K3.arrow(O,V3d.P(e[i]),c,1,5.5*K3.k+1,'#fff'));
+    K3.origin(O,t);
+    cap(K3,[String.raw`\text{sistema ortogonal: }\ v_i\cdot v_j=0\ \ (i\neq j)`,{t:String.raw`\Longrightarrow\ \text{linealmente independientes}\ \Longrightarrow\ \text{base}`,c:OKC}]);
+  });
+  build(); sw();
+})();
+
+/* ---------- 5. COMPLEMENTO ORTOGONAL (3D) ---------- */
+(function(){
+  const K=makeKit(document.getElementById('com3-cv')), bar=makeBar('com3-bar'), V=make3D(K); fit3(K,V);
+  const n=V3.unit([0.25,-0.35,1]); let mode='plano', grow=0, dust=[], spawn=0;
+  function build(){ bar.innerHTML='';
+    pill(bar,'U plano','',()=>{mode='plano';grow=0;dust=[];build();},mode==='plano');
+    pill(bar,'U recta','',()=>{mode='recta';grow=0;dust=[];build();},mode==='recta'); }
+  K.loop((dt,t)=>{
+    V.tick(dt); K.bg(); grow=Math.min(1,grow+dt/1.2); const g=easeN(grow);
+    V.cube(3.2,.9); V.axes(3.2);
+    const [a,b]=V.planeBasis(n), O=V.P([0,0,0]), blue='#6FA8DC';
+    if(mode==='plano'){ // U = plano (azul), U⊥ = recta normal (roja)
+      V.disc(a,b,2.8,blue,.22,blue,.9);
+      const p=V.P(V3.mul(3.0*g,n)), m=V.P(V3.mul(-3.0*g,n));
+      K.dash(O,m,UC,.8,2.4,[6,5]); K.arrow(O,p,UC,1,5.5*K.k+1,'#fff');
+    }else{ // U = recta (azul), U⊥ = plano (rojo)
+      V.disc(a,b,2.8*g,UC,.13,UC,.75);
+      V.line(n,3.2,'#6FA8DC',1); K.arrow(O,V.P(V3.mul(2.6,n)),'#3d7cc0',1,5.5*K.k+1,'#fff');
+    }
+    // el ángulo recto entre los dos
+    const p1=V.P(V3.mul(.45,a)), p2=V.P(V3.add(V3.mul(.45,a),V3.mul(.45,n))), p3=V.P(V3.mul(.45,n)), ctx=K.ctx;
+    ctx.save(); ctx.strokeStyle=UC; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.lineTo(p3[0],p3[1]); ctx.stroke(); ctx.restore();
+    // población de U⊥
+    spawn-=dt; if(spawn<=0){ spawn=0.09; const p = mode==='plano' ? V3.mul(randN(-2.9,2.9),n) : V3.add(V3.mul(randN(-2.7,2.7),a),V3.mul(randN(-2.7,2.7),b)); dust.push({p,a:0}); }
+    dust.forEach(q=>q.a+=dt/3); dust=dust.filter(q=>q.a<1);
+    dust.forEach(q=>K.dot(V.P(q.p),2.8*K.k,UC,Math.min(1,q.a*8)*(1-q.a)*.85));
+    K.origin(O,t);
+    cap(K,[{t: mode==='plano'?String.raw`U:\ \text{plano (azul)}`:String.raw`U:\ \text{recta (azul)}`,c:'#3d7cc0'},
+           {t: mode==='plano'?String.raw`U^{\perp}:\ \text{recta (roja)}`:String.raw`U^{\perp}:\ \text{plano (rojo)}`,c:UC},
+           String.raw`U^{\perp}=\{\,v\in V \mid u\cdot v=0\ \ \text{para todo } u\in U\,\}`,
+           mode==='plano'?String.raw`\dim U+\dim U^{\perp}=2+1=3`:String.raw`\dim U+\dim U^{\perp}=1+2=3`]);
+  });
+  build();
+})();
+
+/* ---------- 6. GRAM-SCHMIDT (3D, paso a paso) ---------- */
+(function(){
+  const K=makeKit(document.getElementById('gs-cv')), bar=makeBar('gs-bar'), V=make3D(K); fit3(K,V);
+  const v1=[2.9,1.0,0.5], v2=[1.8,2.7,0.4], v3=[1.1,1.3,2.9];
+  const u1=V3.unit(v1), p2=V3.mul(V3.dot(v2,u1),u1), w2=V3.add(v2,V3.mul(-1,p2)), u2=V3.unit(w2);
+  const p3=V3.add(V3.mul(V3.dot(v3,u1),u1),V3.mul(V3.dot(v3,u2),u2)), w3=V3.add(v3,V3.mul(-1,p3)), u3=V3.unit(w3);
+  const U=2.5; // escala de los unitarios para que se vean
+  let step=0, st=0;
+  function build(){ bar.innerHTML=''; pill(bar,'Paso ▸','',()=>{ if(step<3){step++;st=0;} }); pill(bar,'⟲','',()=>{step=0;st=0;}); }
+  const gold=()=>CSSV('--tema');
+  function lerp3(a,b,t){ return [lerpN(a[0],b[0],t),lerpN(a[1],b[1],t),lerpN(a[2],b[2],t)]; }
+  K.loop((dt,t)=>{
+    V.tick(dt); K.bg(); st+=dt; V.cube(3.2,.9); V.axes(3.2);
+    const O=V.P([0,0,0]), e1=easeN(clampN(st/1.4,0,1)), A=(x)=>x;
+    // paso 1: v1 se normaliza
+    const U1=V3.mul(U,u1), U2=V3.mul(U,u2), U3=V3.mul(U,u3);
+    if(step===0){ [v1,v2,v3].forEach(x=>K.arrow(O,V.P(x),VC,1,5*K.k+1,'#fff')); }
+    if(step>=1){ const a1 = step===1 ? lerp3(v1,U1,e1) : U1; K.arrow(O,V.P(a1),gold(),1,6*K.k+1,'#fff'); }
+    if(step===1){ [v2,v3].forEach(x=>K.arrow(O,V.P(x),VC,1,5*K.k+1,'#fff')); }
+    if(step===2){ // a v2 se le quita su sombra sobre u1
+      const s1=easeN(clampN(st/1.2,0,1)), s2=easeN(clampN((st-1.4)/1.2,0,1)), s3=easeN(clampN((st-2.8)/1.0,0,1));
+      shadowSeg(K,O,V.P(V3.mul(s1,p2)),SH,1);
+      K.dash(V.P(v2),V.P(p2),'#8a96a5',.8*s1,1.4,[3,4]);
+      const wNow = s3>0 ? lerp3(w2,U2,s3) : w2;
+      if(s2<1) K.arrow(O,V.P(v2),VC,1-s2*0.7,5*K.k+1,'#fff');
+      if(s2>0){ const start=lerp3(p2,[0,0,0],s2); K.arrow(V.P(start),V.P(V3.add(start,s3>0?wNow:w2)),s3>0?gold():VC,1,5.5*K.k+1,'#fff'); }
+      K.arrow(O,V.P(v3),VC,1,5*K.k+1,'#fff');
+    }
+    if(step===3){ // a v3 se le quita su sombra sobre el plano de u1, u2
+      K.arrow(O,V.P(U2),gold(),1,6*K.k+1,'#fff');
+      const [pa,pb]=[u1,u2]; V.disc(pa,pb,2.4,SH,.10*clampN(st,0,1),SH,.5*clampN(st,0,1));
+      const s1=easeN(clampN(st/1.2,0,1)), s2=easeN(clampN((st-1.4)/1.2,0,1)), s3=easeN(clampN((st-2.8)/1.0,0,1));
+      shadowSeg(K,O,V.P(V3.mul(s1,p3)),SH,1);
+      K.dash(V.P(v3),V.P(p3),'#8a96a5',.8*s1,1.4,[3,4]);
+      const wNow = s3>0 ? lerp3(w3,U3,s3) : w3;
+      if(s2<1) K.arrow(O,V.P(v3),VC,1-s2*0.7,5*K.k+1,'#fff');
+      if(s2>0){ const start=lerp3(p3,[0,0,0],s2); K.arrow(V.P(start),V.P(V3.add(start,wNow)),s3>0?gold():VC,1,5.5*K.k+1,'#fff'); }
+      if(false){}
+      if(st>4.2){ const ctx=K.ctx; [[u1,u2],[u2,u3],[u1,u3]].forEach(([a,b])=>{ const q1=V.P(V3.mul(.5,a)), q2=V.P(V3.add(V3.mul(.5,a),V3.mul(.5,b))), q3=V.P(V3.mul(.5,b));
+        ctx.save(); ctx.strokeStyle=OKC; ctx.lineWidth=2; ctx.globalAlpha=clampN(st-4.2,0,1); ctx.beginPath(); ctx.moveTo(q1[0],q1[1]); ctx.lineTo(q2[0],q2[1]); ctx.lineTo(q3[0],q3[1]); ctx.stroke(); ctx.restore(); }); }
+    }
+    K.origin(O,t);
+    const F=[[String.raw`\text{partida: }\ \{v_1,v_2,v_3\}\ \text{ una base cualquiera}`],
+             [String.raw`\text{paso 1: }\ \tilde u_1=\dfrac{v_1}{\|v_1\|}`],
+             [String.raw`\text{paso 2: }\ u_2=v_2-(v_2\cdot\tilde u_1)\,\tilde u_1`,{t:String.raw`\text{(a } v_2 \text{ se le quita su sombra sobre } \tilde u_1\text{)}`,c:'#3d7cc0'},String.raw`\tilde u_2=\dfrac{u_2}{\|u_2\|}`],
+             [String.raw`\text{paso 3: }\ u_3=v_3-(v_3\cdot\tilde u_1)\,\tilde u_1-(v_3\cdot\tilde u_2)\,\tilde u_2`,{t:String.raw`\text{(a } v_3 \text{ se le quita su sombra sobre el plano de } \tilde u_1,\tilde u_2\text{)}`,c:'#3d7cc0'},String.raw`\tilde u_3=\dfrac{u_3}{\|u_3\|}`,{t:String.raw`\{\tilde u_1,\tilde u_2,\tilde u_3\}\ \text{ base ortonormal}`,c:OKC}]][step];
+    cap(K,F);
+  });
+  build();
+})();
+
+/* ---------- 7. PROYECCIÓN ORTOGONAL (3D) ---------- */
+(function(){
+  const K=makeKit(document.getElementById('pro-cv')), bar=makeBar('pro-bar'), V=make3D(K); fit3(K,V);
+  const n=V3.unit([0.2,-0.3,1]), [a,b]=V.planeBasis(n); let mode='plano';
+  const v=[2.3,1.3,2.1];
+  function build(){ bar.innerHTML='';
+    pill(bar,'Sobre un plano','',()=>{mode='plano';build();},mode==='plano');
+    pill(bar,'Sobre una recta','',()=>{mode='recta';build();},mode==='recta'); }
+  K.loop((dt,t)=>{
+    V.tick(dt); K.bg(); V.cube(3.2,.9); V.axes(3.2);
+    const O=V.P([0,0,0]), blue='#6FA8DC';
+    let p, nn;
+    if(mode==='plano'){ V.disc(a,b,2.9,blue,.2,blue,.9); p=V3.add(v,V3.mul(-V3.dot(v,n),n)); }
+    else { const d=V3.unit([1,0.5,0.15]); V.line(d,3.2,blue,1); p=V3.mul(V3.dot(v,d),d); }
+    const r=V3.add(v,V3.mul(-1,p)), rn=V3.unit(r);
+    // el sol, en la dirección perpendicular, sobre la punta de v
+    const sunW=V3.add(v,V3.mul(1.6,rn)), sp=V.P(sunW);
+    const pts=[V.P(V3.add(p,V3.mul(0.6,mode==='plano'?a:V3.unit(p)))),V.P(V3.add(p,V3.mul(-0.6,mode==='plano'?a:V3.unit(p))))];
+    cone(K,sp,pts[0],pts[1],.9);
+    // un punto q que pasea por U: siempre está más lejos de v que la sombra
+    const th=t*0.7, q = mode==='plano' ? V3.add(p,V3.add(V3.mul(1.5*Math.cos(th),a),V3.mul(1.5*Math.sin(th),b))) : V3.add(p,V3.mul(1.6*Math.sin(th),V3.unit(p)));
+    K.dash(V.P(q),V.P(v),'#d2553f',.75,2,[5,4]); K.dot(V.P(q),5*K.k,'#d2553f',.9);
+    K.dash(V.P(p),V.P(v),OKC,.95,2.6,[]);
+    // ángulo recto entre lo que sobra y U
+    const dir=mode==='plano'?a:V3.unit(p), q1=V.P(V3.add(p,V3.mul(.4,dir))), q2=V.P(V3.add(p,V3.add(V3.mul(.4,dir),V3.mul(.4,rn)))), q3=V.P(V3.add(p,V3.mul(.4,rn)));
+    const ctx=K.ctx; ctx.save(); ctx.strokeStyle=OKC; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(q1[0],q1[1]); ctx.lineTo(q2[0],q2[1]); ctx.lineTo(q3[0],q3[1]); ctx.stroke(); ctx.restore();
+    shadowSeg(K,O,V.P(p),SH,1); K.arrow(O,V.P(p),'#3d7cc0',1,4.5*K.k+1,null);
+    K.arrow(O,V.P(v),VC,1,6*K.k+1,'#fff');
+    sun2(K,sp,8,t);
+    K.origin(O,t);
+    cap(K,[String.raw`v=p+(v-p)`,{t:String.raw`p=\text{sombra de } v \text{ en } U\ \text{(proyección ortogonal)}`,c:'#3d7cc0'},{t:String.raw`v-p\perp U`,c:OKC},{t:String.raw`\|v-q\|>\|v-p\|\ \ \text{para todo } q\in U,\ q\neq p`,c:'#d2553f'}]);
+  });
+  build();
+})();
+
+</script>
+<script>
+const tabBtns=[...document.querySelectorAll('#tabs button')];
+function show(btn){ tabBtns.forEach(b=>b.classList.toggle('on',b===btn)); const m=btn.dataset.mod;
+  document.querySelectorAll('.stage').forEach(e=>e.classList.toggle('on',e.id==='st-'+m));
+  document.querySelectorAll('.bar').forEach(e=>e.classList.toggle('on',e.id==='bar-'+m)); }
+tabBtns.forEach(b=>b.onclick=()=>show(b)); show(tabBtns[0]);
+</script></body></html>
