@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema 6 · Funciones</title>
+<style>
+  :root{
+    --tema:#3C8C64; --temaD:#2E6E4E; --temaL:#E6F1EB;
+    --rojo:#C81E1E; --ink:#2b2b2b; --gris:#9AA3A0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#fff;color:var(--ink);
+    font-family:"Latin Modern Sans","CMU Sans Serif","Helvetica Neue",Arial,sans-serif}
+  header{background:var(--tema);color:#fff;text-align:center;padding:10px 12px 0}
+  header h1{margin:0 0 8px;font-weight:400;font-size:22px;letter-spacing:.3px}
+  header h1 b{font-weight:700}
+  nav{display:flex;justify-content:center;flex-wrap:wrap;gap:2px}
+  nav button{background:transparent;border:0;color:#e9f4ee;font:inherit;font-size:15px;
+    padding:8px 14px 9px;border-radius:8px 8px 0 0;cursor:pointer;opacity:.85}
+  nav button:hover{opacity:1}
+  nav button.on{background:#fff;color:var(--temaD);opacity:1;font-weight:700}
+  main{max-width:1120px;margin:0 auto;padding:10px 14px 10px}
+  #wrap{position:relative;width:min(100%, calc((100vh - 210px) * 16 / 9));margin:0 auto;aspect-ratio:16/9;border:1px solid #e3ebe6;border-radius:10px;overflow:hidden;background:#fff}
+  canvas{display:block;width:100%;height:100%;touch-action:none}
+  .bar{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px;min-height:34px}
+  .bar > div{row-gap:6px}
+  .bar button{font:inherit;font-size:15px;background:#fff;color:var(--temaD);
+    border:1.5px solid var(--tema);border-radius:999px;padding:6px 16px;cursor:pointer}
+  .bar button:hover{background:var(--temaL)}
+  .bar button.on{background:var(--tema);color:#fff}
+  .bar .sep{width:18px}
+  #texlayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .tx{position:absolute;white-space:nowrap;font-size:21px;line-height:1;color:#503050}
+  .tx.bg{background:rgba(255,255,255,.92);padding:3px 6px;border-radius:6px}
+  .tx mjx-container{margin:0!important} .tx mjx-assistive-mml{display:none!important}
+</style>
+<script>window.MathJax={tex:{},svg:{fontCache:'local'},options:{enableAssistiveMml:false},startup:{typeset:false}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head>
+<body>
+<header>
+  <h1>Tema 6. <b>Funciones</b></h1>
+  <nav id="tabs"></nav>
+</header>
+<main>
+  <div id="wrap"><canvas id="cv"></canvas><div id="texlayer"></div></div>
+  <div class="bar" id="bar"></div>
+</main>
+
+<script>
+/* ============================================================
+   Utilidades comunes
+   ============================================================ */
+const COL = {tema:'#3C8C64', temaD:'#2E6E4E', rojo:'#C81E1E', ok:'#1E963C',
+             eje:'#A7AFAB', f:'#EE8A00', g:'#4F7FD0', sol:'#E1B400', fant:'#EE8A00'};
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+let W=0, H=0, DPR=1;
+function resize(){
+  const r = cv.getBoundingClientRect(); DPR = window.devicePixelRatio||1;
+  W = r.width; H = r.height; cv.width = W*DPR; cv.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', resize);
+
+// vista: centro (cx,cy) y semiancho en unidades del mundo
+let V = {cx:0, cy:0, half:6};
+const U  = () => W/(2*V.half);
+const sx = x => W/2 + (x-V.cx)*U();
+const sy = y => H/2 - (y-V.cy)*U();
+const wx = px => (px-W/2)/U()+V.cx;
+const wy = py => -(py-H/2)/U()+V.cy;
+const yTop = () => wy(0), yBot = () => wy(H);
+const xL = () => wx(0), xR = () => wx(W);
+const lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const ease = t => t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+
+function clear(){ ctx.clearRect(0,0,W,H); }
+function arrowHead(x,y,ang,len=8,color=COL.eje){
+  ctx.save(); ctx.fillStyle=color; ctx.translate(x,y); ctx.rotate(ang);
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-len,-len*0.45); ctx.lineTo(-len,len*0.45); ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function axes(){
+  ctx.strokeStyle=COL.eje; ctx.lineWidth=1.2;
+  const x0=sx(0), y0=sy(0);
+  ctx.beginPath(); ctx.moveTo(6,y0); ctx.lineTo(W-6,y0); ctx.stroke(); arrowHead(W-6,y0,0);
+  ctx.beginPath(); ctx.moveTo(x0,H-6); ctx.lineTo(x0,6); ctx.stroke(); arrowHead(x0,6,-Math.PI/2);
+}
+function poly(pts, color, lw=3, dash=null, alpha=1){
+  if(pts.length<2) return;
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=lw;
+  ctx.lineCap='round'; ctx.lineJoin='round'; if(dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(sx(pts[0][0]),sy(pts[0][1]));
+  for(let i=1;i<pts.length;i++) ctx.lineTo(sx(pts[i][0]),sy(pts[i][1]));
+  ctx.stroke(); ctx.restore();
+}
+// dibuja y=f(x) partiendo la curva donde no está definida o se dispara
+function plotF(f, a, b, color, lw=3, opt={}){
+  const n = opt.n||700, lim = opt.lim||(V.half*0.62);
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.globalAlpha = opt.alpha??1; if(opt.dash) ctx.setLineDash(opt.dash);
+  if(opt.glow){ ctx.shadowColor=color; ctx.shadowBlur=opt.glow; }
+  ctx.beginPath(); let pen=false, prev=null;
+  for(let i=0;i<=n;i++){
+    const x=a+(b-a)*i/n, y=f(x);
+    const okv = Number.isFinite(y) && Math.abs(y-V.cy) < lim*1.6;
+    if(okv && prev!==null && Math.abs(y-prev)>lim) pen=false;
+    if(okv){ pen ? ctx.lineTo(sx(x),sy(y)) : ctx.moveTo(sx(x),sy(y)); pen=true; prev=y; }
+    else { pen=false; prev=null; }
+  }
+  ctx.stroke(); ctx.restore();
+}
+function dot(x,y,color,r=5,hollow=false){
+  ctx.beginPath(); ctx.arc(sx(x),sy(y),r,0,2*Math.PI);
+  if(hollow){ ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=color; ctx.stroke(); }
+  else { ctx.fillStyle=color; ctx.fill(); }
+}
+function sun(px,py,r=16,phase=0){
+  ctx.save(); ctx.translate(px,py);
+  ctx.fillStyle='#FFF3C4'; ctx.strokeStyle=COL.sol; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.arc(0,0,r,0,2*Math.PI); ctx.fill(); ctx.stroke();
+  ctx.lineCap='round';
+  for(let k=0;k<8;k++){ const a=k*Math.PI/4+phase;
+    ctx.beginPath(); ctx.moveTo(Math.cos(a)*(r+5),Math.sin(a)*(r+5)); ctx.lineTo(Math.cos(a)*(r+12),Math.sin(a)*(r+12)); ctx.stroke(); }
+  ctx.restore();
+}
+function sampleCurve(f,a,b,n=400){ const p=[]; for(let i=0;i<=n;i++){const x=a+(b-a)*i/n; p.push([x,f(x)]);} return p; }
+
+
+/* ---------- etiquetas en LaTeX (MathJax) sobre el lienzo ---------- */
+const texLayer=document.getElementById('texlayer'), texEls={}; let texUsed={};
+function texAt(id,tex,x,y,o={}){ texUsed[id]=1; let e=texEls[id];
+  if(!e){ e=document.createElement('div'); e.className='tx'; texLayer.appendChild(e); texEls[id]=e; }
+  e.classList.toggle('bg',!!o.bg); e.style.color=o.color||'#503050'; e.style.fontSize=(o.size||21)+'px';
+  const ready=!!(window.MathJax&&MathJax.tex2svg);
+  if(e.dataset.tex!==tex+ready){ e.innerHTML=''; if(ready){ try{ e.appendChild(MathJax.tex2svg(tex,{display:false})); }catch(err){} } e.dataset.tex=tex+ready; }
+  const tr = o.anchor==='l' ? 'translate(0,-50%)' : (o.anchor==='r' ? 'translate(-100%,-50%)' : 'translate(-50%,-50%)');
+  e.style.left=x+'px'; e.style.top=y+'px'; e.style.display='block'; let sc=1; if(o.maxw){ const w=e.offsetWidth; if(w>o.maxw) sc=o.maxw/w; } e.style.transformOrigin='0 50%'; e.style.transform=tr+(sc<1?` scale(${sc})`:''); }
+function texFrame(){ for(const id in texEls) if(!texUsed[id]) texEls[id].style.display='none'; texUsed={}; }
+
+/* ---------- barra de botones ---------- */
+const bar = document.getElementById('bar');
+function buttons(list){
+  bar.innerHTML='';
+  list.forEach(it=>{
+    if(it==='|'){ const s=document.createElement('span'); s.className='sep'; bar.appendChild(s); return; }
+    const b=document.createElement('button'); b.textContent=it.t; if(it.on) b.classList.add('on');
+    b.onclick=()=>{ if(it.group){ [...bar.querySelectorAll('button')].forEach(o=>{ if(o.dataset.g===it.group) o.classList.remove('on'); }); b.classList.add('on'); } it.f(b); };
+    if(it.group) b.dataset.g=it.group;
+    bar.appendChild(b);
+  });
+}
+/* ---------- puntero ---------- */
+let ptr = {down:false, x:0, y:0};
+function evPos(e){ const r=cv.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; }
+cv.addEventListener('pointerdown', e=>{ cv.setPointerCapture(e.pointerId); const [x,y]=evPos(e); ptr={down:true,x,y}; cur.down&&cur.down(x,y); });
+cv.addEventListener('pointermove', e=>{ const [x,y]=evPos(e); ptr.x=x; ptr.y=y; cur.move&&cur.move(x,y,ptr.down); });
+cv.addEventListener('pointerup',   e=>{ ptr.down=false; cur.up&&cur.up(); });
+
+/* ============================================================
+   1. La regla de la vertical
+   ============================================================ */
+const T1 = (()=>{
+  const heartP=[],moonP=[],circP=[];
+  for(let i=0;i<=240;i++){ const t=i/240*2*Math.PI, k=0.17;
+    heartP.push([k*16*Math.sin(t)**3, 0.35+k*(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))]); }
+  const R=2.5, d=0.4/0.65*R, r=0.568/0.65*R;
+  for(let a=60;a<=300;a+=2){ const t=a*Math.PI/180; moonP.push([R*Math.cos(t),R*Math.sin(t)]); }
+  for(let a=262.4;a>=97.6;a-=2){ const t=a*Math.PI/180; moonP.push([d+r*Math.cos(t),r*Math.sin(t)]); }
+  moonP.push(moonP[0].slice());
+  for(let i=0;i<=200;i++){ const t=i/200*2*Math.PI; circP.push([2.5*Math.cos(t),2.5*Math.sin(t)]); }
+  const shapes = {
+    ola:      sampleCurve(x=>1.3*Math.sin(1.1*x),-5.3,5.3,300),
+    colinas:  sampleCurve(x=>-1.6+1.9*Math.exp(-((x+1.6)**2)/1.6)+1.2*Math.exp(-((x-2.4)**2)/1.2)+0.25*Math.sin(1.7*x),-5.5,5.5,300),
+    corazon:  heartP, luna: moonP, circ: circP,
+    saliente: [[-4.6,-2.6],[-3.0,-0.6],[-1.4,1.7],[2.3,2.3],[0.3,1.1],[1.5,-0.4],[4.6,-2.6]],
+    tuyo: []
+  };
+  let s = {shape:'ola', x:-5, dir:1, drag:false, drawing:false, hold:0};
+  function cuts(pts,x){
+    const out=[];
+    for(let i=0;i<pts.length-1;i++){ const [x0,y0]=pts[i],[x1,y1]=pts[i+1];
+      if((x0<=x && x<x1)||(x1<=x && x<x0)){ const t=(x-x0)/(x1-x0); out.push(lerp(y0,y1,t)); } }
+    out.sort((a,b)=>a-b); const ded=[]; out.forEach(y=>{ if(!ded.length||Math.abs(y-ded[ded.length-1])>0.04) ded.push(y); });
+    return ded;
+  }
+  return {
+    enter(){ V={cx:0,cy:0,half:6}; s.x=-5.6; s.dir=1;
+      buttons([
+        {t:'Ola',group:'s',on:s.shape==='ola',f:()=>{s.shape='ola';s.drawing=false;}},
+        {t:'Colinas',group:'s',on:s.shape==='colinas',f:()=>{s.shape='colinas';s.drawing=false;}},
+        {t:'Corazón',group:'s',on:s.shape==='corazon',f:()=>{s.shape='corazon';s.drawing=false;}},
+        {t:'Luna',group:'s',on:s.shape==='luna',f:()=>{s.shape='luna';s.drawing=false;}},
+        {t:'Circunferencia',group:'s',on:s.shape==='circ',f:()=>{s.shape='circ';s.drawing=false;}},
+        {t:'Saliente',group:'s',on:s.shape==='saliente',f:()=>{s.shape='saliente';s.drawing=false;}},
+        '|',
+        {t:'✎ Dibuja tú',group:'s',on:s.shape==='tuyo',f:()=>{s.shape='tuyo';shapes.tuyo=[];s.drawing=true;}}
+      ]);
+    },
+    down(px,py){ if(s.shape==='tuyo'){ shapes.tuyo=[[wx(px),wy(py)]]; s.drawing=true; } else { s.drag=true; s.x=wx(px);} },
+    move(px,py,d){ if(!d) return;
+      if(s.shape==='tuyo' && s.drawing){ const p=[wx(px),wy(py)], L=shapes.tuyo[shapes.tuyo.length-1];
+        if(!L||Math.hypot(p[0]-L[0],p[1]-L[1])>0.05) shapes.tuyo.push(p); }
+      else if(s.drag) s.x=wx(px); },
+    up(){ s.drag=false; },
+    draw(dt){
+      clear(); axes();
+      const pts=shapes[s.shape];
+      if(!s.drag && !(s.shape==='tuyo' && ptr.down)){
+        s.x += s.dir*dt*1.6;
+        if(s.x>5.7){s.x=5.7;s.dir=-1;} if(s.x<-5.7){s.x=-5.7;s.dir=1;}
+      }
+      poly(pts, COL.tema, 3.2);
+      const c = pts.length>1 ? cuts(pts,s.x) : [];
+      const col = c.length>1 ? COL.rojo : COL.ok;
+      ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.setLineDash([7,6]);
+      ctx.beginPath(); ctx.moveTo(sx(s.x),0); ctx.lineTo(sx(s.x),H); ctx.stroke(); ctx.restore();
+      c.forEach(y=>dot(s.x,y,col,6));
+    }
+  };
+})();
+
+/* ============================================================
+   2. Las sombras: dominio e imagen
+   ============================================================ */
+const T2 = (()=>{
+  const fns = {
+    curva: {f:x=>0.3+0.7*Math.sin(1.25*x)+0.18*x, a:-3.6, b:3.0, ends:true},
+    inv:   {f:x=>x===0?NaN:1/x, a:-6, b:6},
+    raiz:  {f:x=>x<0?NaN:Math.sqrt(x), a:0, b:6, ends:'left'},
+    par:   {f:x=>0.45*x*x-2, a:-6, b:6}
+  };
+  let s={fn:'curva', mode:'arriba', t:0, hold:0, bx:null, by:null, pts:[]};
+  const NB=480;
+  function prep(){
+    const F=fns[s.fn]; s.pts=[];
+    const lo=Math.max(F.a,xL()+0.05), hi=Math.min(F.b,xR()-0.05);
+    for(let i=0;i<=900;i++){ const x=lo+(hi-lo)*i/900, y=F.f(x);
+      if(Number.isFinite(y) && y>yBot()+0.15 && y<yTop()-0.15) s.pts.push([x,y]); }
+    s.bx=new Uint8Array(NB); s.by=new Uint8Array(NB); s.t=0; s.hold=0;
+  }
+  function intervals(bins, lo, hi){ const out=[]; let st=-1;
+    for(let i=0;i<=bins.length;i++){ const on=i<bins.length&&bins[i];
+      if(on&&st<0) st=i; if(!on&&st>=0){ out.push([lo+(hi-lo)*st/bins.length, lo+(hi-lo)*i/bins.length]); st=-1; } }
+    return out; }
+  return {
+    enter(){ V={cx:0,cy:0.2,half:6.4}; prep();
+      buttons([
+        {t:'Curva',group:'f',on:s.fn==='curva',f:()=>{s.fn='curva';prep();}},
+        {t:'1/x',group:'f',on:s.fn==='inv',f:()=>{s.fn='inv';prep();}},
+        {t:'√x',group:'f',on:s.fn==='raiz',f:()=>{s.fn='raiz';prep();}},
+        {t:'Parábola',group:'f',on:s.fn==='par',f:()=>{s.fn='par';prep();}},
+        '|',
+        {t:'☀ arriba',group:'m',on:s.mode==='arriba',f:()=>{s.mode='arriba';prep();}},
+        {t:'☀ de lado',group:'m',on:s.mode==='lado',f:()=>{s.mode='lado';prep();}},
+        {t:'Ambos',group:'m',on:s.mode==='ambos',f:()=>{s.mode='ambos';prep();}}
+      ]);
+    },
+    draw(dt, time){
+      clear(); axes();
+      const F=fns[s.fn], up = s.mode!=='lado', side = s.mode!=='arriba';
+      plotF(F.f, Math.max(F.a,xL()), Math.min(F.b,xR()), COL.tema, 3.2);
+      if(F.ends===true){ dot(F.a,F.f(F.a),COL.tema,5); dot(F.b,F.f(F.b),COL.tema,5,true); }
+      if(F.ends==='left'){ dot(0,0,COL.tema,5); }
+      // avance del punto
+      if(s.t<1){ s.t=Math.min(1,s.t+dt/4.2); } else { s.hold+=dt; if(s.hold>2.2) prep(); }
+      const n=s.pts.length, k=Math.floor(s.t*(n-1));
+      const xl=xL(), xr=xR(), yb=yBot(), yt=yTop();
+      const bin=(v,lo,hi)=>clamp(Math.floor((v-lo)/(hi-lo)*NB),0,NB-1);
+      for(let i=0;i<=k && i<n;i++){ const [x,y]=s.pts[i];
+        s.bx[bin(x,xl,xr)]=1; s.by[bin(y,yb,yt)]=1;
+        if(i>0){ const [x0,y0]=s.pts[i-1];
+          if(Math.abs(x-x0)<0.2 && Math.abs(y-y0)<1.5){
+            for(let j=Math.min(bin(x,xl,xr),bin(x0,xl,xr)); j<=Math.max(bin(x,xl,xr),bin(x0,xl,xr)); j++) s.bx[j]=1;
+            for(let j=Math.min(bin(y,yb,yt),bin(y0,yb,yt)); j<=Math.max(bin(y,yb,yt),bin(y0,yb,yt)); j++) s.by[j]=1; } } }
+      ctx.save(); ctx.lineCap='butt'; ctx.strokeStyle=COL.tema; ctx.globalAlpha=0.55; ctx.lineWidth=9;
+      if(up) intervals(s.bx,xl,xr).forEach(([a,b])=>{ ctx.beginPath(); ctx.moveTo(sx(a),sy(0)); ctx.lineTo(sx(b),sy(0)); ctx.stroke(); });
+      if(side) intervals(s.by,yb,yt).forEach(([a,b])=>{ ctx.beginPath(); ctx.moveTo(sx(0),sy(a)); ctx.lineTo(sx(0),sy(b)); ctx.stroke(); });
+      ctx.restore();
+      // rayo de luz desde el punto
+      if(n && s.t<1){ const [x,y]=s.pts[k];
+        ctx.save(); ctx.strokeStyle=COL.sol; ctx.lineWidth=1.8; ctx.setLineDash([5,5]);
+        if(up){ ctx.beginPath(); ctx.moveTo(sx(x),sy(y)); ctx.lineTo(sx(x),sy(0)); ctx.stroke(); }
+        if(side){ ctx.beginPath(); ctx.moveTo(sx(x),sy(y)); ctx.lineTo(sx(0),sy(y)); ctx.stroke(); }
+        ctx.restore(); dot(x,y,COL.sol,6);
+      }
+      if(up) sun(W*0.74, 30, 15, time*0.4);
+      if(side) sun(W-34, H*0.2, 15, time*0.4);
+    }
+  };
+})();
+
+/* ============================================================
+   3. Máquinas en cadena: composición
+   ============================================================ */
+const T3 = (()=>{
+  const sq = {f:x=>x*x, lab:String.raw`(\;\cdot\;)^2`}, sn = {f:x=>Math.sin(x), lab:String.raw`\operatorname{sen}`};
+  let s={order:0, x:2, t:0, hold:0, drag:false, toggled:false};
+  const R=4.4; // rango de cada recta
+  const L = () => [H*0.15, H*0.52, H*0.89];
+  const px = v => W/2 + v*(W*0.38)/R;
+  const vx = p => (p-W/2)*R/(W*0.38);
+  function chain(o){ return o===0 ? [sn,sq] : [sq,sn]; }
+  function line(y){
+    ctx.strokeStyle=COL.eje; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(px(-R)-10,y); ctx.lineTo(px(R)+10,y); ctx.stroke();
+    arrowHead(px(R)+14,y,0);
+    for(let k=-4;k<=4;k++){ ctx.beginPath(); ctx.moveTo(px(k),y-(k===0?7:4)); ctx.lineTo(px(k),y+(k===0?7:4)); ctx.stroke(); }
+  }
+  function machine(y,lab){
+    const w=74,h=40; ctx.save(); ctx.fillStyle='#E6F1EB'; ctx.strokeStyle=COL.tema; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(W/2-w/2,y-h/2,w,h,9); ctx.fill(); ctx.stroke();
+    ctx.restore(); texAt('maq'+Math.round(y),lab,W/2,y,{color:COL.temaD,size:22});
+  }
+  function bez(p0,p1,p2,t){ return [ (1-t)*(1-t)*p0[0]+2*(1-t)*t*p1[0]+t*t*p2[0], (1-t)*(1-t)*p0[1]+2*(1-t)*t*p1[1]+t*t*p2[1] ]; }
+  return {
+    enter(){ s.t=0; s.hold=0;
+      buttons([{t:'⇅ Cambiar el orden',f:()=>{s.order=1-s.order; s.t=0; s.hold=0; s.toggled=true;}}]); },
+    down(x,y){ if(Math.abs(y-L()[0])<28){ s.drag=true; s.x=clamp(vx(x),-2.6,2.6); s.t=0; s.hold=0; } },
+    move(x,y,d){ if(d&&s.drag){ s.x=clamp(vx(x),-2.6,2.6); s.t=0; s.hold=0; } },
+    up(){ s.drag=false; },
+    draw(dt){
+      clear(); const [y1,y2,y3]=L(); const m1=(y1+y2)/2, m2=(y2+y3)/2;
+      [y1,y2,y3].forEach(line);
+      const [A,B]=chain(s.order), v1=s.x, v2=A.f(v1), v3=B.f(v2);
+      machine(m1,A.lab); machine(m2,B.lab);
+      // trayectos
+      const P1=[px(v1),y1], P2=[px(v2),y2], P3=[px(v3),y3];
+      const seg1=[[P1,[W/2,m1-20],[W/2,m1]],[[W/2,m1],[W/2,m1+20],P2]];
+      const seg2=[[P2,[W/2,m2-20],[W/2,m2]],[[W/2,m2],[W/2,m2+20],P3]];
+      ctx.save(); ctx.strokeStyle='#cfd8d3'; ctx.lineWidth=1.5; ctx.setLineDash([5,5]);
+      [...seg1,...seg2].forEach(([a,c,b])=>{ ctx.beginPath(); ctx.moveTo(...a); ctx.quadraticCurveTo(...c,...b); ctx.stroke(); });
+      ctx.restore();
+      if(!s.drag){ if(s.t<1) s.t=Math.min(1,s.t+dt/2.6); else { s.hold+=dt; if(s.hold>2.5){s.t=0;s.hold=0;} } }
+      const segs=[...seg1,...seg2], q=s.t*4, i=Math.min(3,Math.floor(q)), tt=q-i;
+      // salidas ya alcanzadas
+      ctx.fillStyle=COL.tema;
+      const P = (pt,c,r=7,h=false)=>{ ctx.beginPath(); ctx.arc(pt[0],pt[1],r,0,7); if(h){ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle=c;ctx.stroke();} else {ctx.fillStyle=c;ctx.fill();} };
+      P(P1,COL.tema);
+      if(s.t>=0.5) P(P2,COL.tema,6);
+      if(s.t>=1) P(P3,COL.tema,8);
+      const labF = o => o===0 ? String.raw`(\operatorname{sen} x)^2` : String.raw`\operatorname{sen}(x^2)`;
+      const fx = v => (Math.round(v*100)/100).toFixed(2).replace('.',',').replace('-','−');
+      if(s.t>=1) texAt('c-res',labF(s.order)+String.raw`=${fx(v3)}`,P3[0],y3-30,{bg:true,color:COL.temaD,size:19});
+      if(s.toggled){ const [A2,B2]=chain(1-s.order), w=B2.f(A2.f(v1)); P([px(w),y3],COL.rojo,8,true);
+        texAt('c-otro',labF(1-s.order)+String.raw`=${fx(w)}`,px(w),y3+32,{bg:true,color:COL.rojo,size:19}); }
+      if(s.t<1){ const [a,c,b]=segs[i]; const p=bez(a,c,b,tt); P(p,COL.f,6); }
+    }
+  };
+})();
+
+/* ============================================================
+   4. Simetrías: par, impar, periódica
+   ============================================================ */
+const T4 = (()=>{
+  const fns = {
+    x2:  x=>x*x,
+    x3:  x=>x*x*x,
+    sen: x=>Math.sin(x),
+    mix: x=>x*x+x,
+    exp: x=>Math.exp(x)
+  };
+  const TP=2*Math.PI;
+  let s={fn:'x2', mov:null, t:0, res:null};
+  const T = {
+    espejo: (x,y,t)=>[x*Math.cos(Math.PI*t), y],
+    giro:   (x,y,t)=>[x*Math.cos(Math.PI*t)-y*Math.sin(Math.PI*t), x*Math.sin(Math.PI*t)+y*Math.cos(Math.PI*t)],
+    deslizar:(x,y,t)=>[x+TP*t, y]
+  };
+  const test = {
+    espejo:  f=>x=>f(-x)-f(x), giro: f=>x=>-f(-x)-f(x), deslizar: f=>x=>f(x-TP)-f(x)
+  };
+  function check(){ const f=fns[s.fn], g=test[s.mov](f); let m=0;
+    for(let x=-5;x<=5;x+=0.05) m=Math.max(m,Math.abs(g(x))); return m<1e-6; }
+  function go(m){ s.mov=m; s.t=0; s.res=null; }
+  return {
+    enter(){ V={cx:0,cy:0,half:6.2}; s.mov=null; s.res=null;
+      buttons([
+        {t:'x²',group:'f',on:s.fn==='x2',f:()=>{s.fn='x2';s.mov=null;}},
+        {t:'x³',group:'f',on:s.fn==='x3',f:()=>{s.fn='x3';s.mov=null;}},
+        {t:'sen x',group:'f',on:s.fn==='sen',f:()=>{s.fn='sen';s.mov=null;}},
+        {t:'x² + x',group:'f',on:s.fn==='mix',f:()=>{s.fn='mix';s.mov=null;}},
+        {t:'eˣ',group:'f',on:s.fn==='exp',f:()=>{s.fn='exp';s.mov=null;}},
+        '|',
+        {t:'↔ Espejo',f:()=>go('espejo')},
+        {t:'⟲ Giro',f:()=>go('giro')},
+        {t:'→ Deslizar',f:()=>go('deslizar')}
+      ]); },
+    draw(dt,time){
+      clear(); axes(); const f=fns[s.fn];
+      const glowing = s.res===true;
+      plotF(f,-14,14,COL.tema,3.2,{glow: glowing ? 8+6*Math.sin(time*4) : 0});
+      if(!s.mov) return;
+      if(s.t<1){ s.t=Math.min(1,s.t+dt/1.8); if(s.t>=1) s.res=check(); }
+      const e=ease(s.t);
+      // elemento de simetría
+      ctx.save(); ctx.strokeStyle=COL.f; ctx.lineWidth=2;
+      if(s.mov==='espejo'){ ctx.setLineDash([6,5]); ctx.beginPath(); ctx.moveTo(sx(0),0); ctx.lineTo(sx(0),H); ctx.stroke(); }
+      if(s.mov==='giro'){ ctx.beginPath(); ctx.arc(sx(0),sy(0),26,-0, -Math.PI*e, true); ctx.stroke(); dot(0,0,COL.f,4); }
+      if(s.mov==='deslizar'){ const y=yTop()-0.6; ctx.beginPath(); ctx.moveTo(sx(-TP/2),sy(y)); ctx.lineTo(sx(-TP/2+TP*e),sy(y)); ctx.stroke(); if(e>0.05) arrowHead(sx(-TP/2+TP*e),sy(y),0,9,COL.f); }
+      ctx.restore();
+      if(s.res===true) return;
+      const pts=[]; for(let x=-14;x<=14;x+=0.02){ const y=f(x); if(Math.abs(y)<9) pts.push(T[s.mov](x,y,e)); }
+      poly(pts, s.res===false ? COL.rojo : COL.fant, 2.8, [8,6], s.res===false?0.75:0.9);
+    }
+  };
+})();
+
+/* ============================================================
+   5. La regla de la horizontal: inyectividad
+   ============================================================ */
+const T5 = (()=>{
+  const fns = {
+    x2:  {f:x=>x*x, even:true},
+    exp: {f:x=>Math.exp(x)},
+    x3:  {f:x=>x*x*x},
+    sen: {f:x=>Math.sin(x)},
+    cub: {f:x=>-2*x*x*x+x+1}
+  };
+  let s={fn:'x2', c:0, t:0, drag:false};
+  function roots(f,c){ const r=[]; const a=xL(), b=xR(), n=2400; let px=a, pv=f(a)-c;
+    for(let i=1;i<=n;i++){ const x=a+(b-a)*i/n, v=f(x)-c;
+      if(Number.isFinite(v)&&Number.isFinite(pv)&&(pv===0||pv*v<0)) r.push(pv===0?px:px+(x-px)*pv/(pv-v));
+      px=x; pv=v; }
+    return r; }
+  return {
+    enter(){ V={cx:0,cy:0.6,half:4.5};
+      buttons([
+        {t:'x²',group:'f',on:s.fn==='x2',f:()=>s.fn='x2'},
+        {t:'eˣ',group:'f',on:s.fn==='exp',f:()=>s.fn='exp'},
+        {t:'x³',group:'f',on:s.fn==='x3',f:()=>s.fn='x3'},
+        {t:'sen x',group:'f',on:s.fn==='sen',f:()=>s.fn='sen'},
+        {t:'−2x³+x+1',group:'f',on:s.fn==='cub',f:()=>s.fn='cub'}
+      ]); },
+    down(x,y){ s.drag=true; s.c=wy(y); }, move(x,y,d){ if(d&&s.drag) s.c=wy(y); }, up(){ s.drag=false; },
+    draw(dt){
+      clear(); axes(); const F=fns[s.fn];
+      if(!s.drag){ s.t+=dt; s.c=0.6+2.4*Math.sin(s.t*0.6); }
+      plotF(F.f,xL(),xR(),COL.tema,3.2);
+      const r=roots(F.f,s.c), col=r.length>1?COL.rojo:COL.ok;
+      ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.setLineDash([7,6]);
+      ctx.beginPath(); ctx.moveTo(0,sy(s.c)); ctx.lineTo(W,sy(s.c)); ctx.stroke(); ctx.restore();
+      if(F.even && r.length===2){
+        const a=Math.abs(r[0]);
+        ctx.save(); ctx.strokeStyle=COL.rojo; ctx.globalAlpha=0.6; ctx.lineWidth=1.4; ctx.setLineDash([3,4]);
+        r.forEach(x=>{ ctx.beginPath(); ctx.moveTo(sx(x),sy(s.c)); ctx.lineTo(sx(x),sy(0)); ctx.stroke(); });
+        ctx.setLineDash([]); ctx.lineWidth=2; ctx.beginPath();
+        ctx.ellipse(sx(0),sy(0),a*U(),Math.min(40,a*U()*0.35),0,0,Math.PI); ctx.stroke(); ctx.restore();
+        dot(-a,0,COL.rojo,4); dot(a,0,COL.rojo,4);
+      }
+      r.forEach(x=>dot(x,s.c,col,6));
+    }
+  };
+})();
+
+/* ============================================================
+   6. El espejo de la diagonal: inversa (plegado en 3D)
+   ============================================================ */
+const T6 = (()=>{
+  const PI=Math.PI, h=PI/2;
+  const fns = {
+    exp: {f:x=>Math.exp(x), a:-6.4, b:1.85, inj:true, name:String.raw`\ln x`},
+    x3:  {f:x=>x*x*x, a:-1.86, b:1.86, inj:true, name:String.raw`\sqrt[3]{x}`},
+    x2:  {f:x=>x*x, a:-2.5, b:2.5, cut:[0,2.5], cutLab:['0',''], name:String.raw`\sqrt{x}`, x0:2.4},
+    inv: {f:x=>1/x, a:-6.4, b:6.4, inj:true, name:String.raw`\dfrac{1}{x}`},
+    sen: {f:x=>Math.sin(x), a:-6.4, b:6.4, cut:[-h,h], cutLab:[String.raw`-\tfrac{\pi}{2}`,String.raw`\tfrac{\pi}{2}`], name:String.raw`\operatorname{arcsen} x`, x0:0.5},
+    cos: {f:x=>Math.cos(x), a:-6.4, b:6.4, cut:[0,PI], cutLab:['0',String.raw`\pi`], name:String.raw`\arccos x`, x0:0.5},
+    tan: {f:x=>Math.tan(x), a:-6.4, b:6.4, cut:[-h+0.002,h-0.002], cutLab:[String.raw`-\tfrac{\pi}{2}`,String.raw`\tfrac{\pi}{2}`], name:String.raw`\operatorname{arctg} x`, x0:1.2}
+  };
+  let s={fn:'exp', th:0, target:0, cut:false};
+  const a=Math.SQRT1_2, D=34;
+  function rot(x,y,th){ const p=(x+y)/2, q=(x-y)/2, c=Math.cos(th); return [p+q*c, p-q*c, a*(y-x)*Math.sin(th)]; }
+  function proj([X,Y,Z]){ const k=D/(D-Z); return [sx(X*k), sy(Y*k)]; }
+  function sample(F,lo,hi){ const pts=[], seg=[];
+    for(let i=0;i<=900;i++){ const x=lo+(hi-lo)*i/900, y=F.f(x);
+      if(!Number.isFinite(y)||Math.abs(y)>6.2||(F===fns.inv&&Math.abs(x)<0.16)){ if(seg.length) pts.push(seg.splice(0)); continue; }
+      seg.push([x,y]); }
+    if(seg.length) pts.push(seg); return pts; }
+  function strokeSegs(segs,th,col,lw,alpha,dash){ segs.forEach(sg=>{ const pp=sg.map(([x,y])=>proj(rot(x,y,th)));
+    ctx.save(); ctx.globalAlpha=alpha??1; ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round'; if(dash) ctx.setLineDash(dash);
+    ctx.beginPath(); pp.forEach((p,i)=> i?ctx.lineTo(...p):ctx.moveTo(...p)); ctx.stroke(); ctx.restore(); }); }
+  function label(txt,x,y,col){ ctx.save(); ctx.font='italic 20px "Latin Modern Math","STIX Two Math","Times New Roman",serif'; ctx.fillStyle=col;
+    ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.strokeText(txt,x,y); ctx.fillText(txt,x,y); ctx.restore(); }
+  let cutBtn=null;
+  return {
+    enter(){ V={cx:0,cy:0,half:6.4}; s.th=0; s.target=0;
+      const set=f=>{ s.fn=f; s.th=0; s.target=0; s.cut=false; if(cutBtn){ cutBtn.classList.remove('on'); cutBtn.disabled=!fns[f].cut; } };
+      buttons([
+        {t:'eˣ',group:'f',on:s.fn==='exp',f:()=>set('exp')},
+        {t:'x³',group:'f',on:s.fn==='x3',f:()=>set('x3')},
+        {t:'x²',group:'f',on:s.fn==='x2',f:()=>set('x2')},
+        {t:'1/x',group:'f',on:s.fn==='inv',f:()=>set('inv')},
+        {t:'sen x',group:'f',on:s.fn==='sen',f:()=>set('sen')},
+        {t:'cos x',group:'f',on:s.fn==='cos',f:()=>set('cos')},
+        {t:'tg x',group:'f',on:s.fn==='tan',f:()=>set('tan')},
+        '|',
+        {t:'Doblar ⟷',f:()=>{ s.target = s.target>0 ? 0 : Math.PI; }},
+        {t:'✂ Cortar',f:b=>{ if(fns[s.fn].cut){ s.cut=!s.cut; b.classList.toggle('on',s.cut);} }}
+      ]);
+      cutBtn=[...bar.querySelectorAll('button')].find(b=>b.textContent.includes('Cortar')); if(cutBtn) cutBtn.disabled=!fns[s.fn].cut; },
+    draw(dt,time){
+      clear();
+      const sp=dt*1.6; if(Math.abs(s.target-s.th)<sp) s.th=s.target; else s.th+=Math.sign(s.target-s.th)*sp;
+      const th=ease(s.th/Math.PI)*Math.PI, F=fns[s.fn], cutOn=s.cut&&F.cut, done=s.th>=Math.PI-1e-6;
+      // hoja que se pliega
+      const L=4.6, corners=[[-L,-L],[L,-L],[L,L],[-L,L]].map(([x,y])=>proj(rot(x,y,th)));
+      ctx.save(); ctx.fillStyle = Math.cos(th)>=0 ? 'rgba(60,140,100,0.05)' : 'rgba(60,140,100,0.11)';
+      ctx.strokeStyle='rgba(60,140,100,0.25)'; ctx.lineWidth=1;
+      ctx.beginPath(); corners.forEach((p,i)=> i?ctx.lineTo(...p):ctx.moveTo(...p)); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+      // la franja que conservamos al cortar
+      if(cutOn){ const [lo,hi]=F.cut, al=1-th/Math.PI*0.6;
+        ctx.save(); ctx.globalAlpha=0.10*al+0.04; ctx.fillStyle=COL.tema; ctx.fillRect(sx(lo),0,sx(hi)-sx(lo),H); ctx.restore();
+        ctx.save(); ctx.globalAlpha=al; ctx.strokeStyle=COL.tema; ctx.lineWidth=1.4; ctx.setLineDash([4,5]);
+        [lo,hi].forEach(x=>{ ctx.beginPath(); ctx.moveTo(sx(x),0); ctx.lineTo(sx(x),H); ctx.stroke(); }); ctx.restore();
+        F.cutLab.forEach((t,i)=>{ if(t){ ctx.save(); ctx.fillStyle=COL.tema; ctx.beginPath(); ctx.arc(sx(F.cut[i]),sy(0),5,0,7); ctx.fill(); ctx.restore();
+          texAt('cut'+i,t,sx(F.cut[i]),sy(0)+30,{bg:true,color:COL.temaD,size:22}); } }); }
+      axes();
+      // espejo y = x
+      ctx.save(); ctx.strokeStyle=COL.f; ctx.lineWidth=2; ctx.setLineDash([8,6]);
+      ctx.beginPath(); ctx.moveTo(sx(-5.5),sy(-5.5)); ctx.lineTo(sx(5.5),sy(5.5)); ctx.stroke(); ctx.restore();
+      const keep = cutOn ? sample(F,F.cut[0],F.cut[1]) : sample(F,F.a,F.b);
+      // lo que se corta queda atrás, tenue
+      if(cutOn){ strokeSegs(sample(F,F.a,F.cut[0]),0,'#b9c4be',2,0.8,[5,5]); strokeSegs(sample(F,F.cut[1],F.b),0,'#b9c4be',2,0.8,[5,5]); }
+      // la original, como recuerdo, mientras se dobla
+      if(s.th>0) strokeSegs(keep,0,'#c9d3ce',2.2);
+      const ok = F.inj || cutOn, col = done ? (ok?COL.tema:COL.rojo) : COL.tema;
+      strokeSegs(keep,th,col,3.2);
+      if(done && !ok){ // el reflejo no es función: la vertical lo corta varias veces
+        const x0=F.x0; ctx.save(); ctx.strokeStyle=COL.rojo; ctx.lineWidth=2; ctx.setLineDash([7,6]);
+        ctx.beginPath(); ctx.moveTo(sx(x0),0); ctx.lineTo(sx(x0),H); ctx.stroke(); ctx.restore();
+        keep.forEach(sg=>{ for(let i=1;i<sg.length;i++){ const [xa,ya]=sg[i-1],[xb,yb]=sg[i];
+          if((ya-x0)*(yb-x0)<=0 && ya!==yb){ const xx=xa+(xb-xa)*(x0-ya)/(yb-ya); if(Math.abs(xx)<6.2) dot(x0,xx,COL.rojo,6); } } });
+      }
+      if(done && ok && F.name){ // nombre de la inversa que acaba de nacer
+        const sg=keep[keep.length-1], pt=sg[Math.floor(sg.length*0.82)];
+        texAt('fname',F.name,sx(pt[1])+12,sy(pt[0])-18,{anchor:'l',bg:true,color:COL.temaD,size:22}); }
+    }
+  };
+})();
+
+/* ============================================================
+   7. Apilar alturas: suma de funciones (y par + impar)
+   ============================================================ */
+const T7 = (()=>{
+  const modes = {
+    suma: {f:x=>1.3+0.7*Math.sin(0.9*x), g:x=>0.9+0.13*x, a:-5.6, b:5.6, cy:1.4},
+    pi:   {f:x=>Math.cosh(x)/3, g:x=>Math.sinh(x)/3, a:-3.2, b:2.25, cy:1.2}
+  };
+  let s={m:'suma', x:-5.6, hold:0};
+  return {
+    enter(){ const M=modes[s.m]; V={cx:0,cy:M.cy,half:6.2}; s.x=M.a; s.hold=0;
+      buttons([
+        {t:'f + g',group:'m',on:s.m==='suma',f:()=>{s.m='suma'; this.enter();}},
+        {t:'🎁 Par + impar',group:'m',on:s.m==='pi',f:()=>{s.m='pi'; this.enter();}}
+      ]); },
+    draw(dt){
+      clear(); axes(); const M=modes[s.m];
+      if(s.x<M.b) s.x=Math.min(M.b,s.x+dt*1.5); else { s.hold+=dt; if(s.hold>2.2){ s.x=M.a; s.hold=0; } }
+      plotF(M.g,M.a,M.b,COL.g,2.6); plotF(M.f,M.a,M.b,COL.f,2.6);
+      plotF(x=>M.f(x)+M.g(x),M.a,s.x,COL.tema,3.4,{n:500});
+      const x=s.x, fv=M.f(x), gv=M.g(x), o=0.07;
+      ctx.save(); ctx.lineCap='butt'; ctx.globalAlpha=0.8; ctx.lineWidth=8;
+      ctx.strokeStyle=COL.f; ctx.beginPath(); ctx.moveTo(sx(x-o),sy(0)); ctx.lineTo(sx(x-o),sy(fv)); ctx.stroke();
+      ctx.strokeStyle=COL.g; ctx.beginPath(); ctx.moveTo(sx(x+o),sy(0)); ctx.lineTo(sx(x+o),sy(gv)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sx(x-o),sy(fv)); ctx.lineTo(sx(x-o),sy(fv+gv)); ctx.stroke();
+      ctx.restore();
+      dot(x,fv+gv,COL.tema,6);
+    }
+  };
+})();
+
+
+/* ============================================================
+   8. Museo de funciones: seis vitrinas
+   ============================================================ */
+const T8 = (()=>{
+  const PI=Math.PI, h=PI/2, R=String.raw, I=Infinity;
+  const SALAS=[
+    {n:'Polinomios y potencias', c:'#3f6fb0'},
+    {n:'Racionales', c:'#8e5bb5'},
+    {n:'Exponencial y logaritmo', c:'#d4691f'},
+    {n:'Trigonométricas', c:'#11968a'},
+    {n:'Trigonométricas inversas', c:'#2f7d4e'}];
+  const F=[
+   // sala 1
+   {s:0,b:'x',dI:[[-I,I]],iI:[[-I,I]],tex:R`f(x)=x`,f:x=>x,dom:R`\mathbb{R}`,img:R`\mathbb{R}`,sym:R`\text{impar}`,inj:R`\text{sí}`,inv:R`x\ \ (\text{ella misma})`,br:null,pts:[[0,0]]},
+   {s:0,b:'x²',dI:[[-I,I]],iI:[[0,I]],tex:R`f(x)=x^2`,f:x=>x*x,dom:R`\mathbb{R}`,img:R`[0,+\infty)`,sym:R`\text{par}`,inj:R`\text{no; sí en } [0,+\infty)`,inv:R`\sqrt{x}\ \ \text{(rama } x\ge 0)`,br:[0,9],pts:[[0,0]]},
+   {s:0,b:'x³',dI:[[-I,I]],iI:[[-I,I]],tex:R`f(x)=x^3`,f:x=>x*x*x,dom:R`\mathbb{R}`,img:R`\mathbb{R}`,sym:R`\text{impar}`,inj:R`\text{sí}`,inv:R`\sqrt[3]{x}`,br:null,pts:[[0,0]]},
+   {s:0,b:'√x',dI:[[0,I]],iI:[[0,I]],tex:R`f(x)=\sqrt{x}`,f:x=>x<0?NaN:Math.sqrt(x),dom:R`[0,+\infty)`,img:R`[0,+\infty)`,sym:R`\text{ninguna}`,inj:R`\text{sí}`,inv:R`x^2\ \ \text{en } [0,+\infty)`,br:null,pts:[[0,0],[1,1]]},
+   {s:0,b:'|x|',dI:[[-I,I]],iI:[[0,I]],tex:R`f(x)=|x|`,f:x=>Math.abs(x),dom:R`\mathbb{R}`,img:R`[0,+\infty)`,sym:R`\text{par; pico en } 0`,inj:R`\text{no; sí en } [0,+\infty)`,inv:R`x\ \ \text{(rama } x\ge 0)`,br:[0,9],pts:[[0,0]]},
+   // sala 2
+   {s:1,b:'1/x',dI:[[-I,0],[0,I]],iI:[[-I,0],[0,I]],op:['x0','y0'],tex:R`f(x)=\dfrac{1}{x}`,f:x=>1/x,dom:R`\mathbb{R}\setminus\{0\}`,img:R`\mathbb{R}\setminus\{0\}`,sym:R`\text{impar}`,inj:R`\text{sí}`,inv:R`\dfrac{1}{x}\ \ (\text{ella misma})`,br:null,pts:[[1,1],[-1,-1]],av:[0],ah:[0]},
+   {s:1,b:'1/x²',dI:[[-I,0],[0,I]],iI:[[0,I]],op:['x0','y0'],tex:R`f(x)=\dfrac{1}{x^2}`,f:x=>1/(x*x),dom:R`\mathbb{R}\setminus\{0\}`,img:R`(0,+\infty)`,sym:R`\text{par}`,inj:R`\text{no; sí en } (0,+\infty)`,inv:R`\dfrac{1}{\sqrt{x}}\ \ \text{(rama } x>0)`,br:[0.001,9],pts:[[1,1],[-1,1]],av:[0],ah:[0]},
+   // sala 3
+   {s:2,b:'eˣ',dI:[[-I,I]],iI:[[0,I]],op:['y0'],tex:R`f(x)=e^{x}`,f:x=>Math.exp(x),dom:R`\mathbb{R}`,img:R`(0,+\infty)`,sym:R`\text{ninguna}`,inj:R`\text{sí}`,inv:R`\ln x`,br:null,pts:[[0,1]],ah:[0]},
+   {s:2,b:'ln x',dI:[[0,I]],iI:[[-I,I]],op:['x0'],tex:R`f(x)=\ln x`,f:x=>x>0?Math.log(x):NaN,dom:R`(0,+\infty)`,img:R`\mathbb{R}`,sym:R`\text{ninguna}`,inj:R`\text{sí}`,inv:R`e^{x}`,br:null,pts:[[1,0]],av:[0]},
+   {s:2,b:'e⁻ˣ',dI:[[-I,I]],iI:[[0,I]],op:['y0'],tex:R`f(x)=e^{-x}`,f:x=>Math.exp(-x),dom:R`\mathbb{R}`,img:R`(0,+\infty)`,sym:R`\text{ninguna}`,inj:R`\text{sí}`,inv:R`-\ln x`,br:null,pts:[[0,1]],ah:[0]},
+   {s:2,b:'e^(−x²)',dI:[[-I,I]],iI:[[0,1]],op:['y0'],tex:R`f(x)=e^{-x^2}`,f:x=>Math.exp(-x*x),dom:R`\mathbb{R}`,img:R`(0,1]`,sym:R`\text{par (campana de Gauss)}`,inj:R`\text{no; sí en } [0,+\infty)`,inv:R`\sqrt{-\ln x}\ \ \text{(rama } x\ge 0)`,br:[0,9],pts:[[0,1]],ah:[0]},
+   // sala 4
+   {s:3,b:'sen x',dI:[[-I,I]],iI:[[-1,1]],tex:R`f(x)=\operatorname{sen} x`,f:Math.sin,dom:R`\mathbb{R}`,img:R`[-1,1]`,sym:R`\text{impar; periódica } (2\pi)`,inj:R`\text{no; sí en } [-\tfrac{\pi}{2},\tfrac{\pi}{2}]`,inv:R`\operatorname{arcsen} x`,br:[-h,h],pts:[[0,0],[h,1]]},
+   {s:3,b:'cos x',dI:[[-I,I]],iI:[[-1,1]],tex:R`f(x)=\cos x`,f:Math.cos,dom:R`\mathbb{R}`,img:R`[-1,1]`,sym:R`\text{par; periódica } (2\pi)`,inj:R`\text{no; sí en } [0,\pi]`,inv:R`\arccos x`,br:[0,PI],pts:[[0,1],[PI,-1]]},
+   {s:3,b:'tg x',dI:[[-I,-3*h],[-3*h,-h],[-h,h],[h,3*h],[3*h,I]],iI:[[-I,I]],op:['x'+h,'x'+(-h),'x'+3*h,'x'+(-3*h)],tex:R`f(x)=\operatorname{tg} x`,f:Math.tan,dom:R`\mathbb{R}\setminus\{\tfrac{\pi}{2}+k\pi\}`,img:R`\mathbb{R}`,sym:R`\text{impar; periódica } (\pi)`,inj:R`\text{no; sí en } (-\tfrac{\pi}{2},\tfrac{\pi}{2})`,inv:R`\operatorname{arctg} x`,br:[-h+0.003,h-0.003],pts:[[0,0]],av:[-3*h,-h,h,3*h]},
+   // sala 5
+   {s:4,b:'arcsen x',dI:[[-1,1]],iI:[[-h,h]],tex:R`f(x)=\operatorname{arcsen} x`,f:x=>Math.abs(x)>1?NaN:Math.asin(x),dom:R`[-1,1]`,img:R`[-\tfrac{\pi}{2},\tfrac{\pi}{2}]`,sym:R`\text{impar}`,inj:R`\text{sí}`,inv:R`\operatorname{sen} x\ \text{en } [-\tfrac{\pi}{2},\tfrac{\pi}{2}]`,br:null,pts:[[0,0],[1,h],[-1,-h]]},
+   {s:4,b:'arccos x',dI:[[-1,1]],iI:[[0,PI]],tex:R`f(x)=\arccos x`,f:x=>Math.abs(x)>1?NaN:Math.acos(x),dom:R`[-1,1]`,img:R`[0,\pi]`,sym:R`\text{ninguna}`,inj:R`\text{sí}`,inv:R`\cos x\ \text{en } [0,\pi]`,br:null,pts:[[1,0],[-1,PI],[0,h]]},
+   {s:4,b:'arctg x',dI:[[-I,I]],iI:[[-h,h]],op:['y'+h,'y'+(-h)],tex:R`f(x)=\operatorname{arctg} x`,f:Math.atan,dom:R`\mathbb{R}`,img:R`(-\tfrac{\pi}{2},\tfrac{\pi}{2})`,sym:R`\text{impar}`,inj:R`\text{sí}`,inv:R`\operatorname{tg} x\ \text{en } (-\tfrac{\pi}{2},\tfrac{\pi}{2})`,br:null,pts:[[0,0]],ah:[-h,h]}];
+  let sala=0, cur=F[0], invOn=false, it=0;
+  const XL=()=>wx(14), XR=()=>wx(W*0.62);
+  function sample(lo,hi,n=1400){ const segs=[], seg=[]; let prev=null;
+    const fin=cur.dI.length===1&&isFinite(cur.dI[0][0])&&isFinite(cur.dI[0][1]);
+    if(fin){ lo=Math.max(lo,cur.dI[0][0]); hi=Math.min(hi,cur.dI[0][1]); }
+    for(let i=0;i<=n;i++){ const x= fin ? (lo+hi)/2-(hi-lo)/2*Math.cos(Math.PI*i/n) : lo+(hi-lo)*i/n, y=cur.f(x);
+      const ok=Number.isFinite(y)&&Math.abs(y)<9&&!(prev!==null&&Math.abs(y-prev)>4);
+      if(!ok){ if(seg.length>1) segs.push(seg.splice(0)); else seg.length=0; prev=Number.isFinite(y)?y:null; if(Number.isFinite(y)&&Math.abs(y)<9) seg.push([x,y]); continue; }
+      seg.push([x,y]); prev=y; }
+    if(seg.length>1) segs.push(seg); return segs; }
+  function draw(segs,col,lw,alpha,dash,tf){ segs.forEach(sg=>{ ctx.save(); ctx.globalAlpha=alpha??1; ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round'; if(dash) ctx.setLineDash(dash);
+    ctx.beginPath(); sg.forEach((p,i)=>{ const q=tf?tf(p):p; i?ctx.lineTo(sx(q[0]),sy(q[1])):ctx.moveTo(sx(q[0]),sy(q[1])); }); ctx.stroke(); ctx.restore(); }); }
+  function intervals(vals,lo,hi,NB=500){ const bins=new Uint8Array(NB); vals.forEach(v=>{ if(v>=lo&&v<=hi) bins[Math.min(NB-1,Math.floor((v-lo)/(hi-lo)*NB))]=1; });
+    const out=[]; let st=-1; for(let i=0;i<=NB;i++){ const on=i<NB&&bins[i]; if(on&&st<0) st=i; if(!on&&st>=0){ out.push([lo+(hi-lo)*st/NB,lo+(hi-lo)*i/NB]); st=-1; } } return out; }
+  function build(){
+    bar.innerHTML='';
+    const r1=document.createElement('div'), r2=document.createElement('div');
+    [r1,r2].forEach(r=>{ r.style.cssText='display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%'; bar.appendChild(r); });
+    SALAS.forEach((S,i)=>{ const b=document.createElement('button'); b.textContent=S.n;
+      b.style.cssText=`font:inherit;font-size:13.5px;padding:5px 12px;border-radius:8px;cursor:pointer;border:2px solid ${S.c};`+(i===sala?`background:${S.c};color:#fff;font-weight:700`:`background:#fff;color:${S.c}`);
+      b.onclick=()=>{ sala=i; cur=F.find(f=>f.s===i); invOn=false; it=0; build(); }; r1.appendChild(b); });
+    const S=SALAS[sala];
+    F.filter(f=>f.s===sala).forEach(f=>{ const b=document.createElement('button'); b.textContent=f.b;
+      b.style.cssText=`font:inherit;font-size:15px;padding:5px 15px;border-radius:999px;cursor:pointer;border:1.5px solid ${S.c};`+(f===cur?`background:${S.c};color:#fff`:`background:#fff;color:${S.c}`);
+      b.onclick=()=>{ cur=f; invOn=false; it=0; build(); }; r2.appendChild(b); });
+    const bi=document.createElement('button'); bi.textContent=invOn?'Ocultar la inversa':'⟷ Ver su inversa';
+    bi.style.cssText=`font:inherit;font-size:15px;padding:5px 15px;border-radius:999px;cursor:pointer;margin-left:14px;border:1.5px dashed ${S.c};background:#fff;color:${S.c}`;
+    bi.onclick=()=>{ invOn=!invOn; build(); }; r2.appendChild(bi);
+  }
+  return {
+    enter(){ V={cx:2.1,cy:0.2,half:6.4}; build(); },
+    draw(dt,time){
+      clear(); const S=SALAS[cur.s], col=S.c; it+=((invOn?1:0)-it)*Math.min(1,dt*2.6); const e=ease(clamp(it,0,1));
+      // la vitrina: marco del color de la sala
+      const gx0=10, gx1=W*0.625;
+      ctx.save(); ctx.fillStyle=hexA6(col,.035); ctx.fillRect(gx0,10,gx1-gx0,H-20); ctx.strokeStyle=col; ctx.globalAlpha=.55; ctx.lineWidth=2; ctx.strokeRect(gx0,10,gx1-gx0,H-20); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.rect(gx0,10,gx1-gx0,H-20); ctx.clip();
+      // cuadrícula suave y ejes
+      ctx.strokeStyle='#eceff2'; ctx.lineWidth=1; for(let k=-12;k<=12;k++){ ctx.beginPath(); ctx.moveTo(sx(k),0); ctx.lineTo(sx(k),H); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,sy(k)); ctx.lineTo(W,sy(k)); ctx.stroke(); }
+      ctx.strokeStyle='#97a3ae'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(gx0,sy(0)); ctx.lineTo(gx1,sy(0)); ctx.stroke(); ctx.beginPath(); ctx.moveTo(sx(0),H); ctx.lineTo(sx(0),10); ctx.stroke();
+      // asíntotas
+      (cur.av||[]).forEach(x=>{ ctx.save(); ctx.strokeStyle='#8a96a3'; ctx.setLineDash([6,5]); ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(sx(x),0); ctx.lineTo(sx(x),H); ctx.stroke(); ctx.restore(); });
+      (cur.ah||[]).forEach(y=>{ ctx.save(); ctx.strokeStyle='#8a96a3'; ctx.setLineDash([6,5]); ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(0,sy(y)); ctx.lineTo(W,sy(y)); ctx.stroke(); ctx.restore(); });
+      const lo=XL()-0.5, hi=XR()+0.5, all=sample(lo,hi), yb=wy(H-10), yt=wy(10);
+      // sombras: dominio sobre el eje X, imagen sobre el eje Y
+      if(e<0.05){ const X0=wx(gx0), X1=wx(gx1), Y0=yb, Y1=yt;
+        ctx.save(); ctx.lineCap='butt'; ctx.strokeStyle=col; ctx.globalAlpha=.35; ctx.lineWidth=10;
+        cur.dI.forEach(([a,b])=>{ const A=Math.max(a,X0), B=Math.min(b,X1); if(B>A){ ctx.beginPath(); ctx.moveTo(sx(A)+(a>X0?1:0),sy(0)); ctx.lineTo(sx(B)-(b<X1?1:0),sy(0)); ctx.stroke(); } });
+        cur.iI.forEach(([a,b])=>{ const A=Math.max(a,Y0), B=Math.min(b,Y1); if(B>A){ ctx.beginPath(); ctx.moveTo(sx(0),sy(A)); ctx.lineTo(sx(0),sy(B)); ctx.stroke(); } });
+        ctx.restore();
+        // extremos finitos: cerrado (lleno) o abierto (hueco)
+        const ends=(L,ax)=>L.forEach(([a,b],k)=>[a,b].forEach(v=>{ if(!isFinite(v)) return; const open=cur.op&&cur.op.includes(ax+v); const px=ax==='x'?sx(v):sx(0), py=ax==='x'?sy(0):sy(v);
+          ctx.save(); ctx.beginPath(); ctx.arc(px,py,5,0,7); ctx.fillStyle=open?'#fff':col; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.fill(); ctx.stroke(); ctx.restore(); }));
+        ends(cur.dI,'x'); ends(cur.iI,'y'); }
+      // la función, y (si se pide) su inversa por el espejo y = x
+      if(e>0.02){ ctx.save(); ctx.strokeStyle=COL.f; ctx.lineWidth=2; ctx.setLineDash([8,6]); ctx.beginPath(); ctx.moveTo(sx(-8),sy(-8)); ctx.lineTo(sx(8),sy(8)); ctx.stroke(); ctx.restore(); }
+      if(cur.br && e>0.02){ draw(all,'#b9c4be',2,.9,[5,5]); const keep=sample(Math.max(cur.br[0],lo),Math.min(cur.br[1],hi));
+        draw(keep,col,3.4,1,null); draw(keep,shade(col),3.4,1,null,p=>[lerp(p[0],p[1],e),lerp(p[1],p[0],e)]);
+        ctx.save(); ctx.globalAlpha=.08*e; ctx.fillStyle=col; ctx.fillRect(sx(Math.max(cur.br[0],XL())),10,sx(Math.min(cur.br[1],XR()))-sx(Math.max(cur.br[0],XL())),H-20); ctx.restore(); }
+      else { draw(all,col,3.4,1,null); if(e>0.02) draw(all,shade(col),3.4,1,null,p=>[lerp(p[0],p[1],e),lerp(p[1],p[0],e)]); }
+      // puntos notables
+      cur.pts.forEach(([x,y])=>{ if(x<XL()||x>XR()) return; dot(x,y,col,5.5); });
+      ctx.restore();
+      const kp=cur.pts[0]; if(kp && e<0.05) texAt('m-pt',R`(${fmtN(kp[0])},\,${fmtN(kp[1])})`,sx(kp[0])+8,sy(kp[1])-16,{anchor:'l',bg:true,color:col,size:17});
+      if(e>0.95) texAt('m-inv',cur.inv.split(R`\ \ `)[0].split(R`\ \text{en}`)[0],gx1-18,30,{anchor:'r',bg:true,color:shade(col),size:22});
+      // la ficha
+      const fx=W*0.645, fw=W-fx-12, fy=10, fh=H-20, hh=40;
+      ctx.save(); ctx.fillStyle='#fff'; ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.beginPath(); ctx.roundRect(fx,fy,fw,fh,12); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(fx,fy,fw,hh,[12,12,0,0]); ctx.fillStyle=col; ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 15px "Latin Modern Sans","Helvetica Neue",Arial,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText('Ficha '+(cur.s+1)+' · '+S.n,fx+14,fy+hh/2); ctx.restore();
+      const lx=fx+16, rows=[[cur.tex,24],[R`\text{Dominio: }\ `+cur.dom,19],[R`\text{Imagen: }\ `+cur.img,19],[R`\text{Simetría: }\ `+cur.sym,19],[R`\text{Inyectiva: }\ `+cur.inj,19],[R`\text{Inversa: }\ `+cur.inv,19]];
+      let yy=fy+hh+42; rows.forEach(([t,sz],i)=>{ texAt('m-row'+i,t,lx,yy,{anchor:'l',color:i?'#503050':col,size:sz,maxw:fw-32}); yy+= i?Math.min(56,(fh-hh-90)/5):Math.min(70,(fh-hh)/5); });
+    }
+  };
+})();
+function hexA6(h,a){ h=h.replace('#',''); return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`; }
+function shade(h){ h=h.replace('#',''); const c=[0,2,4].map(i=>Math.round(parseInt(h.slice(i,i+2),16)*0.62)); return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join(''); }
+function fmtN(v){ const PI=Math.PI; if(Math.abs(v-PI)<1e-9) return String.raw`\pi`; if(Math.abs(v-PI/2)<1e-9) return String.raw`\tfrac{\pi}{2}`; if(Math.abs(v+PI/2)<1e-9) return String.raw`-\tfrac{\pi}{2}`; return String(Math.round(v*100)/100); }
+
+/* ============================================================
+   Pestañas y bucle
+   ============================================================ */
+const TABS = [
+  ['Vertical',T1],['Sombras',T2],['Cadena',T3],['Simetrías',T4],
+  ['Horizontal',T5],['Espejo',T6],['Apilar',T7],['Museo',T8]
+];
+let cur = T1;
+const nav=document.getElementById('tabs');
+TABS.forEach(([name,tab],i)=>{
+  const b=document.createElement('button'); b.textContent=name; if(i===0) b.classList.add('on');
+  b.onclick=()=>{ [...nav.children].forEach(c=>c.classList.remove('on')); b.classList.add('on'); cur=tab; resize(); tab.enter(); };
+  nav.appendChild(b);
+});
+resize(); T1.enter();
+let last=performance.now(), time=0;
+function loop(now){ const dt=Math.min(0.05,(now-last)/1000); last=now; time+=dt; cur.draw(dt,time); texFrame(); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
