@@ -1060,6 +1060,204 @@
       .pestanas button { padding: 9px 11px 10px; letter-spacing: .1em; }
     }
 
+
+    /* Regiones dentro de una isla (p. ej. Cálculo) */
+    .subbloque { margin-top: 30px; }
+    .subbloque-cabecera {
+      margin: 70px 0 0;
+      padding: 28px 0 0;
+      text-align: center;
+      border-top: 1px solid var(--linea);
+    }
+    .subbloque-cabecera .region {
+      margin: 0 0 6px;
+      font-size: 11px;
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: var(--oro-2);
+    }
+    .subbloque-cabecera h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(32px, 5vw, 46px);
+    }
+    .subbloque .tema:first-of-type { border-top: 0; }
+    .subbloque .horizonte { border-top: 0; margin-top: 20px; }
+
+    .indice li.subsub { margin-left: 24px; }
+    .indice li.subsub a { font-size: 12px; }
+    .indice li.subsub a::before { left: -42px; width: 4px; height: 4px; }
+    @media (max-width: 1240px) { .indice li.subsub { margin-left: 0; } }
+
+
+    /* ===== Carta ampliada ===== */
+    .mapa .vientos path { stroke: #eee6d4; stroke-width: .8; }
+    .mapa .sondas text { font-family: var(--serif); font-style: italic; font-size: 15px; fill: #b9a77f; opacity: .8; }
+    .cartela-grupo path { fill: var(--papel-2); stroke: var(--tinta); stroke-width: .9; transition: fill .4s, stroke .4s; }
+    .cartela-grupo text { font-family: var(--serif); font-size: 21px; fill: var(--tinta); }
+    .cartela-grupo .num { font-style: italic; fill: var(--oro-2); }
+    .mapa:has(.islote.activa) .cartela-grupo path { fill: #f6ebcc; stroke: var(--oro-2); }
+    .rotulo-islote { font-family: var(--serif); font-style: italic; font-size: 16px; fill: var(--tinta); transition: fill .4s; }
+    .islote.activa .rotulo-islote { fill: var(--oro-2); font-weight: 500; }
+    .islote .simbolo { stroke-width: 1.8; }
+    .tierra .agua-t   { fill: none; stroke: #e1eaea; stroke-width: 34; }
+    .tierra .rayado-t { fill: none; stroke: #4c5a66; stroke-width: 9; stroke-dasharray: .8 2.6; opacity: .38; }
+    .tierra .cartela path { fill: var(--papel-2); stroke: var(--tinta); stroke-width: .9; }
+    .tierra.activa .cartela path { fill: #f6ebcc; stroke: var(--oro-2); }
+
+    .rumbos-movil { display: none; }
+    @media (max-width: 700px) {
+      .carta .mapa { width: 150%; max-width: none; }
+      .carta { overflow-x: auto; scrollbar-width: none; }
+      .carta > p, .carta > h2, .rumbos-movil { position: sticky; left: 0; }
+    }
+    @media (max-width: 700px) {
+      .rumbos-movil { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
+      .rumbos-movil button {
+        font: inherit; font-size: 12px; padding: 8px 13px; color: var(--tinta-2);
+        background: var(--papel-2); border: 1px solid var(--linea); border-radius: 999px; cursor: pointer;
+      }
+      .rumbos-movil button[aria-pressed="true"] { color: var(--tinta); border-color: var(--oro); background: #f6ebcc; }
+    }
+
+    /* ===== Destinos ===== */
+    .destino { display: none; }
+    .destino.activo { display: block; animation: llegar .8s cubic-bezier(.2,.7,.2,1); }
+    .destino .tema.datos { display: none; }
+    .destino .lema-algebra { margin: 40px auto 10px; }
+    .destino .horizonte { margin-top: 30px; }
+    .destino .horizonte[hidden], .cuaderno[hidden], .cuaderno [hidden] { display: none !important; }
+
+    /* ===== Cuaderno: una sola ventana por destino ===== */
+    .cuaderno {
+      margin-top: 44px;
+      background: var(--papel-2);
+      border: 1px solid var(--linea);
+      border-radius: 8px;
+      overflow: hidden;
+      scroll-margin-top: 70px;
+      box-shadow: 0 30px 60px -45px rgba(12, 21, 36, .45);
+    }
+    .fila-temas, .fila-materiales {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .fila-temas::-webkit-scrollbar, .fila-materiales::-webkit-scrollbar { display: none; }
+
+    .fila-temas { flex-wrap: wrap; gap: 2px 6px; padding: 10px 14px 0; background: var(--papel); border-bottom: 1px solid var(--linea); overflow: visible; }
+    .fila-temas button {
+      flex: 0 0 auto;
+      padding: 8px 10px 9px;
+      margin-bottom: -1px;
+      font-family: var(--serif);
+      font-size: 17px;
+      color: var(--tinta-2);
+      background: transparent;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color .25s, border-color .25s;
+    }
+    .fila-temas button .num { font-style: italic; font-size: 14px; color: var(--oro-2); margin-right: 3px; }
+    .fila-temas button:hover { color: var(--tinta); }
+    .fila-temas button[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--oro); }
+
+    .fila-materiales { padding: 12px 16px 0; }
+    .fila-materiales button {
+      flex: 0 0 auto;
+      padding: 7px 14px;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--tinta-2);
+      background: transparent;
+      border: 1px solid var(--linea);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: color .25s, border-color .25s, background .25s;
+    }
+    .fila-materiales button:hover { color: var(--tinta); }
+    .fila-materiales button[aria-selected="true"] { color: var(--oro-2); border-color: var(--oro); background: #fbf3df; }
+    .fila-temas button:focus-visible, .fila-materiales button:focus-visible { outline: 1px solid var(--oro); outline-offset: -3px; }
+
+    .hoja { padding-top: 12px; }
+    .hoja iframe { display: block; width: 100%; height: 660px; border: 0; border-top: 1px solid var(--linea); background: #fff; }
+    .hoja-puertos { padding: 18px; }
+    .hoja-vacia {
+      margin: 0;
+      padding: 60px 20px 70px;
+      text-align: center;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 20px;
+      color: var(--tinta-2);
+    }
+    .pie-panel .nota { font-size: 14px; color: var(--tinta-2); }
+    .pie-panel .nota strong { font-weight: 500; color: var(--tinta); }
+
+    .indice li.sub.abierto > a { color: var(--tinta); }
+
+    @media (max-width: 600px) {
+      .hoja iframe { height: 540px; }
+      .fila-temas button { font-size: 16px; padding: 9px 12px 10px; }
+      .fila-materiales { padding: 10px 10px 0; }
+    }
+
+
+    /* ===== Carta y destinos a lo ancho disponible ===== */
+    .carta, .destino {
+      --ancho: min(1180px, calc(100vw - 40px));
+      width: var(--ancho);
+      margin-left: calc((100% - var(--ancho)) / 2);
+    }
+    @media (min-width: 1241px) {
+      /* deja libre la franja de la bitácora (a la izquierda) */
+      .carta, .destino {
+        --ancho: min(1180px, calc(100vw - 340px));
+        margin-left: calc((100% - var(--ancho)) / 2 + 120px);
+      }
+    }
+    @media (max-width: 700px) {
+      .carta, .destino { --ancho: calc(100vw - 32px); }
+    }
+
+    .hoja iframe { height: min(780px, 82vh); }
+
+    /* pestañas de temas en una sola línea */
+    .fila-temas { flex-wrap: nowrap; overflow-x: auto; }
+
+
+    /* ===== Letra más grande: pestañas y bitácora ===== */
+    .fila-temas { gap: 0 2px; padding: 10px 10px 0; }
+    .fila-temas button { font-size: clamp(16px, 1.3vw, 19px); padding: 10px 8px 11px; }
+    .fila-temas button .num { font-size: 15px; }
+    .fila-materiales button { font-size: 12.5px; letter-spacing: .14em; padding: 8px 16px; }
+
+    .indice h2 { font-size: 11.5px; }
+    .indice a { font-size: 15px; }
+    .indice li.rumbo > a { font-size: 19px; }
+    .indice li.sub a { font-size: 14px; }
+    .indice li.subsub a { font-size: 13.5px; }
+    .indice li { margin-bottom: 13px; }
+    .indice li.sub { margin: -3px 0 11px 12px; }
+    .indice li.subsub { margin-left: 26px; }
+
+    @media (max-width: 1240px) {
+      .indice a, .indice li.sub a, .indice li.subsub a { font-size: 14px; }
+      .indice li.rumbo > a { font-size: 15.5px; }
+      .indice li, .indice li.sub, .indice li.subsub { margin: 0; }
+    }
+    @media (max-width: 600px) {
+      .fila-temas button { font-size: 17px; padding: 9px 10px 10px; }
+      .fila-materiales button { font-size: 11.5px; padding: 7px 12px; }
+    }
+
     .leyenda { display: none; }
   </style>
 </head>
@@ -1222,14 +1420,14 @@
 
     <!-- =========================================================
          CARTA DE NAVEGACIÓN
-         Cada isla es un bloque del curso. Al pulsarla, el barco
-         navega hasta ella y debajo aparece el bloque.
+         Cada isla o islote es un destino. Al pulsarlo, el barco
+         navega hasta él y debajo se abre su cuaderno de bitácora.
     ========================================================== -->
     <section class="carta revelar" id="carta" style="border-top:0;padding:0">
       <p class="rotulo">Carta de navegación</p>
       <h2>Elige rumbo</h2>
 
-      <svg class="mapa" viewBox="0 0 800 340" role="group" aria-label="Mapa de los tres bloques del curso">
+      <svg class="mapa" viewBox="0 0 1000 430" role="group" aria-label="Mapa de los bloques del curso">
         <defs>
           <marker id="punta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M0 1 L9 5 L0 9 Z" fill="#1d2633"/>
@@ -1237,104 +1435,118 @@
           <marker id="punta-oro" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M0 1 L9 5 L0 9 Z" fill="#a8822f"/>
           </marker>
-          <radialGradient id="arena" cx=".45" cy=".4" r=".7">
-            <stop offset="0" stop-color="#f8ecc9"/><stop offset="1" stop-color="#e6d3a2"/>
-          </radialGradient>
-          <radialGradient id="tierra" cx=".4" cy=".35" r=".75">
-            <stop offset="0" stop-color="#e9ead0"/><stop offset="1" stop-color="#cfd3a6"/>
-          </radialGradient>
-                    <path id="forma-algebra" d="M-74 -6 C-78 -30 -58 -50 -34 -54 C-20 -66 4 -62 14 -54 C34 -60 62 -48 70 -26 C80 -6 72 18 56 30 C44 46 18 50 0 44 C-18 52 -46 44 -58 30 C-70 22 -72 8 -74 -6 Z"/>
-          <path id="forma-calculo" d="M-64 -14 C-66 -38 -42 -56 -14 -54 C2 -62 30 -58 46 -44 C66 -32 70 -6 60 14 C52 34 30 46 6 42 C-14 48 -40 42 -54 26 C-64 14 -62 0 -64 -14 Z"/>
+          <path id="forma-algebra"     d="M-74 -6 C-78 -30 -58 -50 -34 -54 C-20 -66 4 -62 14 -54 C34 -60 62 -48 70 -26 C80 -6 72 18 56 30 C44 46 18 50 0 44 C-18 52 -46 44 -58 30 C-70 22 -72 8 -74 -6 Z"/>
+          <path id="forma-calculo"     d="M-64 -14 C-66 -38 -42 -56 -14 -54 C2 -62 30 -58 46 -44 C66 -32 70 -6 60 14 C52 34 30 46 6 42 C-14 48 -40 42 -54 26 C-64 14 -62 0 -64 -14 Z"/>
           <path id="forma-estadistica" d="M-70 4 C-76 -22 -56 -46 -28 -50 C-10 -58 18 -56 36 -46 C58 -36 72 -16 68 8 C64 30 44 46 18 46 C0 52 -26 50 -44 38 C-60 30 -66 18 -70 4 Z"/>
+          <path id="costa-continente"  d="M1000 0 L820 0 C806 28 826 54 812 80 C796 108 776 124 790 152 C804 182 778 204 776 232 C774 264 800 282 794 312 C786 346 810 372 804 430 L1000 430 Z"/>
+          <clipPath id="recorte-mapa"><rect width="1000" height="430"/></clipPath>
         </defs>
 
-        <!-- rejilla de meridianos y paralelos -->
+        <!-- vientos de la rosa (estilo portulano) y rejilla -->
+        <g class="vientos" clip-path="url(#recorte-mapa)"><path d="M70 352 L1370 352"/><path d="M70 352 L1275 839"/><path d="M70 352 L1005 1255"/><path d="M70 352 L599 1540"/><path d="M70 352 L115 1651"/><path d="M70 352 L-375 1574"/><path d="M70 352 L-800 1318"/><path d="M70 352 L-1098 922"/><path d="M70 352 L-1227 443"/><path d="M70 352 L-1166 -50"/><path d="M70 352 L-926 -484"/><path d="M70 352 L-540 -796"/><path d="M70 352 L-66 -941"/><path d="M70 352 L428 -898"/><path d="M70 352 L870 -672"/><path d="M70 352 L1196 -298"/><path d="M70 352 L1357 171"/></g>
         <g class="rejilla">
-          <path d="M100 0 V340 M200 0 V340 M300 0 V340 M400 0 V340 M500 0 V340 M600 0 V340 M700 0 V340"/>
-          <path d="M0 85 H800 M0 170 H800 M0 255 H800"/>
+          <path d="M100 0 V430 M200 0 V430 M300 0 V430 M400 0 V430 M500 0 V430 M600 0 V430 M700 0 V430 M800 0 V430 M900 0 V430"/>
+          <path d="M0 107 H1000 M0 215 H1000 M0 322 H1000"/>
         </g>
+        <g class="ola"><path d="M40 50 q6 -5 12 0 t12 0"/><path d="M250 40 q6 -5 12 0 t12 0"/><path d="M420 30 q6 -5 12 0 t12 0"/><path d="M690 48 q6 -5 12 0 t12 0"/><path d="M60 400 q6 -5 12 0 t12 0"/><path d="M300 395 q6 -5 12 0 t12 0"/><path d="M520 405 q6 -5 12 0 t12 0"/><path d="M700 390 q6 -5 12 0 t12 0"/><path d="M250 150 q6 -5 12 0 t12 0"/><path d="M445 250 q6 -5 12 0 t12 0"/><path d="M570 255 q6 -5 12 0 t12 0"/><path d="M700 140 q6 -5 12 0 t12 0"/></g>
+        <g class="sondas"><text x="330" y="70">π</text><text x="612" y="60">e</text><text x="250" y="262">√2</text><text x="470" y="388">φ</text><text x="705" y="250">∞</text><text x="40" y="190">i</text><text x="690" y="395">∂</text></g>
 
-        <!-- olas -->
-        <g class="ola">
-          <path d="M40 60 q6 -5 12 0 t12 0"/>   <path d="M320 40 q6 -5 12 0 t12 0"/>
-          <path d="M560 70 q6 -5 12 0 t12 0"/>  <path d="M40 300 q6 -5 12 0 t12 0"/>
-          <path d="M300 290 q6 -5 12 0 t12 0"/> <path d="M470 310 q6 -5 12 0 t12 0"/>
-          <path d="M640 312 q6 -5 12 0 t12 0"/> <path d="M290 120 q6 -5 12 0 t12 0"/>
-          <path d="M530 110 q6 -5 12 0 t12 0"/> <path d="M770 120 q6 -5 12 0 t12 0"/>
-        </g>
-
-        <!-- rosa de los vientos -->
-        <g class="rosa" transform="translate(748 292)">
-          <circle r="28"/><circle r="20"/>
-          <path d="M0 -36 L5 -5 L36 0 L5 5 L0 36 L-5 5 L-36 0 L-5 -5 Z" fill="#efe5cd"/>
-          <path d="M0 -36 L5 -5 L0 0 Z" fill="#b9a77f"/>
-          <text y="-41" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="13" fill="#a8822f" stroke="none">N</text>
-        </g>
-
-
-        <!-- ISLA I · ÁLGEBRA -->
-        <g class="isla" data-bloque="algebra" transform="translate(170 178)" tabindex="0" role="button" aria-label="Bloque I: Álgebra">
+        <!-- I · ÁLGEBRA -->
+        <g class="isla" data-destino="algebra" transform="translate(155 205)" tabindex="0" role="button" aria-label="I · Álgebra">
           <use href="#forma-algebra" class="agua" transform="scale(1.36)"/>
           <use href="#forma-algebra" class="agua" transform="scale(1.2)"/>
           <use href="#forma-algebra" class="rayado" transform="scale(1.07)"/>
           <use href="#forma-algebra" class="costa"/>
           <use href="#forma-algebra" class="nivel" transform="scale(.78)"/>
           <use href="#forma-algebra" class="nivel" transform="scale(.56)"/>
-          <g class="simbolo">
-            <path d="M-30 18 L-2 -10" marker-end="url(#punta)"/>
+          <g class="simbolo"><path d="M-30 18 L-2 -10" marker-end="url(#punta)"/>
             <path d="M-30 18 L4 22" marker-end="url(#punta)"/>
             <path d="M-2 -10 L32 -6 M4 22 L32 -6" stroke-dasharray="3 4" stroke-width="1"/>
-            <path d="M-30 18 L30 -5" stroke="#a8822f" marker-end="url(#punta-oro)"/>
-          </g>
-          <g class="bandera"><path d="M0 -54 V-86" stroke="#1d2633" stroke-width="1.4"/><path d="M0 -86 L19 -80 L0 -74 Z" fill="#c9a14a"/></g>
+            <path d="M-30 18 L30 -5" stroke="#a8822f" marker-end="url(#punta-oro)"/></g>
           <g class="cartela">
             <path d="M-72 -118 H72 L64 -105 L72 -92 H-72 L-64 -105 Z"/>
             <text y="-99" text-anchor="middle"><tspan class="num">I</tspan> · Álgebra</text>
           </g>
         </g>
 
-        <!-- ISLA II · CÁLCULO -->
-        <g class="isla" data-bloque="calculo" transform="translate(410 178)" tabindex="0" role="button" aria-label="Bloque II: Cálculo">
-          <use href="#forma-calculo" class="agua" transform="scale(1.36)"/>
-          <use href="#forma-calculo" class="agua" transform="scale(1.2)"/>
-          <use href="#forma-calculo" class="rayado" transform="scale(1.07)"/>
-          <use href="#forma-calculo" class="costa"/>
-          <use href="#forma-calculo" class="nivel" transform="scale(.78)"/>
-          <use href="#forma-calculo" class="nivel" transform="scale(.56)"/>
-          <g class="simbolo">
-            <path d="M-42 22 C -24 22 -14 -28 6 -24 S 32 12 44 -4"/>
+        <!-- II · ARCHIPIÉLAGO DEL CÁLCULO -->
+        <g class="cartela-grupo" transform="translate(500 70)">
+          <path d="M-82 -14 H82 L74 -1 L82 12 H-82 L-74 -1 Z"/>
+          <text y="5" text-anchor="middle"><tspan class="num">II</tspan> · Cálculo</text>
+        </g>
+        <g class="isla islote" data-destino="calculo-una-variable" transform="translate(368 205)" tabindex="0" role="button" aria-label="Cálculo · una variable">
+          <g transform="scale(0.66)">
+            <use href="#forma-calculo" class="agua" transform="scale(1.36)"/>
+            <use href="#forma-calculo" class="agua" transform="scale(1.2)"/>
+            <use href="#forma-calculo" class="rayado" transform="scale(1.07)"/>
+            <use href="#forma-calculo" class="costa"/>
+            <use href="#forma-calculo" class="nivel" transform="scale(.7)"/>
+          </g>
+          <g class="simbolo" transform="scale(.72)"><path d="M-42 22 C -24 22 -14 -28 6 -24 S 32 12 44 -4"/>
             <path d="M-28.4 3 L13.6 -40" stroke="#a8822f" stroke-width="1.5"/>
-            <circle cx="-7.4" cy="-18.5" r="3" fill="#a8822f" stroke="#1d2633" stroke-width="1"/>
+            <circle cx="-7.4" cy="-18.5" r="3" fill="#a8822f" stroke="#1d2633" stroke-width="1"/></g>
+          <text class="rotulo-islote" y="-63" text-anchor="middle">una variable</text>
+        </g>
+        <g class="isla islote" data-destino="calculo-varias-variables" transform="translate(500 182)" tabindex="0" role="button" aria-label="Cálculo · varias variables">
+          <g transform="scale(0.64)">
+            <use href="#forma-estadistica" class="agua" transform="scale(1.36)"/>
+            <use href="#forma-estadistica" class="agua" transform="scale(1.2)"/>
+            <use href="#forma-estadistica" class="rayado" transform="scale(1.07)"/>
+            <use href="#forma-estadistica" class="costa"/>
+            <use href="#forma-estadistica" class="nivel" transform="scale(.7)"/>
           </g>
-          <g class="bandera"><path d="M0 -54 V-86" stroke="#1d2633" stroke-width="1.4"/><path d="M0 -86 L19 -80 L0 -74 Z" fill="#c9a14a"/></g>
-          <g class="cartela">
-            <path d="M-72 -118 H72 L64 -105 L72 -92 H-72 L-64 -105 Z"/>
-            <text y="-99" text-anchor="middle"><tspan class="num">II</tspan> · Cálculo</text>
+          <g class="simbolo" transform="scale(.72)">
+            <path d="M-40 14 C-30 6 30 6 40 14" stroke-width="1" stroke-dasharray="3 3"/>
+            <path d="M-40 14 C-36 -26 36 -26 40 14 C30 24 -30 24 -40 14 Z" fill="#efe2bd" stroke-width="1.4"/>
+            <path d="M-16 20 C-14 0 -6 -11 0 -15.5 M16 20 C14 0 6 -11 0 -15.5 M0 21 V-15.5" stroke-width=".9" opacity=".7"/>
+            <path d="M-33 1 C-16 8 16 8 33 1" stroke-width=".9" opacity=".7"/>
+            <path d="M-28 -14 L6 -24 L30 -17 L-4 -7 Z" fill="#c9a14a" fill-opacity=".28" stroke="#a8822f" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="0" cy="-15.5" r="3" fill="#a8822f" stroke="#1d2633" stroke-width="1"/>
           </g>
+          <text class="rotulo-islote" y="-62" text-anchor="middle">varias variables</text>
+        </g>
+        <g class="isla islote" data-destino="ecuaciones-diferenciales" transform="translate(632 208)" tabindex="0" role="button" aria-label="Cálculo · ecuaciones diferenciales">
+          <g transform="scale(0.62)">
+            <use href="#forma-algebra" class="agua" transform="scale(1.36)"/>
+            <use href="#forma-algebra" class="agua" transform="scale(1.2)"/>
+            <use href="#forma-algebra" class="rayado" transform="scale(1.07)"/>
+            <use href="#forma-algebra" class="costa"/>
+            <use href="#forma-algebra" class="nivel" transform="scale(.7)"/>
+          </g>
+          <g class="simbolo" transform="scale(.72)"><path d="M-27.5 -17.5 L-20.5 -10.5 M-28.9 -2.7 L-19.1 -1.3 M-28.1 12.9 L-19.9 7.1 M-26.7 26.2 L-21.3 17.8 M-15.5 -17.5 L-8.5 -10.5 M-16.9 -2.7 L-7.1 -1.3 M-16.1 12.9 L-7.9 7.1 M-14.7 26.2 L-9.3 17.8 M-3.5 -17.5 L3.5 -10.5 M-4.9 -2.7 L4.9 -1.3 M-4.1 12.9 L4.1 7.1 M-2.7 26.2 L2.7 17.8 M8.5 -17.5 L15.5 -10.5 M7.1 -2.7 L16.9 -1.3 M7.9 12.9 L16.1 7.1 M9.3 26.2 L14.7 17.8 M20.5 -17.5 L27.5 -10.5 M19.1 -2.7 L28.9 -1.3 M19.9 12.9 L28.1 7.1 M21.3 26.2 L26.7 17.8" stroke-width="1.1" opacity=".75"/>
+            <path d="M-30.0 -20.0 L-27.0 -16.1 L-24.0 -13.0 L-21.0 -10.5 L-18.0 -8.5 L-15.0 -6.9 L-12.0 -5.5 L-9.0 -4.5 L-6.0 -3.6 L-3.0 -2.9 L0.0 -2.3 L3.0 -1.9 L6.0 -1.5 L9.0 -1.2 L12.0 -1.0 L15.0 -0.8 L18.0 -0.6 L21.0 -0.5 L24.0 -0.4 L27.0 -0.3 L30.0 -0.3" stroke="#a8822f" stroke-width="1.6"/>
+            <path d="M-30.0 24.0 L-27.0 19.4 L-24.0 15.6 L-21.0 12.6 L-18.0 10.2 L-15.0 8.2 L-12.0 6.6 L-9.0 5.4 L-6.0 4.3 L-3.0 3.5 L0.0 2.8 L3.0 2.3 L6.0 1.8 L9.0 1.5 L12.0 1.2 L15.0 1.0 L18.0 0.8 L21.0 0.6 L24.0 0.5 L27.0 0.4 L30.0 0.3" stroke="#a8822f" stroke-width="1.6"/></g>
+          <text class="rotulo-islote" y="-60" text-anchor="middle">ecuaciones diferenciales</text>
         </g>
 
-        <!-- ISLA III · ESTADÍSTICA -->
-        <g class="isla" data-bloque="estadistica" transform="translate(640 178)" tabindex="0" role="button" aria-label="Bloque III: Estadística">
-          <use href="#forma-estadistica" class="agua" transform="scale(1.36)"/>
-          <use href="#forma-estadistica" class="agua" transform="scale(1.2)"/>
-          <use href="#forma-estadistica" class="rayado" transform="scale(1.07)"/>
-          <use href="#forma-estadistica" class="costa"/>
-          <use href="#forma-estadistica" class="nivel" transform="scale(.78)"/>
-          <use href="#forma-estadistica" class="nivel" transform="scale(.56)"/>
-          <g class="simbolo">
+        <!-- III · ESTADÍSTICA: tierra firme -->
+        <g class="isla tierra" data-destino="estadistica" tabindex="0" role="button" aria-label="III · Estadística">
+          <use href="#costa-continente" class="agua-t"/>
+          <use href="#costa-continente" class="rayado-t"/>
+          <use href="#costa-continente" class="costa"/>
+          <path class="nivel" d="M1000 70 C930 60 870 90 860 140 C850 190 880 230 860 280 C845 320 880 360 1000 370"/>
+          <path class="nivel" d="M1000 120 C950 115 915 140 912 180 C908 220 930 250 915 290 C905 320 940 335 1000 330"/>
+          <g class="simbolo" transform="translate(890 220) scale(1.15)">
             <path d="M-30 22 V10 M-18 22 V-4 M-6 22 V-18 M6 22 V-20 M18 22 V-6 M30 22 V8" stroke-width="5" stroke="#d4c49c" stroke-linecap="butt"/>
             <path d="M-44 22 C -24 22 -16 -28 0 -28 C 16 -28 24 22 44 22"/>
             <path d="M-44 22 H44" stroke-width="1"/>
           </g>
-          <g class="bandera"><path d="M0 -54 V-86" stroke="#1d2633" stroke-width="1.4"/><path d="M0 -86 L19 -80 L0 -74 Z" fill="#c9a14a"/></g>
-          <g class="cartela">
-            <path d="M-88 -118 H88 L80 -105 L88 -92 H-88 L-80 -105 Z"/>
+          <g class="cartela" transform="translate(890 222)">
+            <path d="M-86 -118 H86 L78 -105 L86 -92 H-86 L-78 -105 Z"/>
             <text y="-99" text-anchor="middle"><tspan class="num">III</tspan> · Estadística</text>
           </g>
         </g>
 
+        <!-- rosa de los vientos -->
+        <g class="rosa" transform="translate(70 352)">
+          <circle r="30"/><circle r="22"/>
+          <path d="M0 -40 L5 -5 L40 0 L5 5 L0 40 L-5 5 L-40 0 L-5 -5 Z" fill="#efe5cd"/>
+          <path d="M0 -40 L5 -5 L0 0 Z" fill="#b9a77f"/>
+          <text y="-45" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="13" fill="#a8822f" stroke="none">N</text>
+        </g>
+
         <!-- el barco -->
-        <g id="barco-carta" transform="translate(186 262)">
+        <g id="barco-carta" transform="translate(178 300)">
           <g id="barco-giro">
             <g class="cabeceo">
               <path class="estela" d="M-26 12 q5 -3 10 0 M-34 15 q4 -2 8 0"/>
@@ -1347,20 +1559,28 @@
         </g>
       </svg>
 
+      <!-- en el móvil, la carta es pequeña: estos botones ayudan a elegir -->
+      <div class="rumbos-movil" id="rumbos-movil"></div>
     </section>
 
     <!-- =========================================================
-         BLOQUE I · ÁLGEBRA
+         CÓMO SE RELLENA CADA DESTINO
+         Cada <div class="tema"> es una pestaña de arriba (un tema o una entrega).
+         Dentro, cada <a data-tipo="..." href="..."> es una pestaña de abajo:
+           Teoría · Animaciones · Ejercicios resueltos · Mapa mental
+         Basta con poner el nombre del archivo en href.
+         Si el archivo no está subido, su pestaña no aparece.
+         Para quitar una pestaña, borra su línea o conviértela en comentario.
     ========================================================== -->
-    <div class="bloque" id="algebra" data-nombre="Álgebra" data-numeral="I">
 
+    <div class="destino" id="algebra" data-grupo="algebra" data-numeral="I" data-grupo-nombre="Álgebra" data-nombre="Álgebra">
       <header class="bloque-cabecera">
         <p class="travesia">Travesía I</p>
         <h2>Álgebra</h2>
       </header>
 
       <!-- LEMA -->
-      <div class="lema-algebra revelar" id="lema-algebra">
+      <div class="lema-algebra" id="lema-algebra">
         <p class="frase" id="frase-lema" role="button" tabindex="0"
            aria-pressed="false" aria-label="Pulsa para transformar el lema">
           <span class="lema-cambiante">
@@ -1368,335 +1588,161 @@
             <span class="texto-nuevo">Todo es combinación lineal</span>
           </span>
         </p>
-        <p class="firma">Álgebra Lineal</p>
       </div>
 
-      <!-- =====================================================
-           TEMA 2 · ESPACIOS VECTORIALES
-           Una ventana con cuatro pestañas: Teoría · Animaciones · Ejercicios resueltos · Mapa mental.
-           Si el archivo de una pestaña no está subido, esa pestaña no se muestra.
-      ====================================================== -->
-      <section class="tema" id="espacios-vectoriales" data-corto="Espacios vectoriales">
-        <div class="cabecera">
-          <span class="numero">Tema 2</span>
-          <h2>Espacios vectoriales</h2>
+        <div class="tema" id="espacios-vectoriales" data-numero="Tema 2" data-nombre="Espacios vectoriales">
+          <a data-tipo="Teoría" href="./Tema2.pdf"></a>
+          <a data-tipo="Animaciones" href="./Tema2_animaciones.html"></a>
+          <a data-tipo="Ejercicios resueltos" href="./Tema2Resueltos.pdf"></a>
+          <a data-tipo="Mapa mental" href="./mapa-espacios-vectoriales.pdf"></a>
         </div>
 
-        <div class="ventana revelar">
-          <nav class="pestanas" role="tablist" aria-label="Materiales del tema">
-            <button role="tab" id="t-espacios-vectoriales-1" aria-controls="p-espacios-vectoriales-1" aria-selected="false" tabindex="-1">Teoría</button>
-            <button role="tab" id="t-espacios-vectoriales-2" aria-controls="p-espacios-vectoriales-2" aria-selected="false" tabindex="-1">Animaciones</button>
-            <button role="tab" id="t-espacios-vectoriales-3" aria-controls="p-espacios-vectoriales-3" aria-selected="false" tabindex="-1">Ejercicios resueltos</button>
-            <button role="tab" id="t-espacios-vectoriales-4" aria-controls="p-espacios-vectoriales-4" aria-selected="false" tabindex="-1">Mapa mental</button>
-          </nav>
-          <div class="paneles">
-            <!-- PESTAÑA «TEORÍA»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-espacios-vectoriales-1" role="tabpanel" aria-labelledby="t-espacios-vectoriales-1" data-src="./Tema2.pdf">
-              <iframe title="Teoría"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema2.pdf" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «ANIMACIONES»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-espacios-vectoriales-2" role="tabpanel" aria-labelledby="t-espacios-vectoriales-2" data-src="./Tema2_animaciones.html">
-              <iframe title="Animaciones"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema2_animaciones.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «EJERCICIOS RESUELTOS»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-espacios-vectoriales-3" role="tabpanel" aria-labelledby="t-espacios-vectoriales-3" data-src="./Tema2Resueltos.pdf">
-              <iframe title="Ejercicios resueltos"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema2Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «MAPA MENTAL»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-espacios-vectoriales-4" role="tabpanel" aria-labelledby="t-espacios-vectoriales-4" data-src="./mapa-espacios-vectoriales.pdf">
-              <iframe title="Mapa mental"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./mapa-espacios-vectoriales.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-              </div>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <!-- =====================================================
-           TEMA 3 · ESPACIOS EUCLÍDEOS
-           Una ventana con cuatro pestañas: Teoría · Animaciones · Ejercicios resueltos · Mapa mental.
-           Si el archivo de una pestaña no está subido, esa pestaña no se muestra.
-      ====================================================== -->
-      <section class="tema" id="espacios-euclideos" data-corto="Espacios euclídeos">
-        <div class="cabecera">
-          <span class="numero">Tema 3</span>
-          <h2>Espacios euclídeos</h2>
+        <div class="tema" id="espacios-euclideos" data-numero="Tema 3" data-nombre="Espacios euclídeos">
+          <a data-tipo="Teoría" href="./Tema3.pdf"></a>
+          <a data-tipo="Animaciones" href="./Tema3_animaciones.html"></a>
+          <a data-tipo="Ejercicios resueltos" href="./Tema3Resueltos.pdf"></a>
+          <a data-tipo="Mapa mental" href="./mapa-espacios-euclideos.pdf"></a>
         </div>
 
-        <div class="ventana revelar">
-          <nav class="pestanas" role="tablist" aria-label="Materiales del tema">
-            <button role="tab" id="t-espacios-euclideos-1" aria-controls="p-espacios-euclideos-1" aria-selected="false" tabindex="-1">Teoría</button>
-            <button role="tab" id="t-espacios-euclideos-2" aria-controls="p-espacios-euclideos-2" aria-selected="false" tabindex="-1">Animaciones</button>
-            <button role="tab" id="t-espacios-euclideos-3" aria-controls="p-espacios-euclideos-3" aria-selected="false" tabindex="-1">Ejercicios resueltos</button>
-            <button role="tab" id="t-espacios-euclideos-4" aria-controls="p-espacios-euclideos-4" aria-selected="false" tabindex="-1">Mapa mental</button>
-          </nav>
-          <div class="paneles">
-            <!-- PESTAÑA «TEORÍA»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-espacios-euclideos-1" role="tabpanel" aria-labelledby="t-espacios-euclideos-1" data-src="./Tema3.pdf">
-              <iframe title="Teoría"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema3.pdf" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «ANIMACIONES»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-espacios-euclideos-2" role="tabpanel" aria-labelledby="t-espacios-euclideos-2" data-src="./Tema3_animaciones.html">
-              <iframe title="Animaciones"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema3_animaciones.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «EJERCICIOS RESUELTOS»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-espacios-euclideos-3" role="tabpanel" aria-labelledby="t-espacios-euclideos-3" data-src="./Tema3Resueltos.pdf">
-              <iframe title="Ejercicios resueltos"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema3Resueltos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «MAPA MENTAL»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-espacios-euclideos-4" role="tabpanel" aria-labelledby="t-espacios-euclideos-4" data-src="./mapa-espacios-euclideos.pdf">
-              <iframe title="Mapa mental"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./mapa-espacios-euclideos.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-              </div>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <!-- =====================================================
-           TEMA 4 · APLICACIONES LINEALES
-           Una ventana con cuatro pestañas: Teoría · Animaciones · Ejercicios resueltos · Mapa mental.
-           Si el archivo de una pestaña no está subido, esa pestaña no se muestra.
-      ====================================================== -->
-      <section class="tema" id="aplicaciones-lineales" data-corto="Aplicaciones lineales">
-        <div class="cabecera">
-          <span class="numero">Tema 4</span>
-          <h2>Aplicaciones lineales</h2>
+        <div class="tema" id="aplicaciones-lineales" data-numero="Tema 4" data-nombre="Aplicaciones lineales">
+          <a data-tipo="Teoría" href="./Tema4.pdf"></a>
+          <a data-tipo="Animaciones" href="./Tema4_animaciones.html"></a>
+          <a data-tipo="Ejercicios resueltos" href="./Tema4Res.pdf"></a>
+          <a data-tipo="Mapa mental" href="./Tema 4. Mapa mental.pdf" data-nota="Autora: &lt;strong&gt;Carla Villarreal Conde&lt;/strong&gt; · ¡Muchas gracias, Carla!"></a>
         </div>
 
-        <div class="ventana revelar">
-          <nav class="pestanas" role="tablist" aria-label="Materiales del tema">
-            <button role="tab" id="t-aplicaciones-lineales-1" aria-controls="p-aplicaciones-lineales-1" aria-selected="false" tabindex="-1">Teoría</button>
-            <button role="tab" id="t-aplicaciones-lineales-2" aria-controls="p-aplicaciones-lineales-2" aria-selected="false" tabindex="-1">Animaciones</button>
-            <button role="tab" id="t-aplicaciones-lineales-3" aria-controls="p-aplicaciones-lineales-3" aria-selected="false" tabindex="-1">Ejercicios resueltos</button>
-            <button role="tab" id="t-aplicaciones-lineales-4" aria-controls="p-aplicaciones-lineales-4" aria-selected="false" tabindex="-1">Mapa mental</button>
-          </nav>
-          <div class="paneles">
-            <!-- PESTAÑA «TEORÍA»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-aplicaciones-lineales-1" role="tabpanel" aria-labelledby="t-aplicaciones-lineales-1" data-src="./Tema4.pdf">
-              <iframe title="Teoría"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema4.pdf" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «ANIMACIONES»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-aplicaciones-lineales-2" role="tabpanel" aria-labelledby="t-aplicaciones-lineales-2" data-src="./Tema4_animaciones.html">
-              <iframe title="Animaciones"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema4_animaciones.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «EJERCICIOS RESUELTOS»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-aplicaciones-lineales-3" role="tabpanel" aria-labelledby="t-aplicaciones-lineales-3" data-src="./Tema4Res.pdf">
-              <iframe title="Ejercicios resueltos"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema4Res.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «MAPA MENTAL»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-aplicaciones-lineales-4" role="tabpanel" aria-labelledby="t-aplicaciones-lineales-4" data-src="./mapa4.pdf">
-              <iframe title="Mapa mental"></iframe>
-              <div class="pie-panel">
-                <p class="agradecimiento">Autora: <strong>Carla Villarreal Conde</strong> · ¡Muchas gracias, Carla!</p>
-                <a class="enlace" href="./Tema 4. Mapa mental.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-              </div>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <!-- =====================================================
-           TEMA 5 · DIAGONALIZACIÓN
-           Una ventana con cuatro pestañas: Teoría · Animaciones · Ejercicios resueltos · Mapa mental.
-           Si el archivo de una pestaña no está subido, esa pestaña no se muestra.
-      ====================================================== -->
-      <section class="tema" id="diagonalizacion" data-corto="Diagonalización">
-        <div class="cabecera">
-          <span class="numero">Tema 5</span>
-          <h2>Diagonalización</h2>
+        <div class="tema" id="diagonalizacion" data-numero="Tema 5" data-nombre="Diagonalización">
+          <a data-tipo="Teoría" href="./Tema5.pdf"></a>
+          <!-- <a data-tipo="Animaciones" href="./dossier-diagonalizacion.html"></a> -->
+          <!-- <a data-tipo="Ejercicios resueltos" href="./Tema5Resueltos.pdf"></a> -->
+          <!-- <a data-tipo="Mapa mental" href="./mapa-diagonalizacion.pdf"></a> -->
         </div>
 
-        <div class="ventana revelar">
-          <nav class="pestanas" role="tablist" aria-label="Materiales del tema">
-            <button role="tab" id="t-diagonalizacion-1" aria-controls="p-diagonalizacion-1" aria-selected="false" tabindex="-1">Teoría</button>
-            <button role="tab" id="t-diagonalizacion-2" aria-controls="p-diagonalizacion-2" aria-selected="false" tabindex="-1">Animaciones</button>
-            <button role="tab" id="t-diagonalizacion-3" aria-controls="p-diagonalizacion-3" aria-selected="false" tabindex="-1">Ejercicios resueltos</button>
-            <button role="tab" id="t-diagonalizacion-4" aria-controls="p-diagonalizacion-4" aria-selected="false" tabindex="-1">Mapa mental</button>
-          </nav>
-          <div class="paneles">
-            <!-- PESTAÑA «TEORÍA»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-            <section class="panel" id="p-diagonalizacion-1" role="tabpanel" aria-labelledby="t-diagonalizacion-1" data-src="./Tema5.pdf">
-              <iframe title="Teoría"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema5.pdf" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «ANIMACIONES»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-           <!-- <section class="panel" id="p-diagonalizacion-2" role="tabpanel" aria-labelledby="t-diagonalizacion-2" data-src="./dossier-diagonalizacion.html">
-              <iframe title="Animaciones"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./dossier-diagonalizacion.html" target="_blank" rel="noopener">Abrir en ventana nueva ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «EJERCICIOS RESUELTOS»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-           <!-- <section class="panel" id="p-diagonalizacion-3" role="tabpanel" aria-labelledby="t-diagonalizacion-3" data-src="./Tema4Res.pdf">
-              <iframe title="Ejercicios resueltos"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./Tema4Res.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-              </div>
-            </section>
-            <!-- PESTAÑA «MAPA MENTAL»: pon aquí el nombre de tu archivo (en data-src y en href) -->
-          <!--  <section class="panel" id="p-diagonalizacion-4" role="tabpanel" aria-labelledby="t-diagonalizacion-4" data-src="./mapa-diagonalizacion.pdf">
-              <iframe title="Mapa mental"></iframe>
-              <div class="pie-panel">
-                <span></span>
-                <a class="enlace" href="./mapa-diagonalizacion.pdf" target="_blank" rel="noopener">Abrir o descargar ↗</a>
-              </div>
-            </section> -->
-
-            
-          </div>
-        </div>
-      </section>
-
-      <!-- OTROS PUERTOS DEL ÁLGEBRA -->
-      <section class="tema revelar" id="recomendados" data-corto="Otros puertos">
-        <div class="cabecera">
-          <span class="numero">⚓</span>
-          <h2>Otros puertos</h2>
-        </div>
-        <div class="puertos">
+        <!-- OTROS PUERTOS: cada <a class="enlace-recomendado"> es una tarjeta -->
+        <div class="tema puertos" id="recomendados" data-numero="⚓" data-nombre="Otros puertos">
           <a class="enlace-recomendado" href="https://claude.ai/artifact/BMyZvbrsASDPD9mZm8YSAn" target="_blank" rel="noopener noreferrer">
-            <span>
-              <strong>Checklist Temas 1, 2 y 3</strong>
-              <small>Autor: Javier García Pavón · ¡Muchas gracias, Javi!</small>
-            </span>
+            <span><strong>Checklist Temas 1, 2 y 3</strong><small>Autor: Javier García Pavón · ¡Muchas gracias, Javi!</small></span>
             <span class="flecha">↗</span>
           </a>
           <a class="enlace-recomendado" href="https://claude.ai/artifact/3HS6CtWczo1eLQvRMfPwUK" target="_blank" rel="noopener noreferrer">
-            <span>
-              <strong>El cine de las aplicaciones lineales</strong>
-              <small>¡Muchas gracias, Carla, por recordármelo!</small>
-            </span>
+            <span><strong>El cine de las aplicaciones lineales</strong><small>¡Muchas gracias, Carla, por recordármelo!</small></span>
             <span class="flecha">↗</span>
           </a>
           <a class="enlace-recomendado" href="./polcar.pdf" target="_blank" rel="noopener noreferrer">
-            <span>
-              <strong>¿Todo polinomio es el polinomio característico de alguna matriz?</strong>
-              <small>Autor: Ángel Escribano Martínez · Preguntas de investigación</small>
-            </span>
+            <span><strong>¿Todo polinomio es el polinomio característico de alguna matriz?</strong><small>Autor: Ángel Escribano Martínez · Preguntas de investigación</small></span>
             <span class="flecha">↗</span>
           </a>
         </div>
-      </section>
 
-    </div><!-- /bloque álgebra -->
-
-    <!-- =========================================================
-         BLOQUE II · CÁLCULO
-         Para añadir un tema: copia aquí una <section class="tema"> del álgebra
-         (cambia su id, data-corto, número, nombre y los archivos de sus cuatro pestañas)
-         y borra el <div class="horizonte">.
-    ========================================================== -->
-    <div class="bloque" id="calculo" data-nombre="Cálculo" data-numeral="II">
-      <header class="bloque-cabecera">
-        <p class="travesia">Travesía II</p>
-        <h2>Cálculo</h2>
-      </header>
-
-      <div class="horizonte">
-        <svg viewBox="0 0 520 90" aria-hidden="true">
-          <path class="linea-mar" d="M0 70 H520"/>
-          <g transform="translate(260 0)"><g class="velero">
-            <path d="M0 66 V40" stroke="#5b6573" stroke-width="1"/>
-            <path d="M1 41 L1 64 L13 64 Z" fill="#fbf9f4" stroke="#5b6573" stroke-width=".8"/>
-            <path d="M-10 66 L10 66 L7 70 L-7 70 Z" fill="#5b6573"/>
-          </g></g>
-        </svg>
-        <p>Este rumbo aún está por navegar. Aquí irán apareciendo las animaciones, los dossieres y los ejercicios de cálculo.</p>
-      </div>
-
-      <!-- OTROS PUERTOS DE CÁLCULO
-           Para añadir uno, copia aquí un <a class="enlace-recomendado"> del álgebra
-           dentro de <div class="puertos"> y borra el párrafo «vacio». -->
-      <section class="tema" id="puertos-calculo" data-corto="Otros puertos">
-        <div class="cabecera">
-          <span class="numero">⚓</span>
-          <h2>Otros puertos</h2>
-        </div>
-        <div class="puertos">
-          <p class="vacio">Todavía no hay puertos en este rumbo.</p>
-        </div>
-      </section>
     </div>
 
-    <!-- =========================================================
-         BLOQUE III · ESTADÍSTICA
-    ========================================================== -->
-    <div class="bloque" id="estadistica" data-nombre="Estadística" data-numeral="III">
+    <div class="destino" id="calculo-una-variable" data-grupo="calculo" data-numeral="II" data-grupo-nombre="Cálculo" data-nombre="Cálculo en una variable">
+      <header class="bloque-cabecera">
+        <p class="travesia">Travesía II · Cálculo</p>
+        <h2>Cálculo en una variable</h2>
+      </header>
+
+        <div class="tema" id="c1-funciones" data-numero="Entrega 1" data-nombre="Funciones">
+          <a data-tipo="Teoría" href="./Calculo1_Entrega1.pdf"></a>
+          <a data-tipo="Animaciones" href="./Calculo1_Entrega1_animaciones.html"></a>
+          <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega1Resueltos.pdf"></a>
+          <a data-tipo="Mapa mental" href="./Calculo1_Entrega1_mapa.pdf"></a>
+        </div>
+
+        <div class="tema" id="c1-limites-continuidad" data-numero="Entrega 2" data-nombre="Límites y continuidad">
+          <a data-tipo="Teoría" href="./Calculo1_Entrega2.pdf"></a>
+          <a data-tipo="Animaciones" href="./Calculo1_Entrega2_animaciones.html"></a>
+          <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega2Resueltos.pdf"></a>
+          <a data-tipo="Mapa mental" href="./Calculo1_Entrega2_mapa.pdf"></a>
+        </div>
+
+        <div class="tema" id="c1-derivada" data-numero="Entrega 3" data-nombre="Derivada y usos">
+          <a data-tipo="Teoría" href="./Calculo1_Entrega3.pdf"></a>
+          <a data-tipo="Animaciones" href="./Calculo1_Entrega3_animaciones.html"></a>
+          <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega3Resueltos.pdf"></a>
+          <a data-tipo="Mapa mental" href="./Calculo1_Entrega3_mapa.pdf"></a>
+        </div>
+
+        <div class="tema" id="c1-integrales" data-numero="Entrega 4" data-nombre="Integrales">
+          <a data-tipo="Teoría" href="./Calculo1_Entrega4.pdf"></a>
+          <a data-tipo="Animaciones" href="./Calculo1_Entrega4_animaciones.html"></a>
+          <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega4Resueltos.pdf"></a>
+          <a data-tipo="Mapa mental" href="./Calculo1_Entrega4_mapa.pdf"></a>
+        </div>
+
+        <!-- OTROS PUERTOS: cada <a class="enlace-recomendado"> es una tarjeta -->
+        <div class="tema puertos" id="puertos-calculo-una-variable" data-numero="⚓" data-nombre="Otros puertos">
+        </div>
+
+    </div>
+
+    <div class="destino" id="calculo-varias-variables" data-grupo="calculo" data-numeral="II" data-grupo-nombre="Cálculo" data-nombre="Cálculo en varias variables">
+      <header class="bloque-cabecera">
+        <p class="travesia">Travesía II · Cálculo</p>
+        <h2>Cálculo en varias variables</h2>
+      </header>
+
+        <div class="horizonte">
+          <svg viewBox="0 0 520 90" aria-hidden="true">
+            <path class="linea-mar" d="M0 70 H520"/>
+            <g transform="translate(260 0)"><g class="velero">
+              <path d="M0 66 V40" stroke="#5b6573" stroke-width="1"/>
+              <path d="M1 41 L1 64 L13 64 Z" fill="#fbf9f4" stroke="#5b6573" stroke-width=".8"/>
+              <path d="M-10 66 L10 66 L7 70 L-7 70 Z" fill="#5b6573"/>
+            </g></g>
+          </svg>
+          <p>Este rumbo aún está por navegar. Aquí irán llegando sus entregas.</p>
+        </div>
+        <!-- OTROS PUERTOS: cada <a class="enlace-recomendado"> es una tarjeta -->
+        <div class="tema puertos" id="puertos-calculo-varias-variables" data-numero="⚓" data-nombre="Otros puertos">
+        </div>
+
+    </div>
+
+    <div class="destino" id="ecuaciones-diferenciales" data-grupo="calculo" data-numeral="II" data-grupo-nombre="Cálculo" data-nombre="Ecuaciones diferenciales">
+      <header class="bloque-cabecera">
+        <p class="travesia">Travesía II · Cálculo</p>
+        <h2>Ecuaciones diferenciales</h2>
+      </header>
+
+        <div class="horizonte">
+          <svg viewBox="0 0 520 90" aria-hidden="true">
+            <path class="linea-mar" d="M0 70 H520"/>
+            <g transform="translate(260 0)"><g class="velero">
+              <path d="M0 66 V40" stroke="#5b6573" stroke-width="1"/>
+              <path d="M1 41 L1 64 L13 64 Z" fill="#fbf9f4" stroke="#5b6573" stroke-width=".8"/>
+              <path d="M-10 66 L10 66 L7 70 L-7 70 Z" fill="#5b6573"/>
+            </g></g>
+          </svg>
+          <p>Este rumbo aún está por navegar. Aquí irán llegando sus entregas.</p>
+        </div>
+        <!-- OTROS PUERTOS: cada <a class="enlace-recomendado"> es una tarjeta -->
+        <div class="tema puertos" id="puertos-ecuaciones-diferenciales" data-numero="⚓" data-nombre="Otros puertos">
+        </div>
+
+    </div>
+
+    <div class="destino" id="estadistica" data-grupo="estadistica" data-numeral="III" data-grupo-nombre="Estadística" data-nombre="Estadística">
       <header class="bloque-cabecera">
         <p class="travesia">Travesía III</p>
         <h2>Estadística</h2>
       </header>
 
-      <div class="horizonte">
-        <svg viewBox="0 0 520 90" aria-hidden="true">
-          <path class="linea-mar" d="M0 70 H520"/>
-          <g transform="translate(260 0)"><g class="velero">
-            <path d="M0 66 V40" stroke="#5b6573" stroke-width="1"/>
-            <path d="M1 41 L1 64 L13 64 Z" fill="#fbf9f4" stroke="#5b6573" stroke-width=".8"/>
-            <path d="M-10 66 L10 66 L7 70 L-7 70 Z" fill="#5b6573"/>
-          </g></g>
-        </svg>
-        <p>Este rumbo aún está por navegar. Aquí irán apareciendo las animaciones, los dossieres y los ejercicios de estadística.</p>
-      </div>
+        <div class="horizonte">
+          <svg viewBox="0 0 520 90" aria-hidden="true">
+            <path class="linea-mar" d="M0 70 H520"/>
+            <g transform="translate(260 0)"><g class="velero">
+              <path d="M0 66 V40" stroke="#5b6573" stroke-width="1"/>
+              <path d="M1 41 L1 64 L13 64 Z" fill="#fbf9f4" stroke="#5b6573" stroke-width=".8"/>
+              <path d="M-10 66 L10 66 L7 70 L-7 70 Z" fill="#5b6573"/>
+            </g></g>
+          </svg>
+          <p>Este rumbo aún está por navegar. Aquí irán llegando sus entregas.</p>
+        </div>
+        <!-- OTROS PUERTOS: cada <a class="enlace-recomendado"> es una tarjeta -->
+        <div class="tema puertos" id="puertos-estadistica" data-numero="⚓" data-nombre="Otros puertos">
+        </div>
 
-      <!-- OTROS PUERTOS DE ESTADÍSTICA
-           Para añadir uno, copia aquí un <a class="enlace-recomendado"> del álgebra
-           dentro de <div class="puertos"> y borra el párrafo «vacio». -->
-      <section class="tema" id="puertos-estadistica" data-corto="Otros puertos">
-        <div class="cabecera">
-          <span class="numero">⚓</span>
-          <h2>Otros puertos</h2>
-        </div>
-        <div class="puertos">
-          <p class="vacio">Todavía no hay puertos en este rumbo.</p>
-        </div>
-      </section>
     </div>
 
   </main>
@@ -1997,50 +2043,6 @@
     });
   })();
 
-  /* ---------- Ventanas de cada tema: pestañas ---------- */
-  (() => {
-    document.querySelectorAll(".ventana").forEach(async (ventana) => {
-      const tabs = [...ventana.querySelectorAll('[role="tab"]')];
-      const panel = (t) => document.getElementById(t.getAttribute("aria-controls"));
-
-      function abrir(tab, enfocar) {
-        tabs.forEach((t) => {
-          const si = t === tab;
-          t.setAttribute("aria-selected", String(si));
-          t.tabIndex = si ? 0 : -1;
-          const p = panel(t);
-          p.classList.toggle("activo", si);
-          // el archivo se carga la primera vez que se abre su pestaña
-          if (si && !p.querySelector("iframe").getAttribute("src")) {
-            p.querySelector("iframe").setAttribute("src", p.dataset.src);
-          }
-        });
-        if (enfocar) tab.focus();
-      }
-
-      tabs.forEach((t) => {
-        t.addEventListener("click", () => abrir(t));
-        t.addEventListener("keydown", (e) => {
-          const vis = tabs.filter((x) => !x.hidden), i = vis.indexOf(t);
-          if (e.key === "ArrowRight") abrir(vis[(i + 1) % vis.length], true);
-          if (e.key === "ArrowLeft")  abrir(vis[(i - 1 + vis.length) % vis.length], true);
-        });
-      });
-
-      // Oculta las pestañas cuyo archivo aún no está subido
-      await Promise.all(tabs.map(async (t) => {
-        try {
-          const r = await fetch(panel(t).dataset.src, { method: "HEAD", cache: "no-store" });
-          if (!r.ok) { t.hidden = true; panel(t).hidden = true; }
-        } catch (e) { /* abierta en local sin servidor: se deja visible */ }
-      }));
-
-      const primera = tabs.find((t) => !t.hidden);
-      if (primera) abrir(primera);
-      else ventana.hidden = true;
-    });
-  })();
-
   /* ---------- Aparición al hacer scroll ---------- */
   (() => {
     const obs = new IntersectionObserver((entradas) => {
@@ -2054,160 +2056,285 @@
     document.querySelectorAll(".revelar").forEach((el) => obs.observe(el));
   })();
 
-  /* ---------- Carta de navegación e índice por bloques ---------- */
+  /* ---------- Carta, cuadernos de cada destino y bitácora ---------- */
   (() => {
-    const bloques = [...document.querySelectorAll(".bloque")];
-    const nombres = bloques.map((b) => b.id);
-    const islas   = [...document.querySelectorAll(".isla")];
-    const barco   = document.getElementById("barco-carta");
-    const giro    = document.getElementById("barco-giro");
-    const indice  = document.getElementById("indice");
-    const lista   = document.getElementById("indice-lista");
-    const titulo  = document.getElementById("indice-titulo");
-    const portada = document.querySelector(".portada");
-    const quieto  = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const destinos = [...document.querySelectorAll(".destino")];
+    const islas    = [...document.querySelectorAll(".isla[data-destino]")];
+    const barco    = document.getElementById("barco-carta");
+    const giro     = document.getElementById("barco-giro");
+    const indice   = document.getElementById("indice");
+    const lista    = document.getElementById("indice-lista");
+    const portada  = document.querySelector(".portada");
+    const quieto   = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ICONOS   = { "Teoría": "", "Animaciones": "", "Ejercicios resueltos": "", "Mapa mental": "" };
 
-    // Fondeaderos: dónde atraca el barco junto a cada isla
+    // Fondeaderos: todos a la misma altura, al pie de cada destino
     const puerto = {
-      algebra:     { x: 186, y: 262 },
-      calculo:     { x: 426, y: 262 },
-      estadistica: { x: 656, y: 262 }
+      "algebra":                  { x: 178, y: 300 },
+      "calculo-una-variable":     { x: 368, y: 300 },
+      "calculo-varias-variables": { x: 500, y: 300 },
+      "ecuaciones-diferenciales": { x: 632, y: 300 },
+      "estadistica":              { x: 752, y: 300 }
     };
 
-    let actual = null, pos = { ...puerto.algebra }, viaje = 0, obsSecciones;
+    /* ---- 1. Comprobar qué archivos existen (en la web) ---- */
+    const falta = new Set();
+    const comprobaciones = [...document.querySelectorAll(".destino .tema a[data-tipo]")].map(async (a) => {
+      try {
+        const r = await fetch(a.getAttribute("href"), { method: "HEAD", cache: "no-store" });
+        if (!r.ok) falta.add(a);
+      } catch (e) { /* abierta en local sin servidor: se da por buena */ }
+    });
 
-    // Ruta entre dos puertos: curva suave que sale y llega en horizontal,
-    // por el mar abierto que queda bajo las islas.
+    /* ---- 2. Cuaderno de cada destino: temas arriba, materiales abajo ---- */
+    const cuadernos = new Map();
+
+    destinos.forEach((dest) => {
+      const temas = [...dest.querySelectorAll(":scope > .tema")];
+      temas.forEach((t) => t.classList.add("datos"));
+
+      const cuaderno = document.createElement("div");
+      cuaderno.className = "cuaderno";
+      cuaderno.innerHTML = `
+        <nav class="fila-temas" role="tablist" aria-label="Temas"></nav>
+        <nav class="fila-materiales" role="tablist" aria-label="Materiales"></nav>
+        <div class="hoja">
+          <iframe title="Material"></iframe>
+          <div class="hoja-puertos puertos"></div>
+          <p class="hoja-vacia">Aún no hay materiales en esta parada.</p>
+          <div class="pie-panel"><span class="nota"></span><a class="enlace" target="_blank" rel="noopener"></a></div>
+        </div>`;
+      dest.appendChild(cuaderno);
+
+      const filaT = cuaderno.querySelector(".fila-temas");
+      const filaM = cuaderno.querySelector(".fila-materiales");
+      const marco = cuaderno.querySelector("iframe");
+      const hojaP = cuaderno.querySelector(".hoja-puertos");
+      const vacia = cuaderno.querySelector(".hoja-vacia");
+      const pie   = cuaderno.querySelector(".pie-panel");
+      const nota  = pie.querySelector(".nota");
+      const abrir = pie.querySelector("a");
+
+      const estado = { tema: null, botones: new Map() };
+
+      function mostrar(modo) {
+        marco.hidden = modo !== "material";
+        pie.hidden   = modo !== "material";
+        hojaP.hidden = modo !== "puertos";
+        vacia.hidden = modo !== "vacio";
+        filaM.hidden = modo !== "material";
+      }
+
+      function elegirMaterial(a, enfocar) {
+        filaM.querySelectorAll("button").forEach((b) => {
+          const si = b._a === a;
+          b.setAttribute("aria-selected", String(si));
+          b.tabIndex = si ? 0 : -1;
+          if (si && enfocar) b.focus();
+        });
+        const url = a.getAttribute("href");
+        if (marco.getAttribute("src") !== url) marco.setAttribute("src", url);
+        nota.innerHTML = a.dataset.nota || "";
+        abrir.href = url;
+        abrir.textContent = (/\.pdf$/i.test(url) ? "Abrir o descargar" : "Abrir en ventana nueva") + " ↗";
+        mostrar("material");
+      }
+
+      function elegirTema(t, enfocar) {
+        estado.tema = t;
+        estado.botones.forEach((b, tt) => {
+          const si = tt === t;
+          b.setAttribute("aria-selected", String(si));
+          b.tabIndex = si ? 0 : -1;
+          if (si && enfocar) b.focus();
+        });
+        filaM.innerHTML = "";
+        if (t.classList.contains("puertos")) {
+          hojaP.innerHTML = t.innerHTML;
+          mostrar("puertos");
+        } else {
+          const mats = [...t.querySelectorAll("a[data-tipo]")].filter((a) => !falta.has(a));
+          mats.forEach((a, i) => {
+            const b = document.createElement("button");
+            b.setAttribute("role", "tab");
+            b.textContent = a.dataset.tipo;
+            b._a = a;
+            b.addEventListener("click", () => elegirMaterial(a));
+            b.addEventListener("keydown", (e) => teclas(e, mats, i, (x) => elegirMaterial(x, true)));
+            filaM.appendChild(b);
+          });
+          if (mats.length) elegirMaterial(mats[0]); else mostrar("vacio");
+        }
+        marcarIndice();
+      }
+
+      function teclas(e, lista, i, accion) {
+        if (e.key === "ArrowRight") accion(lista[(i + 1) % lista.length]);
+        if (e.key === "ArrowLeft")  accion(lista[(i - 1 + lista.length) % lista.length]);
+      }
+
+      function construirTemas() {
+        filaT.innerHTML = "";
+        estado.botones.clear();
+        const visibles = temas.filter((t) => t.classList.contains("puertos")
+          ? t.querySelector(".enlace-recomendado")
+          : true);
+        visibles.forEach((t, i) => {
+          const b = document.createElement("button");
+          b.setAttribute("role", "tab");
+          b.innerHTML = `<span class="num">${t.dataset.numero}</span> ${t.dataset.nombre}`;
+          b.addEventListener("click", () => elegirTema(t));
+          b.addEventListener("keydown", (e) => teclas(e, visibles, i, (x) => elegirTema(x, true)));
+          filaT.appendChild(b);
+          estado.botones.set(t, b);
+        });
+        cuaderno.hidden = visibles.length === 0;
+        filaT.hidden = visibles.length < 2;
+        const hor = dest.querySelector(":scope > .horizonte");
+        if (hor) hor.hidden = visibles.some((t) => !t.classList.contains("puertos"));
+        const actual = visibles.includes(estado.tema) ? estado.tema : visibles[0];
+        if (actual) elegirTema(actual);
+        return visibles;
+      }
+
+      cuadernos.set(dest, { construirTemas, elegirTema, cuaderno, estado, temas });
+    });
+
+    /* ---- 3. Barco ---- */
     function curva(a, b) {
       const dx = b.x - a.x, sg = Math.sign(dx) || 1, k = Math.max(Math.abs(dx) * 0.45, 30);
       return [a, { x: a.x + sg * k, y: a.y + 16 }, { x: b.x - sg * k, y: b.y + 16 }, b];
     }
-    const enCurva = ([p0, p1, p2, p3], t) => {
-      const u = 1 - t;
-      return {
-        x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
-        y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y
-      };
-    };
-    const tangente = ([p0, p1, p2, p3], t) => {
-      const u = 1 - t;
-      return {
-        x: 3*(u*u*(p1.x-p0.x) + 2*u*t*(p2.x-p1.x) + t*t*(p3.x-p2.x)),
-        y: 3*(u*u*(p1.y-p0.y) + 2*u*t*(p2.y-p1.y) + t*t*(p3.y-p2.y))
-      };
-    };
-    const trazo = ([p0, p1, p2, p3]) => `M${p0.x} ${p0.y} C${p1.x} ${p1.y} ${p2.x} ${p2.y} ${p3.x} ${p3.y}`;
+    const enCurva = ([p0, p1, p2, p3], t) => { const u = 1 - t; return {
+      x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+      y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y }; };
+    const tangente = ([p0, p1, p2, p3], t) => { const u = 1 - t; return {
+      x: 3*(u*u*(p1.x-p0.x) + 2*u*t*(p2.x-p1.x) + t*t*(p3.x-p2.x)),
+      y: 3*(u*u*(p1.y-p0.y) + 2*u*t*(p2.y-p1.y) + t*t*(p3.y-p2.y)) }; };
 
-    let rumbo = 1;   // 1: proa a la derecha, -1: proa a la izquierda
-    function colocar(p, inclinacion = 0) {
+    let pos = { ...puerto.algebra }, rumbo = 1, viaje = 0;
+    function colocar(p, inc = 0) {
       barco.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
-      giro.setAttribute("transform", `scale(${rumbo} 1) rotate(${inclinacion.toFixed(1)})`);
+      giro.setAttribute("transform", `scale(${rumbo} 1) rotate(${inc.toFixed(1)})`);
     }
-
     function navegar(destino) {
       const a = { ...pos }, b = puerto[destino];
-      if (Math.abs(b.x - a.x) < 1 && Math.abs(b.y - a.y) < 1) return;
+      if (!b || (Math.abs(b.x - a.x) < 1 && Math.abs(b.y - a.y) < 1)) return;
       const c = curva(a, b);
-      rumbo = Math.sign(b.x - a.x) || rumbo;   // el barco no se da la vuelta a mitad de viaje
-      const id = ++viaje, dur = quieto ? 1 : 1900, t0 = performance.now();
+      rumbo = Math.sign(b.x - a.x) || rumbo;
+      const id = ++viaje, dur = quieto ? 1 : Math.min(2400, 900 + Math.abs(b.x - a.x) * 2.4), t0 = performance.now();
       const suave = (t) => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
       (function paso(ahora) {
         if (id !== viaje) return;
         const t = suave(Math.min(1, (ahora - t0) / dur));
         pos = enCurva(c, t);
         const d = tangente(c, t);
-        let ang = Math.atan2(d.y, d.x * rumbo) * 180 / Math.PI;
-        ang = Math.max(-14, Math.min(14, ang));                    // solo un leve cabeceo
+        const ang = Math.max(-14, Math.min(14, Math.atan2(d.y, d.x * rumbo) * 180 / Math.PI));
         colocar(pos, t < 1 ? ang * Math.sin(Math.PI * Math.min(1, t * 1.15)) : 0);
         if (t < 1) requestAnimationFrame(paso);
       })(t0);
     }
 
-    function construirIndice(activo) {
-      lista.querySelectorAll("li.dinamico").forEach((li) => li.remove());
-      const primeroFijo = lista.querySelector("li.fijo");
-      if (obsSecciones) obsSecciones.disconnect();
-      obsSecciones = new IntersectionObserver((entradas) => {
-        entradas.forEach((e) => {
-          if (!e.isIntersecting) return;
-          lista.querySelectorAll("li.sub a").forEach((a) => {
-            const es = a.getAttribute("href") === "#" + e.target.id;
-            a.classList.toggle("actual", es);
-            if (es && getComputedStyle(indice).position === "sticky") {
-              a.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
-            }
-          });
-        });
-      }, { rootMargin: "-45% 0px -50% 0px" });
-
-      bloques.forEach((bloque) => {
-        const li = document.createElement("li");
-        li.className = "dinamico rumbo" + (bloque === activo ? " abierto" : "");
-        const a = document.createElement("a");
-        a.href = "#" + bloque.id;
-        a.innerHTML = `<span class="num">${bloque.dataset.numeral}</span> ${bloque.dataset.nombre}`;
-        li.appendChild(a);
-        lista.insertBefore(li, primeroFijo);
-
-        if (bloque !== activo) return;
-        bloque.querySelectorAll(":scope > section[id]").forEach((sec) => {
-          const sub = document.createElement("li");
-          sub.className = "dinamico sub";
-          const s = document.createElement("a");
-          s.href = "#" + sec.id;
-          s.textContent = sec.dataset.corto || sec.querySelector("h2")?.textContent || sec.id;
-          sub.appendChild(s);
-          lista.insertBefore(sub, primeroFijo);
-          obsSecciones.observe(sec);
-        });
-      });
+    /* ---- 4. Activar un destino ---- */
+    let activo = null;
+    function activar(dest, animar = true) {
+      if (dest === activo) return;
+      activo = dest;
+      destinos.forEach((d) => d.classList.toggle("activo", d === dest));
+      islas.forEach((i) => i.classList.toggle("activa", i.dataset.destino === dest.id));
+      document.querySelectorAll("#rumbos-movil button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.destino === dest.id)));
+      if (animar) navegar(dest.id); else { pos = { ...puerto[dest.id] }; colocar(pos); }
+      construirIndice();
     }
 
-    function activar(nombre, animar = true) {
-      if (!nombres.includes(nombre) || nombre === actual) return;
-      actual = nombre;
-      bloques.forEach((b) => b.classList.toggle("activo", b.id === nombre));
-      islas.forEach((i) => {
-        i.classList.toggle("activa", i.dataset.bloque === nombre);
-        i.classList.toggle("lejana", i.dataset.bloque !== nombre);
+    function irA(id, desplazar = true) {
+      let el = document.getElementById(id);
+      if (id === "calculo") el = document.getElementById("calculo-una-variable");
+      if (!el) return false;
+      const dest = el.classList.contains("destino") ? el : el.closest(".destino");
+      if (!dest) return false;
+      activar(dest, true);
+      if (el.classList.contains("tema")) cuadernos.get(dest).elegirTema(el);
+      if (desplazar) requestAnimationFrame(() => {
+        const objetivo = el.classList.contains("tema") ? cuadernos.get(dest).cuaderno : dest;
+        objetivo.scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "start" });
       });
-      construirIndice(document.getElementById(nombre));
-      if (animar) navegar(nombre);
-      else { pos = { ...puerto[nombre] }; colocar(pos); }
-    }
-
-    function elegir(nombre) {
-      activar(nombre, true);
-      history.replaceState(null, "", "#" + nombre);
+      history.replaceState(null, "", "#" + id);
+      return true;
     }
 
     islas.forEach((isla) => {
-      isla.addEventListener("click", () => elegir(isla.dataset.bloque));
-      isla.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); elegir(isla.dataset.bloque); }
-      });
+      const ir = () => { irA(isla.dataset.destino, false); };
+      isla.addEventListener("click", ir);
+      isla.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ir(); } });
     });
 
-    // Al cargar: #algebra, #calculo, #estadistica o una sección concreta
-    function desdeEnlace(animar) {
-      const h = decodeURIComponent(location.hash.slice(1));
-      if (nombres.includes(h)) {
-        activar(h, animar);
-        if (animar) requestAnimationFrame(() => document.getElementById(h).scrollIntoView({ behavior: "smooth" }));
-        return;
-      }
-      const el = h && document.getElementById(h);
-      const b = el && el.closest(".bloque");
-      if (b) {
-        activar(b.id, animar);
-        requestAnimationFrame(() => el.scrollIntoView());
-      }
+    // Botones del móvil
+    const movil = document.getElementById("rumbos-movil");
+    destinos.forEach((d) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.destino = d.id;
+      b.textContent = d.dataset.grupo === "calculo" ? d.dataset.nombre.replace("Cálculo en ", "Cálculo · ") : d.dataset.nombre;
+      b.addEventListener("click", () => irA(d.id, false));
+      movil.appendChild(b);
+    });
+
+    /* ---- 5. Bitácora: islas → islotes → temas ---- */
+    function li(clase, href, html, alPulsar) {
+      const item = document.createElement("li");
+      item.className = "dinamico " + clase;
+      const a = document.createElement("a");
+      a.href = href;
+      a.innerHTML = html;
+      a.addEventListener("click", (e) => { e.preventDefault(); alPulsar(); });
+      item.appendChild(a);
+      lista.insertBefore(item, lista.querySelector("li.fijo"));
+      return a;
     }
 
-    desdeEnlace(false);
-    if (!actual) activar("algebra", false);
-    addEventListener("hashchange", () => desdeEnlace(true));
+    function construirIndice() {
+      lista.querySelectorAll("li.dinamico").forEach((x) => x.remove());
+      const grupos = [];
+      destinos.forEach((d) => {
+        let g = grupos.find((x) => x.id === d.dataset.grupo);
+        if (!g) grupos.push(g = { id: d.dataset.grupo, num: d.dataset.numeral, nombre: d.dataset.grupoNombre, destinos: [] });
+        g.destinos.push(d);
+      });
+      grupos.forEach((g) => {
+        const abierto = g.destinos.includes(activo);
+        const a = li("rumbo" + (abierto ? " abierto" : ""), "#" + g.destinos[0].id,
+          `<span class="num">${g.num}</span> ${g.nombre}`, () => irA(g.destinos[0].id));
+        if (!abierto) return;
+        const varios = g.destinos.length > 1;
+        g.destinos.forEach((d) => {
+          if (varios) li("sub" + (d === activo ? " abierto" : ""), "#" + d.id, d.dataset.nombre, () => irA(d.id));
+          if (d !== activo) return;
+          cuadernos.get(d).temas.forEach((t) => {
+            if (t.classList.contains("puertos") && !t.querySelector(".enlace-recomendado")) return;
+            const x = li(varios ? "sub subsub" : "sub", "#" + t.id, t.dataset.nombre, () => irA(t.id));
+            x.dataset.tema = t.id;
+          });
+        });
+      });
+      marcarIndice();
+    }
+
+    function marcarIndice() {
+      if (!activo) return;
+      const t = cuadernos.get(activo)?.estado.tema;
+      lista.querySelectorAll("a[data-tema]").forEach((a) => a.classList.toggle("actual", t && a.dataset.tema === t.id));
+    }
+
+    /* ---- 6. Arranque ---- */
+    cuadernos.forEach((c) => c.construirTemas());
+    const inicial = decodeURIComponent(location.hash.slice(1));
+    if (!inicial || !irA(inicial, true)) activar(document.getElementById("algebra"), false);
+    if (!activo) activar(destinos[0], false);
+    // al saber qué archivos faltan, se rehacen las pestañas
+    Promise.all(comprobaciones).then(() => { cuadernos.forEach((c) => c.construirTemas()); construirIndice(); });
+
+    addEventListener("hashchange", () => irA(decodeURIComponent(location.hash.slice(1))));
 
     // El índice aparece al dejar atrás la portada
     new IntersectionObserver(([e]) => {
