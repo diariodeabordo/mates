@@ -1187,6 +1187,7 @@
     .fila-temas button:focus-visible, .fila-materiales button:focus-visible { outline: 1px solid var(--oro); outline-offset: -3px; }
 
     .hoja { padding-top: 12px; }
+    .hoja video { display: block; width: 100%; max-height: min(780px, 82vh); background: #0b1622; border-top: 1px solid var(--linea); }
     .hoja iframe { display: block; width: 100%; height: 660px; border: 0; border-top: 1px solid var(--linea); background: #fff; }
     .hoja-puertos { padding: 18px; }
     .hoja-vacia {
@@ -1259,6 +1260,111 @@
     }
 
     .leyenda { display: none; }
+
+    /* ===== El mar según la hora (alba, día, ocaso, noche) ===== */
+    .portada { --flecha: 201, 161, 74; transition: background 1s ease; }
+    [data-mar="alba"] .portada {
+      --flecha: 238, 196, 160;
+      background: radial-gradient(ellipse at 50% 115%, #e8a98f55 0%, transparent 55%),
+                  radial-gradient(ellipse at 50% 40%, #2e4466 0%, #182640 72%);
+    }
+    [data-mar="dia"] .portada {
+      --flecha: 226, 204, 140;
+      background: radial-gradient(ellipse at 50% 30%, #1f5582 0%, #0f2f50 72%);
+    }
+    [data-mar="ocaso"] .portada {
+      --flecha: 244, 176, 98;
+      background: radial-gradient(ellipse at 50% 112%, #d9824a66 0%, transparent 58%),
+                  radial-gradient(ellipse at 50% 40%, #3a2c48 0%, #17162a 74%);
+    }
+    [data-mar="noche"] .portada::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(1.2px 1.2px at 12% 18%, #fff8 50%, transparent 51%),
+        radial-gradient(1px 1px at 28% 9%, #fff7 50%, transparent 51%),
+        radial-gradient(1.4px 1.4px at 47% 14%, #fff9 50%, transparent 51%),
+        radial-gradient(1px 1px at 63% 7%, #fff6 50%, transparent 51%),
+        radial-gradient(1.3px 1.3px at 78% 21%, #fff8 50%, transparent 51%),
+        radial-gradient(1px 1px at 91% 11%, #fff6 50%, transparent 51%),
+        radial-gradient(1px 1px at 6% 33%, #fff5 50%, transparent 51%),
+        radial-gradient(1.2px 1.2px at 85% 36%, #fff7 50%, transparent 51%),
+        radial-gradient(1px 1px at 37% 27%, #fff5 50%, transparent 51%);
+      animation: titilar 5s ease-in-out infinite alternate;
+    }
+    @keyframes titilar { from { opacity: .55; } to { opacity: 1; } }
+    h1 { text-wrap: balance; }
+
+    /* ===== Iconos de las pestañas de materiales ===== */
+    .fila-materiales button { display: inline-flex; align-items: center; gap: 8px; }
+    .fila-materiales .ico { width: 17px; height: 17px; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+    .fila-materiales button[aria-selected="true"] .ico { opacity: 1; }
+
+    /* ===== Lo nuevo ===== */
+    .fila-materiales button.nuevo, .fila-temas button.nuevo { position: relative; }
+    .fila-materiales button.nuevo::after {
+      content: "nuevo"; margin-left: 2px; padding: 1px 6px 1px; border-radius: 999px;
+      font-size: 9.5px; letter-spacing: .12em; color: #fff; background: var(--oro);
+    }
+    .fila-temas button.nuevo::after, .indice a.nuevo::after {
+      content: ""; display: inline-block; width: 7px; height: 7px; margin-left: 6px; vertical-align: 3px;
+      border-radius: 50%; background: var(--oro); box-shadow: 0 0 0 3px #c9a14a33;
+      animation: latido-nuevo 2.2s ease-in-out infinite;
+    }
+    @keyframes latido-nuevo { 50% { box-shadow: 0 0 0 6px #c9a14a00; } }
+
+    /* ===== Vídeo con portada ===== */
+    .hoja { position: relative; }
+    .play-video {
+      position: absolute; left: 0; right: 0; bottom: var(--pie-alto, 52px); top: 12px; z-index: 2;
+      display: grid; place-items: center; align-content: center; gap: 14px;
+      border: 0; cursor: pointer; color: #f6f2ea;
+      background: radial-gradient(ellipse at center, rgba(12,21,36,.15) 0%, rgba(12,21,36,.72) 100%);
+      font-family: var(--serif); transition: background .4s;
+    }
+    .play-video[hidden] { display: none; }
+    .play-video:hover { background: radial-gradient(ellipse at center, rgba(12,21,36,.05) 0%, rgba(12,21,36,.6) 100%); }
+    .play-video .disco {
+      width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center;
+      background: rgba(12,21,36,.55); border: 1.5px solid var(--oro);
+      box-shadow: 0 0 0 8px rgba(201,161,74,.14), 0 18px 40px -12px rgba(0,0,0,.6);
+      transition: transform .35s ease, box-shadow .35s ease;
+    }
+    .play-video:hover .disco { transform: scale(1.06); box-shadow: 0 0 0 12px rgba(201,161,74,.18), 0 18px 40px -12px rgba(0,0,0,.6); }
+    .play-video .disco svg { width: 30px; height: 30px; margin-left: 5px; fill: var(--oro); }
+    .play-video .rotulo { font-style: italic; font-size: 22px; text-shadow: 0 2px 12px rgba(0,0,0,.6); padding: 0 16px; }
+    .play-video .rotulo small { display: block; font-family: var(--sans, inherit); font-style: normal; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--oro); margin-bottom: 6px; }
+
+    /* ===== PDF en el móvil: una ficha en lugar del visor ===== */
+    .ficha-pdf { padding: 34px 22px 38px; text-align: center; border-top: 1px solid var(--linea); background: var(--papel); }
+    .ficha-pdf[hidden] { display: none; }
+    .ficha-pdf svg { width: 54px; height: 54px; stroke: var(--oro); fill: none; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+    .ficha-pdf h3 { margin: 10px 0 4px; font-family: var(--serif); font-weight: 400; font-size: 23px; color: var(--tinta); }
+    .ficha-pdf p { margin: 0 0 20px; font-size: 14px; color: var(--tinta-2); }
+    .ficha-pdf a {
+      display: inline-block; padding: 13px 26px; border-radius: 999px; text-decoration: none;
+      font-size: 13px; letter-spacing: .16em; text-transform: uppercase; font-weight: 500;
+      color: var(--noche); background: linear-gradient(180deg, #e2c27a, var(--oro)); box-shadow: 0 10px 24px -12px rgba(140,100,20,.7);
+    }
+
+    /* ===== Móvil ===== */
+    @media (max-width: 700px) {
+      .fila-materiales { display: grid; grid-template-columns: 1fr 1fr; overflow: visible; gap: 7px; padding: 12px 12px 2px; }
+      .fila-materiales button { justify-content: center; font-size: 10.5px; letter-spacing: .08em; padding: 9px 8px; gap: 6px; white-space: nowrap; }
+      .fila-materiales button.nuevo::after { content: ""; width: 6px; height: 6px; padding: 0; margin-left: 0; border-radius: 50%; }
+      .fila-materiales .ico { width: 15px; height: 15px; }
+      .fila-temas, .indice ul {
+        -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent);
+                mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent);
+      }
+      .fila-temas.al-final, .indice ul.al-final { -webkit-mask-image: none; mask-image: none; }
+      .fila-temas { scroll-behavior: smooth; padding-right: 30px; }
+      .hoja iframe { height: 72vh; }
+      .hoja video { max-height: 62vh; }
+      .play-video .disco { width: 70px; height: 70px; }
+      .play-video .rotulo { font-size: 19px; }
+      .cuaderno { margin-top: 30px; border-radius: 10px; }
+      .pie-panel { padding: 12px 14px !important; }
+    }
   </style>
 </head>
 
@@ -1267,6 +1373,14 @@
   <!-- PORTADA -->
   <header class="portada">
     <canvas id="mar" aria-hidden="true"></canvas>
+    <script>
+      /* El mar de la portada cambia con la hora de quien lo mira */
+      (() => {
+        const h = new Date().getHours();
+        const fase = h >= 6 && h < 10 ? "alba" : h >= 10 && h < 17 ? "dia" : h >= 17 && h < 21 ? "ocaso" : "noche";
+        document.documentElement.dataset.mar = fase;
+      })();
+    </script>
 
     <div class="portada-texto">
       <p class="antetitulo">¡Aprende con entusiasmo!</p>
@@ -1567,8 +1681,9 @@
          CÓMO SE RELLENA CADA DESTINO
          Cada <div class="tema"> es una pestaña de arriba (un tema o una entrega).
          Dentro, cada <a data-tipo="..." href="..."> es una pestaña de abajo:
-           Teoría · Animaciones · Ejercicios resueltos · Mapa mental
+           Teoría · Animaciones · Ejercicios resueltos · Mapa mental · Vídeo
          Basta con poner el nombre del archivo en href.
+         Vídeo: un .mp4 (por ejemplo, el de Manim) o un enlace de YouTube.
          Si el archivo no está subido, su pestaña no aparece.
          Para quitar una pestaña, borra su línea o conviértela en comentario.
     ========================================================== -->
@@ -1595,6 +1710,7 @@
           <a data-tipo="Animaciones" href="./Tema2_animaciones.html"></a>
           <a data-tipo="Ejercicios resueltos" href="./Tema2Resueltos.pdf"></a>
           <a data-tipo="Mapa mental" href="./mapa-espacios-vectoriales.pdf"></a>
+          <a data-tipo="Vídeo" href="./Tema2_video.mp4"></a>
         </div>
 
         <div class="tema" id="espacios-euclideos" data-numero="Tema 3" data-nombre="Espacios euclídeos">
@@ -1602,6 +1718,7 @@
           <a data-tipo="Animaciones" href="./Tema3_animaciones.html"></a>
           <a data-tipo="Ejercicios resueltos" href="./Tema3Resueltos.pdf"></a>
           <a data-tipo="Mapa mental" href="./mapa-espacios-euclideos.pdf"></a>
+          <a data-tipo="Vídeo" href="./Tema3_video.mp4"></a>
         </div>
 
         <div class="tema" id="aplicaciones-lineales" data-numero="Tema 4" data-nombre="Aplicaciones lineales">
@@ -1609,6 +1726,7 @@
           <a data-tipo="Animaciones" href="./Tema4_animaciones.html"></a>
           <a data-tipo="Ejercicios resueltos" href="./Tema4Res.pdf"></a>
           <a data-tipo="Mapa mental" href="./Tema 4. Mapa mental.pdf" data-nota="Autora: &lt;strong&gt;Carla Villarreal Conde&lt;/strong&gt; · ¡Muchas gracias, Carla!"></a>
+          <a data-tipo="Vídeo" href="./Tema4_video.mp4"></a>
         </div>
 
         <div class="tema" id="diagonalizacion" data-numero="Tema 5" data-nombre="Diagonalización">
@@ -1616,6 +1734,7 @@
           <!-- <a data-tipo="Animaciones" href="./dossier-diagonalizacion.html"></a> -->
           <a data-tipo="Ejercicios resueltos" href="./Tema5Resueltos.pdf"></a>
           <!-- <a data-tipo="Mapa mental" href="./mapa-diagonalizacion.pdf"></a> -->
+          <a data-tipo="Vídeo" href="./Tema5_video.mp4"></a>
         </div>
 
         <!-- OTROS PUERTOS: cada <a class="enlace-recomendado"> es una tarjeta -->
@@ -1647,6 +1766,7 @@
           <a data-tipo="Animaciones" href="./Calculo1_Entrega1_animaciones.html"></a>
           <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega1Resueltos.pdf"></a>
           <a data-tipo="Mapa mental" href="./Calculo1_Entrega1_mapa.pdf"></a>
+          <a data-tipo="Vídeo" href="./Calculo1_Entrega1_video.mp4"></a>
         </div>
 
         <div class="tema" id="c1-limites-continuidad" data-numero="Entrega 2" data-nombre="Límites y continuidad">
@@ -1654,13 +1774,15 @@
           <a data-tipo="Animaciones" href="./Calculo1_Entrega2_animaciones.html"></a>
           <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega2Resueltos.pdf"></a>
           <a data-tipo="Mapa mental" href="./Calculo1_Entrega2_mapa.pdf"></a>
+          <a data-tipo="Vídeo" href="./Calculo1_Entrega2_video.mp4"></a>
         </div>
 
         <div class="tema" id="c1-derivada" data-numero="Entrega 3" data-nombre="Derivada y usos">
           <a data-tipo="Teoría" href="./Calculo1_Entrega3.pdf"></a>
-          <a data-tipo="Animaciones" href="./Calculo1_Entrega3_animaciones.mp4"></a>
+          <a data-tipo="Animaciones" href="./Calculo1_Entrega3_animaciones.html"></a>
           <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega3Resueltos.pdf"></a>
           <a data-tipo="Mapa mental" href="./Calculo1_Entrega3_mapa.pdf"></a>
+          <a data-tipo="Vídeo" href="./Calculo1_Entrega3_animaciones.mp4"></a>
         </div>
 
         <div class="tema" id="c1-integrales" data-numero="Entrega 4" data-nombre="Integrales">
@@ -1668,6 +1790,7 @@
           <a data-tipo="Animaciones" href="./Calculo1_Entrega4_animaciones.html"></a>
           <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega4Resueltos.pdf"></a>
           <a data-tipo="Mapa mental" href="./Calculo1_Entrega4_mapa.pdf"></a>
+          <a data-tipo="Vídeo" href="./Calculo1_Entrega4_video.mp4"></a>
         </div>
 
         <!-- OTROS PUERTOS: cada <a class="enlace-recomendado"> es una tarjeta -->
@@ -1779,6 +1902,7 @@
     const lienzo = document.getElementById("mar");
     const ctx = lienzo.getContext("2d");
     const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const colorFlecha = (getComputedStyle(lienzo.parentElement).getPropertyValue("--flecha") || "201, 161, 74").trim();
     let w, h, dpr, paso, cols, filas, t = 0, visible = true;
     const raton = { x: -9999, y: -9999, f: 0 };
 
@@ -1820,7 +1944,7 @@
           const x2 = x + ux * largo, y2 = y + uy * largo;
 
           const brillo = Math.min(1, m / 2.2);
-          ctx.strokeStyle = `rgba(201, 161, 74, ${0.10 + brillo * 0.35 + k * 0.15})`;
+          ctx.strokeStyle = `rgba(${colorFlecha}, ${0.10 + brillo * 0.35 + k * 0.15})`;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(x, y);
@@ -2077,12 +2201,75 @@
       "estadistica":              { x: 752, y: 300 }
     };
 
+    /* ---- 0. Utilidades: iconos, lo nuevo, la última parada ---- */
+    const pantallaTactil = matchMedia("(pointer: coarse) and (max-width: 1024px)");
+    const TRAZOS = {
+      "teoria": '<path d="M4 5.5c2.6-1 5.3-1 8 .8 2.7-1.8 5.4-1.8 8-.8v13c-2.6-1-5.3-1-8 .8-2.7-1.8-5.4-1.8-8-.8z"/><path d="M12 6.3v13.5"/>',
+      "animaciones": '<circle cx="12" cy="12" r="2.2"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(120 12 12)"/>',
+      "ejercicios resueltos": '<path d="M5 19l2.8-.6L18.5 7.7a1.9 1.9 0 0 0-2.7-2.7L5.1 15.7z"/><path d="M14.5 6.3l3.2 3.2"/><path d="M13 19.5h6"/>',
+      "mapa mental": '<circle cx="12" cy="12" r="2.6"/><circle cx="4.8" cy="6" r="1.8"/><circle cx="19.2" cy="6" r="1.8"/><circle cx="5.5" cy="18.5" r="1.8"/><circle cx="18.5" cy="18.5" r="1.8"/><path d="M10 10.4L6.2 7.2M14 10.4l3.8-3.2M10.1 13.9l-3.3 3.3M13.9 13.9l3.3 3.3"/>',
+      "video": '<rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="M10.2 9.2v5.6l4.6-2.8z"/>'
+    };
+    const sinTildes = (x) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const icono = (tipo) => TRAZOS[sinTildes(tipo)] ? `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${TRAZOS[sinTildes(tipo)]}</svg>` : "";
+
+    // Lo nuevo: lo subido desde la última visita (como mucho, las últimas 3 semanas)
+    const leer = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
+    const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+    const ahora = Date.now(), DIA = 864e5;
+    let referencia;
+    try { referencia = +sessionStorage.getItem("diario-referencia") || 0; } catch (e) { referencia = 0; }
+    if (!referencia) {
+      const previa = leer("diario-ultima-visita", 0);
+      referencia = previa ? Math.max(previa, ahora - 21 * DIA) : ahora - 10 * DIA;
+      try { sessionStorage.setItem("diario-referencia", String(referencia)); } catch (e) {}
+    }
+    guardar("diario-ultima-visita", ahora);
+    const vistos = leer("diario-vistos", {});
+    const fechaDe = new Map();
+    const esNuevo = (a) => { const f = fechaDe.get(a); return !!f && f > referencia && vistos[a.getAttribute("href")] !== f; };
+    const temaNuevo = (t) => [...t.querySelectorAll("a[data-tipo]")].some((a) => !falta.has(a) && esNuevo(a));
+    function marcarVisto(a) {
+      const f = fechaDe.get(a);
+      if (!f || !esNuevo(a)) return;
+      vistos[a.getAttribute("href")] = f;
+      guardar("diario-vistos", vistos);
+      const t = a.closest(".tema");
+      document.querySelectorAll(".fila-materiales button").forEach((b) => { if (b._a === a) b.classList.remove("nuevo"); });
+      if (t && !temaNuevo(t)) {
+        cuadernos.forEach((c) => { const b = c.estado.botones.get(t); if (b) b.classList.remove("nuevo"); });
+        lista.querySelectorAll(`a[data-tema="${t.id}"]`).forEach((x) => x.classList.remove("nuevo"));
+      }
+    }
+
+    // La última parada: isla, tema y pestaña
+    function recordar() {
+      setTimeout(() => {
+        if (!activo) return;
+        const c = cuadernos.get(activo);
+        guardar("diario-ultima-parada", { destino: activo.id, tema: c && c.estado.tema ? c.estado.tema.id : null, tipo: c ? c.estado.tipo : null });
+      }, 0);
+    }
+
+    // Pestañas que no caben: la elegida se ve entera y un difuminado avisa de que hay más
+    function centrarPestana(fila, b) {
+      requestAnimationFrame(() => {
+        if (fila.scrollWidth <= fila.clientWidth) return;
+        const izq = b.offsetLeft - fila.offsetLeft, der = izq + b.offsetWidth;
+        if (izq < fila.scrollLeft + 10 || der > fila.scrollLeft + fila.clientWidth - 40) fila.scrollLeft = Math.max(0, izq - 30);
+        finDeFila(fila);
+      });
+    }
+    function finDeFila(fila) { fila.classList.toggle("al-final", fila.scrollLeft + fila.clientWidth >= fila.scrollWidth - 4); }
+
     /* ---- 1. Comprobar qué archivos existen (en la web) ---- */
     const falta = new Set();
     const comprobaciones = [...document.querySelectorAll(".destino .tema a[data-tipo]")].map(async (a) => {
       try {
         const r = await fetch(a.getAttribute("href"), { method: "HEAD", cache: "no-store" });
         if (!r.ok) falta.add(a);
+        const f = Date.parse(r.headers.get("last-modified") || "");
+        if (f) fechaDe.set(a, f);
       } catch (e) { /* abierta en local sin servidor: se da por buena */ }
     });
 
@@ -2100,6 +2287,17 @@
         <nav class="fila-materiales" role="tablist" aria-label="Materiales"></nav>
         <div class="hoja">
           <iframe title="Material"></iframe>
+          <video class="video-material" controls preload="metadata" playsinline hidden></video>
+          <button type="button" class="play-video" hidden aria-label="Reproducir el vídeo">
+            <span class="disco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg></span>
+            <span class="rotulo"><small>Vídeo</small><span class="titulo-video"></span></span>
+          </button>
+          <div class="ficha-pdf" hidden>
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M13 5h16l9 9v27a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M29 5v9h9M17 23h14M17 29h14M17 35h9"/></svg>
+            <h3 class="ficha-titulo"></h3>
+            <p>Se abre en el lector del teléfono, más cómodo para leer y ampliar.</p>
+            <a class="ficha-abrir" target="_blank" rel="noopener">Abrir el PDF</a>
+          </div>
           <div class="hoja-puertos puertos"></div>
           <p class="hoja-vacia">Aún no hay materiales en esta parada.</p>
           <div class="pie-panel"><span class="nota"></span><a class="enlace" target="_blank" rel="noopener"></a></div>
@@ -2109,23 +2307,31 @@
       const filaT = cuaderno.querySelector(".fila-temas");
       const filaM = cuaderno.querySelector(".fila-materiales");
       const marco = cuaderno.querySelector("iframe");
+      const video = cuaderno.querySelector("video");
+      const play  = cuaderno.querySelector(".play-video");
+      const ficha = cuaderno.querySelector(".ficha-pdf");
+      play.addEventListener("click", () => { play.hidden = true; video.play().catch(() => {}); });
+      video.addEventListener("play", () => { play.hidden = true; video.controls = true; });
       const hojaP = cuaderno.querySelector(".hoja-puertos");
       const vacia = cuaderno.querySelector(".hoja-vacia");
       const pie   = cuaderno.querySelector(".pie-panel");
       const nota  = pie.querySelector(".nota");
       const abrir = pie.querySelector("a");
 
-      const estado = { tema: null, botones: new Map() };
+      const estado = { tema: null, tipo: null, botones: new Map() };
+      filaT.addEventListener("scroll", () => finDeFila(filaT), { passive: true });
 
       function mostrar(modo) {
         marco.hidden = modo !== "material";
+        if (modo !== "material") { video.hidden = true; video.pause(); play.hidden = true; ficha.hidden = true; }
         pie.hidden   = modo !== "material";
         hojaP.hidden = modo !== "puertos";
         vacia.hidden = modo !== "vacio";
         filaM.hidden = modo !== "material";
       }
 
-      function elegirMaterial(a, enfocar) {
+      function elegirMaterial(a, enfocar, auto) {
+        if (!auto) { estado.tipo = a.dataset.tipo; marcarVisto(a); recordar(); }
         filaM.querySelectorAll("button").forEach((b) => {
           const si = b._a === a;
           b.setAttribute("aria-selected", String(si));
@@ -2133,20 +2339,47 @@
           if (si && enfocar) b.focus();
         });
         const url = a.getAttribute("href");
-        if (marco.getAttribute("src") !== url) marco.setAttribute("src", url);
+        const esVideo = /\.(mp4|webm|m4v|mov)(\?|#|$)/i.test(url);
+        const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);
         nota.innerHTML = a.dataset.nota || "";
         abrir.href = url;
-        abrir.textContent = (/\.pdf$/i.test(url) ? "Abrir o descargar" : "Abrir en ventana nueva") + " ↗";
+        abrir.textContent = (/\.pdf$/i.test(url) || esVideo ? "Abrir o descargar" : "Abrir en ventana nueva") + " ↗";
         mostrar("material");
+        const pdfMovil = /\.pdf(\?|#|$)/i.test(url) && pantallaTactil.matches;
+        ficha.hidden = !pdfMovil;
+        if (pdfMovil) {
+          marco.hidden = true; video.hidden = true; video.pause(); play.hidden = true;
+          ficha.querySelector(".ficha-titulo").textContent = `${a.dataset.tipo} · ${estado.tema ? estado.tema.dataset.nombre : ""}`;
+          ficha.querySelector(".ficha-abrir").href = url;
+        } else if (esVideo) {
+          marco.hidden = true;
+          video.hidden = false;
+          const src = url + (url.includes("#") ? "" : "#t=0.5");
+          if (video.getAttribute("src") !== src) {
+            video.setAttribute("src", src);
+            if (a.dataset.portada) video.poster = a.dataset.portada; else video.removeAttribute("poster");
+          }
+          play.hidden = !video.paused;
+          video.controls = play.hidden;
+          play.querySelector(".titulo-video").textContent = estado.tema ? estado.tema.dataset.nombre : "";
+          requestAnimationFrame(() => cuaderno.style.setProperty("--pie-alto", pie.offsetHeight + "px"));
+        } else {
+          video.hidden = true; video.pause(); play.hidden = true;
+          const src = yt ? "https://www.youtube-nocookie.com/embed/" + yt[1] : url;
+          if (marco.getAttribute("src") !== src) marco.setAttribute("src", src);
+          if (yt) marco.setAttribute("allow", "fullscreen; picture-in-picture"); else marco.removeAttribute("allow");
+        }
       }
 
-      function elegirTema(t, enfocar) {
+      function elegirTema(t, enfocar, auto) {
         estado.tema = t;
+        if (!auto) recordar();
         estado.botones.forEach((b, tt) => {
           const si = tt === t;
           b.setAttribute("aria-selected", String(si));
           b.tabIndex = si ? 0 : -1;
           if (si && enfocar) b.focus();
+          if (si) centrarPestana(filaT, b);
         });
         filaM.innerHTML = "";
         if (t.classList.contains("puertos")) {
@@ -2157,13 +2390,15 @@
           mats.forEach((a, i) => {
             const b = document.createElement("button");
             b.setAttribute("role", "tab");
-            b.textContent = a.dataset.tipo;
+            b.innerHTML = icono(a.dataset.tipo) + `<span>${a.dataset.tipo}</span>`;
+            b.classList.toggle("nuevo", esNuevo(a));
             b._a = a;
             b.addEventListener("click", () => elegirMaterial(a));
             b.addEventListener("keydown", (e) => teclas(e, mats, i, (x) => elegirMaterial(x, true)));
             filaM.appendChild(b);
           });
-          if (mats.length) elegirMaterial(mats[0]); else mostrar("vacio");
+          const preferido = mats.find((x) => x.dataset.tipo === estado.tipo);
+          if (mats.length) elegirMaterial(preferido || mats[0], false, true); else mostrar("vacio");
         }
         marcarIndice();
       }
@@ -2183,6 +2418,7 @@
           const b = document.createElement("button");
           b.setAttribute("role", "tab");
           b.innerHTML = `<span class="num">${t.dataset.numero}</span> ${t.dataset.nombre}`;
+          b.classList.toggle("nuevo", temaNuevo(t));
           b.addEventListener("click", () => elegirTema(t));
           b.addEventListener("keydown", (e) => teclas(e, visibles, i, (x) => elegirTema(x, true)));
           filaT.appendChild(b);
@@ -2193,7 +2429,7 @@
         const hor = dest.querySelector(":scope > .horizonte");
         if (hor) hor.hidden = visibles.some((t) => !t.classList.contains("puertos"));
         const actual = visibles.includes(estado.tema) ? estado.tema : visibles[0];
-        if (actual) elegirTema(actual);
+        if (actual) elegirTema(actual, false, true);
         return visibles;
       }
 
@@ -2245,6 +2481,7 @@
       document.querySelectorAll("#rumbos-movil button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.destino === dest.id)));
       if (animar) navegar(dest.id); else { pos = { ...puerto[dest.id] }; colocar(pos); }
       construirIndice();
+      recordar();
     }
 
     function irA(id, desplazar = true) {
@@ -2254,7 +2491,7 @@
       const dest = el.classList.contains("destino") ? el : el.closest(".destino");
       if (!dest) return false;
       activar(dest, true);
-      if (el.classList.contains("tema")) cuadernos.get(dest).elegirTema(el);
+      if (el.classList.contains("tema")) cuadernos.get(dest).elegirTema(el, false, recordando);
       if (desplazar) requestAnimationFrame(() => {
         const objetivo = el.classList.contains("tema") ? cuadernos.get(dest).cuaderno : dest;
         objetivo.scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "start" });
@@ -2314,6 +2551,7 @@
             if (t.classList.contains("puertos") && !t.querySelector(".enlace-recomendado")) return;
             const x = li(varios ? "sub subsub" : "sub", "#" + t.id, t.dataset.nombre, () => irA(t.id));
             x.dataset.tema = t.id;
+            x.classList.toggle("nuevo", temaNuevo(t));
           });
         });
       });
@@ -2329,10 +2567,22 @@
     /* ---- 6. Arranque ---- */
     cuadernos.forEach((c) => c.construirTemas());
     const inicial = decodeURIComponent(location.hash.slice(1));
-    if (!inicial || !irA(inicial, true)) activar(document.getElementById("algebra"), false);
+    const parada = leer("diario-ultima-parada", null);
+    let recordando = false;
+    if (inicial) irA(inicial, true);
+    else if (parada && document.getElementById(parada.tema || parada.destino)) {
+      // el barco vuelve a la última isla visitada, con el tema y la pestaña de entonces
+      const d = document.getElementById(parada.destino);
+      if (d && cuadernos.get(d) && parada.tipo) cuadernos.get(d).estado.tipo = parada.tipo;
+      activar(document.getElementById("algebra"), false);
+      recordando = true;
+      setTimeout(() => { irA(parada.tema || parada.destino, false); recordando = false; history.replaceState(null, "", location.pathname + location.search); }, 900);
+    }
+    if (!activo) activar(document.getElementById("algebra"), false);
     if (!activo) activar(destinos[0], false);
     // al saber qué archivos faltan, se rehacen las pestañas
     Promise.all(comprobaciones).then(() => { cuadernos.forEach((c) => c.construirTemas()); construirIndice(); });
+    document.querySelectorAll(".indice ul").forEach((u) => { u.addEventListener("scroll", () => finDeFila(u), { passive: true }); finDeFila(u); });
 
     addEventListener("hashchange", () => irA(decodeURIComponent(location.hash.slice(1))));
 
