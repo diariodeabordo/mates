@@ -1684,6 +1684,9 @@
            Teoría · Animaciones · Ejercicios resueltos · Mapa mental · Vídeo
          Basta con poner el nombre del archivo en href.
          Vídeo: un .mp4 (por ejemplo, el de Manim) o un enlace de YouTube.
+         Para marcar un material como NUEVO, añade a su línea la fecha de subida:
+           <a data-tipo="Vídeo" href="./Tema2_video.mp4"></a>
+         Se verá como nuevo 14 días, o hasta que el alumno lo abra.
          Si el archivo no está subido, su pestaña no aparece.
          Para quitar una pestaña, borra su línea o conviértela en comentario.
     ========================================================== -->
@@ -2227,7 +2230,11 @@
     guardar("diario-ultima-visita", ahora);
     const vistos = leer("diario-vistos", {});
     const fechaDe = new Map();
-    const esNuevo = (a) => { const f = fechaDe.get(a); return !!f && f > referencia && vistos[a.getAttribute("href")] !== f; };
+    // Un material es «nuevo» si su línea lleva data-nuevo="AAAA-MM-DD": lo es durante 14 días desde esa fecha,
+    // o hasta que el alumno lo abre. (La fecha de GitHub no sirve: cambia en todos los archivos con cada subida.)
+    fechaDe.clear();
+    document.querySelectorAll(".destino .tema a[data-nuevo]").forEach((a) => { const f = Date.parse(a.dataset.nuevo); if (f) fechaDe.set(a, f); });
+    const esNuevo = (a) => { const f = fechaDe.get(a); return !!f && ahora - f < 14 * DIA && ahora >= f - DIA && vistos[a.getAttribute("href")] !== f; };
     const temaNuevo = (t) => [...t.querySelectorAll("a[data-tipo]")].some((a) => !falta.has(a) && esNuevo(a));
     function marcarVisto(a) {
       const f = fechaDe.get(a);
@@ -2268,8 +2275,6 @@
       try {
         const r = await fetch(a.getAttribute("href"), { method: "HEAD", cache: "no-store" });
         if (!r.ok) falta.add(a);
-        const f = Date.parse(r.headers.get("last-modified") || "");
-        if (f) fechaDe.set(a, f);
       } catch (e) { /* abierta en local sin servidor: se da por buena */ }
     });
 
