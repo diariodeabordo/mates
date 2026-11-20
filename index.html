@@ -61,7 +61,7 @@
       text-align: center;
     }
 
-    #mar {
+    #cielo, #mar {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -1262,35 +1262,8 @@
     .leyenda { display: none; }
 
     /* ===== El mar según la hora (alba, día, ocaso, noche) ===== */
-    .portada { --flecha: 201, 161, 74; transition: background 1s ease; }
-    [data-mar="alba"] .portada {
-      --flecha: 238, 196, 160;
-      background: radial-gradient(ellipse at 50% 115%, #e8a98f55 0%, transparent 55%),
-                  radial-gradient(ellipse at 50% 40%, #2e4466 0%, #182640 72%);
-    }
-    [data-mar="dia"] .portada {
-      --flecha: 226, 204, 140;
-      background: radial-gradient(ellipse at 50% 30%, #1f5582 0%, #0f2f50 72%);
-    }
-    [data-mar="ocaso"] .portada {
-      --flecha: 244, 176, 98;
-      background: radial-gradient(ellipse at 50% 112%, #d9824a66 0%, transparent 58%),
-                  radial-gradient(ellipse at 50% 40%, #3a2c48 0%, #17162a 74%);
-    }
-    [data-mar="noche"] .portada::before {
-      content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-      background-image:
-        radial-gradient(1.2px 1.2px at 12% 18%, #fff8 50%, transparent 51%),
-        radial-gradient(1px 1px at 28% 9%, #fff7 50%, transparent 51%),
-        radial-gradient(1.4px 1.4px at 47% 14%, #fff9 50%, transparent 51%),
-        radial-gradient(1px 1px at 63% 7%, #fff6 50%, transparent 51%),
-        radial-gradient(1.3px 1.3px at 78% 21%, #fff8 50%, transparent 51%),
-        radial-gradient(1px 1px at 91% 11%, #fff6 50%, transparent 51%),
-        radial-gradient(1px 1px at 6% 33%, #fff5 50%, transparent 51%),
-        radial-gradient(1.2px 1.2px at 85% 36%, #fff7 50%, transparent 51%),
-        radial-gradient(1px 1px at 37% 27%, #fff5 50%, transparent 51%);
-      animation: titilar 5s ease-in-out infinite alternate;
-    }
+    .portada { --flecha: 201, 161, 74; }
+    .portada-texto { text-shadow: 0 2px 18px rgba(4, 8, 20, .45); }
     @keyframes titilar { from { opacity: .55; } to { opacity: 1; } }
     h1 { text-wrap: balance; }
 
@@ -1372,13 +1345,253 @@
 
   <!-- PORTADA -->
   <header class="portada">
+    <canvas id="cielo" aria-hidden="true"></canvas>
     <canvas id="mar" aria-hidden="true"></canvas>
     <script>
-      /* El mar de la portada cambia con la hora de quien lo mira */
+      /* ---------- El cielo y el mar de la portada, según la hora ----------
+         El sol sale, sube y se pone a su hora real (aprox. para la latitud de la Península);
+         al atardecer todo se vuelve naranja y de noche brillan las constelaciones.
+         Para probar otra hora: añade ?hora=19.5 a la dirección. */
       (() => {
-        const h = new Date().getHours();
-        const fase = h >= 6 && h < 10 ? "alba" : h >= 10 && h < 17 ? "dia" : h >= 17 && h < 21 ? "ocaso" : "noche";
-        document.documentElement.dataset.mar = fase;
+        const lienzo = document.getElementById("cielo");
+        const ctx = lienzo.getContext("2d");
+        const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const forzada = parseFloat(new URLSearchParams(location.search).get("hora"));
+        let w, h, dpr, horizonte, fondo = null, t = 0, estado;
+
+        // --- el sol de hoy: salida, puesta y altura (aprox. latitud 39° N) ---
+        function sol() {
+          const ahora = new Date();
+          const horaReal = ahora.getHours() + ahora.getMinutes() / 60 + ahora.getSeconds() / 3600;
+          const hora = isNaN(forzada) ? horaReal : forzada;
+          const inicio = new Date(ahora.getFullYear(), 0, 0);
+          const dia = Math.floor((ahora - inicio) / 864e5);
+          const dec = 23.44 * Math.sin(2 * Math.PI * (284 + dia) / 365) * Math.PI / 180;
+          const lat = 39 * Math.PI / 180;
+          const h0 = Math.acos(Math.max(-1, Math.min(1, -Math.tan(lat) * Math.tan(dec)))) * 180 / Math.PI;
+          const md = 12.26 + (-ahora.getTimezoneOffset() / 60);       // mediodía solar en hora local (long. ≈ 4° O)
+          const salida = md - h0 / 15, puesta = md + h0 / 15;
+          let e, p, manana;
+          if (hora >= salida && hora <= puesta) {
+            p = (hora - salida) / (puesta - salida);
+            e = Math.sin(Math.PI * p);
+            manana = p < 0.5;
+          } else {
+            const noche = 24 - (puesta - salida);
+            const q = ((hora - puesta + 24) % 24) / noche;
+            e = -Math.sin(Math.PI * q);
+            p = -1;
+            manana = q > 0.5;
+          }
+          return { e, p, manana };
+        }
+
+        // --- colores del cielo según la altura del sol ---
+        const mezcla = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v) * k));
+        const hex = (c) => c.match(/\w\w/g).map((x) => parseInt(x, 16));
+        const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+        function paleta(e, manana) {
+          const tramos = manana ? [
+            [-1,    "040814", "0b1530"],
+            [-0.22, "060c1d", "13203f"],
+            [-0.06, "1a2145", "4d3558"],
+            [0.04,  "2e3563", "f2a07e"],
+            [0.22,  "25528a", "f3c08a"],
+            [0.55,  "174d80", "6aa6cf"],
+            [1,     "154a7d", "5d9ccb"]
+          ] : [
+            [-1,    "040814", "0b1530"],
+            [-0.22, "060c1d", "13203f"],
+            [-0.06, "24183a", "6a2f3c"],
+            [0.04,  "4a2c55", "f07a2a"],
+            [0.22,  "34507c", "f3b062"],
+            [0.55,  "174d80", "6aa6cf"],
+            [1,     "154a7d", "5d9ccb"]
+          ];
+          let i = 0;
+          while (i < tramos.length - 2 && e > tramos[i + 1][0]) i++;
+          const [e0, a0, b0] = tramos[i], [e1, a1, b1] = tramos[i + 1];
+          const k = Math.max(0, Math.min(1, (e - e0) / (e1 - e0)));
+          return { arriba: mezcla(hex(a0), hex(a1), k), horizonte: mezcla(hex(b0), hex(b1), k) };
+        }
+
+        // --- constelaciones (posiciones relativas al cielo) ---
+        const CONSTELACIONES = [
+          { estrellas: [[.07,.14],[.12,.115],[.17,.125],[.22,.155],[.235,.225],[.30,.245],[.305,.165]], lineas: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]] },   // Osa Mayor
+          { estrellas: [[.305,.045]], lineas: [] },                                                                                                       // Polar
+          { estrellas: [[.61,.10],[.65,.165],[.69,.11],[.73,.17],[.77,.115]], lineas: [[0,1],[1,2],[2,3],[3,4]] },                                          // Casiopea
+          { estrellas: [[.47,.07],[.485,.15],[.50,.23],[.435,.165],[.54,.145]], lineas: [[0,1],[1,2],[3,1],[1,4]] },                                        // Cisne
+          { estrellas: [[.80,.30],[.88,.315],[.825,.40],[.84,.395],[.855,.39],[.805,.49],[.89,.48]], lineas: [[0,1],[0,2],[1,4],[2,3],[3,4],[2,5],[4,6]] }   // Orión
+        ];
+        let semilla = 7;
+        const azar = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+        const POLVO = Array.from({ length: 140 }, () => [azar(), azar() * 0.95, 0.3 + azar() * 1.1, azar() * 6.28]);
+
+        function medir() {
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          w = lienzo.clientWidth; h = lienzo.clientHeight;
+          lienzo.width = w * dpr; lienzo.height = h * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          horizonte = Math.round(h * 0.72);
+          fondo = null;
+        }
+
+        function actualizar() {
+          estado = sol();
+          estado.col = paleta(estado.e, estado.manana);
+          const e = estado.e;
+          // fase y color de las flechas (las lee el campo de flechas)
+          const fase = e < -0.06 ? "noche" : e < 0.25 ? (estado.manana ? "alba" : "ocaso") : "dia";
+          document.documentElement.dataset.mar = fase;
+          window.__flecha = { noche: "201, 161, 74", alba: "246, 200, 165", ocaso: "255, 186, 110", dia: "232, 214, 160" }[fase];
+          fondo = null;
+        }
+
+        function pintarFondo() {
+          fondo = document.createElement("canvas");
+          fondo.width = w * dpr; fondo.height = h * dpr;
+          const f = fondo.getContext("2d");
+          f.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const { arriba, horizonte: hz } = estado.col;
+          // cielo
+          let g = f.createLinearGradient(0, 0, 0, horizonte);
+          g.addColorStop(0, rgb(arriba)); g.addColorStop(0.62, rgb(mezcla(arriba, hz, 0.45))); g.addColorStop(1, rgb(hz));
+          f.fillStyle = g; f.fillRect(0, 0, w, horizonte + 1);
+          // mar: refleja el cielo, más oscuro
+          const marArriba = mezcla(hz, [8, 14, 28], 0.45), marAbajo = mezcla(arriba, [4, 8, 18], 0.55);
+          g = f.createLinearGradient(0, horizonte, 0, h);
+          g.addColorStop(0, rgb(marArriba)); g.addColorStop(1, rgb(marAbajo));
+          f.fillStyle = g; f.fillRect(0, horizonte, w, h - horizonte);
+        }
+
+        function posSol() {
+          const p = estado.p;
+          return { x: w * (0.1 + 0.8 * p), y: horizonte - Math.sin(Math.PI * p) * (horizonte * 0.78) };
+        }
+
+        function dibujar() {
+          if (!fondo) pintarFondo();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.drawImage(fondo, 0, 0);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const e = estado.e;
+
+          // --- estrellas y constelaciones (aparecen al anochecer) ---
+          const noche = Math.max(0, Math.min(1, (-e - 0.04) / 0.2));
+          if (noche > 0) {
+            const alto = horizonte * 0.98;
+            POLVO.forEach(([x, y, r, fase]) => {
+              const a = noche * (0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 1.3 + fase)));
+              ctx.fillStyle = `rgba(255,248,230,${a})`;
+              ctx.beginPath(); ctx.arc(x * w, y * alto, r, 0, 6.283); ctx.fill();
+            });
+            CONSTELACIONES.forEach((c, n) => {
+              const pts = c.estrellas.map(([x, y]) => [x * w, y * horizonte * 1.25]);
+              ctx.strokeStyle = `rgba(232,205,140,${0.28 * noche})`;
+              ctx.lineWidth = 0.8;
+              ctx.beginPath();
+              c.lineas.forEach(([a, b]) => { ctx.moveTo(...pts[a]); ctx.lineTo(...pts[b]); });
+              ctx.stroke();
+              pts.forEach(([x, y], k) => {
+                const brillo = 0.75 + 0.25 * Math.sin(t * 2.1 + n * 1.7 + k * 2.3);
+                const r = 1.7 + (k % 3 === 0 ? 0.7 : 0);
+                const halo = ctx.createRadialGradient(x, y, 0, x, y, r * 6);
+                halo.addColorStop(0, `rgba(255,236,190,${0.55 * noche * brillo})`);
+                halo.addColorStop(1, "rgba(255,236,190,0)");
+                ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(x, y, r * 6, 0, 6.283); ctx.fill();
+                ctx.fillStyle = `rgba(255,250,235,${noche * brillo})`;
+                ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+              });
+            });
+          }
+
+          // --- el sol ---
+          if (estado.p >= 0) {
+            const { x, y } = posSol();
+            const bajo = 1 - Math.min(1, e / 0.35);                    // 1 junto al horizonte
+            const nucleo = mezcla([255, 236, 170], [255, 128, 52], bajo);
+            const halo = ctx.createRadialGradient(x, y, 0, x, y, 170 + 120 * bajo);
+            halo.addColorStop(0, rgb(nucleo, 0.55)); halo.addColorStop(0.25, rgb(nucleo, 0.18)); halo.addColorStop(1, rgb(nucleo, 0));
+            ctx.save();
+            ctx.beginPath(); ctx.rect(0, 0, w, horizonte); ctx.clip();
+            ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(x, y, 300, 0, 6.283); ctx.fill();
+            ctx.fillStyle = rgb(nucleo); ctx.beginPath(); ctx.arc(x, y, 26, 0, 6.283); ctx.fill();
+            ctx.restore();
+            // reflejo sobre el mar: una columna de destellos que se ensancha hacia la orilla
+            const fondoMar = h - horizonte;
+            for (let i = 0; i < 46; i++) {
+              const z = (i + 0.5) / 46;
+              const yy = horizonte + 2 + fondoMar * Math.pow(z, 1.7);
+              const ancho = 10 + z * (110 + 90 * bajo);
+              let sem = (i * 7919 + Math.floor(t * 2.2 + i * 0.37) * 104729) % 65536;
+              const rnd = () => (sem = (sem * 25173 + 13849) % 65536) / 65536;
+              const piezas = 2 + Math.floor(rnd() * 3);
+              for (let k = 0; k < piezas; k++) {
+                const desv = (rnd() + rnd() + rnd() - 1.5) / 1.5;          // casi gaussiano: más destellos en el centro
+                const largo = (4 + rnd() * 16) * (0.4 + z * 1.4);
+                const a = (0.75 - z * 0.45) * (1 - Math.abs(desv)) * (0.4 + 0.6 * rnd());
+                ctx.fillStyle = rgb(nucleo, a);
+                ctx.fillRect(x + desv * ancho - largo / 2, yy, largo, 0.8 + z * 1.6);
+              }
+            }
+          }
+
+          // --- olas: crestas en perspectiva que nacen en el horizonte y llegan sin cortes ---
+          {
+            const fondoMar = h - horizonte, FILAS = 34, vel = 0.055;
+            const avance = t * vel, base = Math.floor(avance), fr = avance - base;
+            const claro = mezcla(estado.col.horizonte, [255, 255, 255], 0.35);
+            for (let i = 0; i < FILAS; i++) {
+              const z = (i + fr) / FILAS;                      // 0 = horizonte, 1 = orilla
+              if (z <= 0) continue;
+              const y = horizonte + fondoMar * Math.pow(z, 1.9);
+              const id = i - base;                             // identidad estable de cada fila
+              const vida = Math.min(1, z * 6) * Math.min(1, (1 - z) * 5);   // aparece y se desvanece
+              const escala = 0.25 + z * 1.6;
+              let semillaFila = (id * 9301 + 49297) % 233280;
+              const rnd = () => (semillaFila = (semillaFila * 9301 + 49297) % 233280) / 233280;
+              const n = 5 + Math.floor(rnd() * 5);
+              for (let k = 0; k < n; k++) {
+                const largo = (40 + rnd() * 120) * escala;
+                const x0 = rnd() * (w + largo) - largo / 2 + Math.sin(t * 0.3 + id) * 12 * escala;
+                const alto = (1.2 + rnd() * 1.6) * escala;
+                const deriva = Math.sin(t * 0.9 + id * 1.7 + k) * 0.5 + 0.5;
+                const a = vida * (0.05 + 0.12 * deriva) * (0.6 + 0.4 * z);
+                // cresta clara
+                ctx.strokeStyle = rgb(claro, a);
+                ctx.lineWidth = 0.6 + z * 1.1;
+                ctx.beginPath();
+                for (let s2 = 0; s2 <= 1.0001; s2 += 0.1) {
+                  const xx = x0 + s2 * largo;
+                  const yy = y - Math.sin(s2 * Math.PI) * alto;
+                  s2 ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy);
+                }
+                ctx.stroke();
+                // seno oscuro justo detrás de la cresta
+                ctx.strokeStyle = `rgba(2, 6, 16, ${a * 0.9})`;
+                ctx.lineWidth = 0.8 + z * 1.6;
+                ctx.beginPath();
+                ctx.moveTo(x0 + largo * 0.1, y + 1.5 * escala);
+                ctx.quadraticCurveTo(x0 + largo / 2, y + (1.5 + alto * 0.6) * escala, x0 + largo * 0.9, y + 1.5 * escala);
+                ctx.stroke();
+              }
+            }
+          }
+          // línea del horizonte
+          ctx.fillStyle = rgb(mezcla(estado.col.horizonte, [255, 255, 255], 0.25), 0.35);
+          ctx.fillRect(0, horizonte, w, 1);
+        }
+
+        let ultimo = 0, visible = true;
+        function bucle(ms) {
+          if (visible && ms - ultimo > 45) { t += quieto ? 0 : 0.045; dibujar(); ultimo = ms; }
+          if (!quieto) requestAnimationFrame(bucle);
+        }
+        new IntersectionObserver(([x]) => { visible = x.isIntersecting; }).observe(lienzo);
+        addEventListener("resize", () => { medir(); dibujar(); });
+        medir(); actualizar(); dibujar();
+        setInterval(() => { actualizar(); if (quieto) dibujar(); }, 60000);
+        if (!quieto) requestAnimationFrame(bucle);
       })();
     </script>
 
@@ -1785,7 +1998,7 @@
           <a data-tipo="Animaciones" href="./Calculo1_Entrega3_animaciones.html"></a>
           <a data-tipo="Ejercicios resueltos" href="./Calculo1_Entrega3Resueltos.pdf"></a>
           <a data-tipo="Mapa mental" href="./Calculo1_Entrega3_mapa.pdf"></a>
-          <a data-tipo="Vídeo" href="./Calculo1_Entrega3_video.mp4"></a>
+          <a data-tipo="Vídeo" href="./Calculo1_Entrega3_animaciones.mp4"></a>
         </div>
 
         <div class="tema" id="c1-integrales" data-numero="Entrega 4" data-nombre="Integrales">
@@ -1947,7 +2160,7 @@
           const x2 = x + ux * largo, y2 = y + uy * largo;
 
           const brillo = Math.min(1, m / 2.2);
-          ctx.strokeStyle = `rgba(${colorFlecha}, ${0.10 + brillo * 0.35 + k * 0.15})`;
+          ctx.strokeStyle = `rgba(${window.__flecha || colorFlecha}, ${0.08 + brillo * 0.30 + k * 0.15})`;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(x, y);
